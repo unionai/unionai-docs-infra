@@ -1,0 +1,2 @@
+{{ $link := partial "rel-link.html" .Destination }}
+<a href="{{ $link | safeURL }}">{{.Text | safeHTML }}</a>
