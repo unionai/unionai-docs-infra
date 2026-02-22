@@ -7,10 +7,13 @@ from lib.ptypes import MethodInfo, PropertyInfo, VariableInfo, FrameworkType, Pa
 
 # Pattern: <some.module.ClassName object at 0x7f...>
 _OBJECT_REPR_RE = re.compile(r"<([\w.]+)\s+object\s+at\s+0x[0-9a-fA-F]+>")
+# Pattern: <module 'some.module' from '/path/to/file.py'>
+_MODULE_REPR_RE = re.compile(r"<module '([\w.]+)' from '[^']+'>")
 
 
 def _sanitize_type_str(s: str) -> str:
-    """Replace object repr strings (with memory addresses) with just the class path."""
+    """Replace object/module repr strings (with memory addresses or paths) with just the name."""
+    s = _MODULE_REPR_RE.sub(r"\1", s)
     return _OBJECT_REPR_RE.sub(r"\1", s)
 
 
