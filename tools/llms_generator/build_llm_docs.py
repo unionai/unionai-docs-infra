@@ -138,11 +138,13 @@ class LLMDocBuilder:
             # Keep other links unchanged (absolute paths like /docs/, static files, etc.)
             return match.group(0)
 
-        # Protect inline code spans from link processing by replacing them with placeholders
+        # Protect code blocks and inline code spans from link processing
         code_spans = []
         def protect_code_span(match):
             code_spans.append(match.group(0))
             return f'\x00CODE{len(code_spans) - 1}\x00'
+        # Fenced code blocks first (``` ... ```), then inline code spans (` ... `)
+        content = re.sub(r'```[^`]*```', protect_code_span, content, flags=re.DOTALL)
         content = re.sub(r'`[^`]+`', protect_code_span, content)
 
         # Process markdown links
