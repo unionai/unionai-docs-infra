@@ -25,7 +25,7 @@ from _repo import get_repo_root, INFRA_ROOT
 # CSV format flags (matching existing redirects.csv)
 CSV_FLAGS = '302,TRUE,FALSE,TRUE,TRUE'
 
-# Default output file (in infra/)
+# Default output file (in unionai-docs-infra/)
 REDIRECTS_FILE = 'redirects.csv'
 
 # Makefile include that defines VERSION
@@ -47,7 +47,7 @@ def read_version(repo_path: Path) -> str:
 
 
 def read_variants(repo_path: Path) -> List[str]:
-    """Read variant names from config.{variant}.toml files in infra/."""
+    """Read variant names from config.{variant}.toml files in unionai-docs-infra/."""
     variants = sorted(
         p.stem.split('.', 1)[1]
         for p in INFRA_ROOT.glob(VARIANT_CONFIG_GLOB)

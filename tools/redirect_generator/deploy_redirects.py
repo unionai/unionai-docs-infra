@@ -161,7 +161,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # Resolve CSV path relative to infra/
+    # Resolve CSV path relative to unionai-docs-infra/
     csv_path = INFRA_ROOT / args.csv
 
     if not csv_path.exists():

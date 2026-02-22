@@ -78,14 +78,14 @@ class LLMDocBuilder:
             # Transform source file references to GitHub URLs
             def transform_source_ref(match):
                 source_line = match.group(0)
-                # Replace /external/unionai-examples with GitHub URL
-                transformed = source_line.replace('/external/unionai-examples', 'https://github.com/unionai/unionai-examples/blob/main')
+                # Replace /unionai-examples with GitHub URL
+                transformed = source_line.replace('/unionai-examples', 'https://github.com/unionai/unionai-examples/blob/main')
                 # Remove all asterisks and make it more explicit with parentheses
                 transformed = transformed.replace('*Source:', '(Source code for the above example:')
                 transformed = transformed.replace('*', ')')  # Replace trailing asterisk with closing parenthesis
                 return transformed
 
-            content = re.sub(r'\*Source: /external/unionai-examples[^\*]*\*', transform_source_ref, content)
+            content = re.sub(r'\*Source: /unionai-examples[^\*]*\*', transform_source_ref, content)
 
             # Move source references directly after code blocks (remove blank line between them)
             content = re.sub(r'```\n\n\(Source code for the above example:', '```\n(Source code for the above example:', content)

@@ -162,7 +162,7 @@ class CLIDocsTester:
             # Filter out dynamic/directory-based commands that we expect to be missing
             static_subcommands = []
             dynamic_patterns = ['tools', 'dist', 'include', 'archetypes', 'content', 'public',
-                              'layouts', 'static', 'scripts', 'external', 'themes',
+                              'layouts', 'static', 'scripts', 'unionai-examples', 'unionai-docs-infra', 'themes',
                               # Dynamic environments from deployed-task
                               'root_env', 'spark_env', 'torch_env', 'env_1', 'env_2', 'trigger_env',
                               'my_task_env', 'async_example_env', 'my_env']

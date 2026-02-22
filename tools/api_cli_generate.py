@@ -124,7 +124,7 @@ def generate_go_cli(cli: dict) -> None:
         os.rename(tmp_file, output_file)
         print(f"  Generated {cli['output_file']}")
     else:
-        print(f"  Warning: infra/scripts/gen-cli-docs not found, skipping {binary}")
+        print(f"  Warning: unionai-docs-infra/scripts/gen-cli-docs not found, skipping {binary}")
 
 
 def main() -> None:

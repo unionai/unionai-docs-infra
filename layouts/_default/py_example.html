@@ -10,7 +10,7 @@
   <div class="markdown-content">
     {{ $content := readFile .Params.example_file }}
     {{ if not $content }}
-      {{- if hasPrefix .Params.example_file "/external/unionai-examples/" -}}
+      {{- if hasPrefix .Params.example_file "/unionai-examples/" -}}
         {{ errorf "File not found: %s (referenced from %s). The examples submodule may be out of date — run 'make update-examples' to update it." .Params.example_file .Path }}
       {{- else -}}
         {{ errorf "File not found: %s (referenced from %s)." .Params.example_file .Path }}

@@ -180,8 +180,8 @@ class ShortcodeProcessor:
                 # Generate markdown code block
                 lang_str = lang or ""
                 source_url = file_path
-                if source_url.startswith('/external/unionai-examples/'):
-                    source_url = 'https://github.com/unionai/unionai-examples/blob/main/' + source_url[len('/external/unionai-examples/'):]
+                if source_url.startswith('/unionai-examples/'):
+                    source_url = 'https://github.com/unionai/unionai-examples/blob/main/' + source_url[len('/unionai-examples/'):]
                 return f"```{lang_str}\n{file_content.rstrip()}\n```\n\n*Source: {source_url}*"
 
             except Exception as e:
@@ -376,8 +376,8 @@ class ShortcodeProcessor:
     def resolve_file_path(self, file_path: str) -> Path:
         """Resolve shortcode file paths to actual file system paths."""
         # Handle different prefixes
-        if file_path.startswith('/external/'):
-            # External files are in the external/ subdirectory
+        if file_path.startswith('/unionai-examples/'):
+            # Example files are in the unionai-examples/ subdirectory
             return self.base_path / file_path.lstrip('/')
         elif file_path.startswith('/static/'):
             return self.base_path / 'static' / file_path[8:]

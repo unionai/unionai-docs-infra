@@ -54,7 +54,7 @@ This document describes how the Union.ai documentation platform works, including
    Copy the sample configuration and customize it:
 
    ```
-   cp hugo.local.toml~sample hugo.local.toml
+   cp unionai-docs-infra/hugo.local.toml~sample hugo.local.toml
    ```
 
    Review `hugo.local.toml` before starting development. See [Controlling the development environment](#controlling-the-development-environment) for available settings.
@@ -130,7 +130,7 @@ See [Contributing docs and examples](https://union.ai/docs/flyte/community/contr
 
 ## Managing tutorial pages
 
-Tutorials are maintained in the [unionai-examples](https://github.com/unionai/unionai-examples) repository and imported as a git submodule in the `external` directory.
+Tutorials are maintained in the [unionai-examples](https://github.com/unionai/unionai-examples) repository and imported as a git submodule in the `unionai-examples` directory.
 
 To initialize the submodule on a fresh clone:
 
@@ -154,7 +154,7 @@ make dist
 
 This is the main production build command. It performs the following steps:
 
-1. Converts Jupyter notebooks from `external/unionai-examples` to markdown
+1. Converts Jupyter notebooks from `unionai-examples` to markdown
 2. Runs `make update-redirects` to detect moved pages and update `redirects.csv`
 3. Builds all four Hugo variants (flyte, byoc, selfmanaged, serverless) into the `dist/` directory
 4. Generates LLM-optimized documentation (`llms-full.txt`) for each variant
@@ -374,7 +374,7 @@ Then commit the changed files in `content/api-reference/`, `data/flytesdk.yaml`,
 
 ### Check Jupyter Notebooks (`check-jupyter`)
 
-**What it checks:** That generated markdown from Jupyter notebooks is up to date with the source notebooks in `external/unionai-examples`.
+**What it checks:** That generated markdown from Jupyter notebooks is up to date with the source notebooks in `unionai-examples`.
 
 **Why it fails:** A notebook in the examples submodule was updated but the generated markdown wasn't regenerated.
 

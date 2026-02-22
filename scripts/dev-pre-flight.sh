@@ -19,18 +19,18 @@ SAMPLE_FILE="${INFRA_DIR}/hugo.local.toml~sample"
 if [[ ! -e hugo.local.toml ]]; then
   fatal \
     "You need to have a 'hugo.local.toml' for development mode" \
-    "(please copy it from 'infra/hugo.local.toml~sample' to get started)"
+    "(please copy it from 'unionai-docs-infra/hugo.local.toml~sample' to get started)"
 fi
 
 if grep -q variant_hide_in_development "hugo.local.toml"; then
   fatal \
     "You have legacy settings in 'hugo.local.toml'" \
-    "(please copy settings from 'infra/hugo.local.toml~sample')"
+    "(please copy settings from 'unionai-docs-infra/hugo.local.toml~sample')"
 fi
 if grep -q variant_identify_variant_in_development "hugo.local.toml"; then
   fatal \
     "You have legacy settings in 'hugo.local.toml'" \
-    "(please copy settings from 'infra/hugo.local.toml~sample')"
+    "(please copy settings from 'unionai-docs-infra/hugo.local.toml~sample')"
 fi
 
 # Check if we have all the settings described in the sample file
@@ -42,6 +42,6 @@ for sett in $known_settings; do
   if ! tr -d ' ' <"hugo.local.toml" | grep -q -c "^$sett="; then
     fatal \
       "You are missing the '$sett' setting in 'hugo.local.toml'" \
-      "(please copy it from 'infra/hugo.local.toml~sample')"
+      "(please copy it from 'unionai-docs-infra/hugo.local.toml~sample')"
   fi
 done

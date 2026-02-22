@@ -30,7 +30,7 @@ MAKEFILE_INC = 'makefile.inc'
 # Hugo variant config file pattern: config.{variant}.toml
 VARIANT_CONFIG_GLOB = 'config.*.toml'
 
-# Default files (in infra/)
+# Default files (in unionai-docs-infra/)
 REDIRECTS_FILE = 'redirects.csv'
 EXCLUDE_FILE = '.redirects-exclude'
 
@@ -46,7 +46,7 @@ def read_version(repo_path: Path) -> str:
 
 
 def read_variants(repo_path: Path) -> List[str]:
-    """Read variant names from config.{variant}.toml files in infra/."""
+    """Read variant names from config.{variant}.toml files in unionai-docs-infra/."""
     variants = sorted(
         p.stem.split('.', 1)[1]
         for p in INFRA_ROOT.glob(VARIANT_CONFIG_GLOB)

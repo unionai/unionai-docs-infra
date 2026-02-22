@@ -1,10 +1,10 @@
-"""Shared helpers for locating the repository root and infra directory."""
+"""Shared helpers for locating the repository root and unionai-docs-infra directory."""
 
 import os
 import subprocess
 from pathlib import Path
 
-# infra/ directory (parent of tools/)
+# unionai-docs-infra/ directory (parent of tools/)
 INFRA_ROOT = Path(__file__).resolve().parent.parent
 
 def get_repo_root() -> Path:
