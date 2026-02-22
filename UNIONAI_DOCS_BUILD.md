@@ -2,6 +2,17 @@
 
 This document describes how the Union.ai documentation platform works, including local development, production builds, the Cloudflare Pages deployment pipeline, LLM documentation generation, and CI checks.
 
+## Repository structure
+
+The docs system is split across two repositories:
+
+- **[unionai-docs](https://github.com/unionai/unionai-docs)** — the parent repository containing version-specific content and configuration. Files that differ between `main` (v2) and `v1` branches live here: `content/`, `data/`, `static/`, `include/`, `hugo.site.toml`, `api-packages.toml`, `makefile.inc`, and CI workflows (`.github/`).
+- **[unionai-docs-infra](https://github.com/unionai/unionai-docs-infra)** (this repo) — shared build infrastructure, imported as a git submodule at `unionai-docs-infra/` in the parent. This includes Hugo configuration (`hugo.toml`, `hugo.ver.toml`, `config.*.toml`), layouts, themes, Python tools (`tools/`), shell scripts (`scripts/`), Makefiles, and redirect data. The contents are identical across both production branches.
+
+A thin top-level `Makefile` in `unionai-docs` forwards all build targets to `unionai-docs-infra/Makefile`.
+
+A third submodule, **[unionai-examples](https://github.com/unionai/unionai-examples)** (at `unionai-examples/`), contains example code referenced by the documentation.
+
 ## Table of contents
 
 - [Requirements](#requirements)
@@ -34,6 +45,9 @@ This document describes how the Union.ai documentation platform works, including
   - [Check Images](#check-images-check-images)
   - [Check Jupyter Notebooks](#check-jupyter-notebooks-check-jupyter)
   - [Check Redirects](#check-redirects-check-redirects)
+  - [Check Links](#check-links-check-links)
+  - [Check Generated Content](#check-generated-content-check-generated-content)
+  - [Check LLM Bundle Notes](#check-llm-bundle-notes-check-llm-bundle-notes)
   - [Cloudflare Pages preview](#cloudflare-pages-preview)
   - [Quick fix for most failures](#quick-fix-for-most-failures)
 
@@ -396,6 +410,34 @@ Then commit the changed files.
 make update-redirects
 ```
 Then commit the updated `redirects.csv`.
+
+### Check Links (`check-links`)
+
+**What it checks:** That all internal links in content files resolve to existing pages.
+
+**Why it fails:** A link points to a page that doesn't exist, was moved, or has a typo in the path. Note that links to section pages must use the `/_index` suffix (e.g., `[Foo](./foo/_index)` not `[Foo](./foo)`).
+
+**How to fix:** Run `make check-links` locally to see which links are broken. Fix the links in the source files. Patterns can be excluded via `.link-checker-exclude` in the repository root (regex patterns matched against `source_file:link_url`).
+
+### Check Generated Content (`check-generated-content`)
+
+**What it checks:** That generated content files (API docs, Jupyter notebook conversions, redirects) are up to date with their sources.
+
+**Why it fails:** An upstream source changed (SDK release, notebook update, file rename) but the generated files weren't regenerated.
+
+**How to fix:**
+```bash
+make dist
+```
+Then commit the changed files. This single command regenerates all generated content.
+
+### Check LLM Bundle Notes (`check-llm-bundle-notes`)
+
+**What it checks:** That `llm_readable_bundle: true` in frontmatter and the `{{< llm-bundle-note >}}` shortcode in the page body are always in sync for section `_index.md` files.
+
+**Why it fails:** A section has `llm_readable_bundle: true` but is missing the shortcode, or vice versa.
+
+**How to fix:** Either add the missing `{{< llm-bundle-note >}}` shortcode to the page body, or add `llm_readable_bundle: true` to the frontmatter. Both must be present together, or neither.
 
 ### Cloudflare Pages preview
 
