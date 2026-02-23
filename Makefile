@@ -57,7 +57,7 @@ dev:
 	@if ! unionai-docs-infra/scripts/pre-flight.sh; then exit 1; fi
 	@if ! unionai-docs-infra/scripts/dev-pre-flight.sh; then exit 1; fi
 	rm -rf public
-	hugo server --config unionai-docs-infra/hugo.toml,hugo.site.toml,unionai-docs-infra/hugo.ver.toml,unionai-docs-infra/hugo.dev.toml,hugo.local.toml
+	hugo server --config unionai-docs-infra/hugo.toml,unionai-docs-infra/hugo.site.toml,unionai-docs-infra/hugo.ver.toml,unionai-docs-infra/hugo.dev.toml,hugo.local.toml
 
 serve:
 	@if [ ! -d dist ]; then echo "Run 'make dist' first"; exit 1; fi
