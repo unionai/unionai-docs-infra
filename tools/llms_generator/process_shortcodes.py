@@ -45,9 +45,9 @@ class ShortcodeProcessor:
         self.key_mappings = self._load_key_mappings()
 
     def _load_key_mappings(self) -> Dict[str, Dict[str, str]]:
-        """Load key mappings from hugo.site.toml dynamically."""
+        """Load key mappings from unionai-docs-infra/hugo.site.toml dynamically."""
         try:
-            toml_path = self.base_path / "hugo.site.toml"
+            toml_path = self.base_path / "unionai-docs-infra" / "hugo.site.toml"
             if not toml_path.exists():
                 print(f"Warning: hugo.site.toml not found at {toml_path}")
                 return {}
