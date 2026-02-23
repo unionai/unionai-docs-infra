@@ -3,3 +3,8 @@ themes/**/test.html
 tools/link_checker/config.yml
 __pycache__/
 *.egg-info/
+.DS_Store
+*.swp
+.vscode
+.idea
+uv.lock
