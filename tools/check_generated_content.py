@@ -12,8 +12,7 @@ Reads api-packages.toml and verifies expected files for:
   - SDK API docs (packages/ and classes/ under each SDK's output_folder)
   - CLI docs (each CLI's output_file or output_dir)
   - Plugin API docs (under plugins_config.output_base/{name}/)
-  - Data YAML files (data/{generator_name}.yaml, data/{plugin_name}.yaml)
-  - Linkmap JSON files (static/{generator_name}-linkmap.json, static/{plugin_name}-linkmap.json)
+  - Linkmap JSON files (linkmap/{generator_name}-linkmap.json, linkmap/{plugin_name}-linkmap.json)
 
 Exit codes: 0 = all present, 1 = missing content detected.
 """
@@ -64,16 +63,11 @@ def check_all(config: dict) -> list[str]:
         if not sdk_classes.is_dir() and not sdk_classes_file.is_file():
             errors.append(f"SDK API classes: missing {output_folder}/classes/ or {output_folder}/classes.md")
 
-        # Data YAML
-        gen_name = sdk["generator_name"]
-        yaml_file = REPO_ROOT / "data" / f"{gen_name}.yaml"
-        if not yaml_file.is_file():
-            errors.append(f"Data YAML: missing data/{gen_name}.yaml")
-
         # Linkmap JSON
-        linkmap_file = REPO_ROOT / "static" / f"{gen_name}-linkmap.json"
+        gen_name = sdk["generator_name"]
+        linkmap_file = REPO_ROOT / "linkmap" / f"{gen_name}-linkmap.json"
         if not linkmap_file.is_file():
-            errors.append(f"Linkmap: missing static/{gen_name}-linkmap.json")
+            errors.append(f"Linkmap: missing linkmap/{gen_name}-linkmap.json")
 
     # --- CLI docs ---
     for cli in config.get("clis", []):
@@ -107,15 +101,10 @@ def check_all(config: dict) -> list[str]:
             errors.append(f"Plugin '{name}': no .md files in {output_base}/{name}/")
 
         if check_plugin_linkmaps:
-            # Data YAML
-            yaml_file = REPO_ROOT / "data" / f"{name}.yaml"
-            if not yaml_file.is_file():
-                errors.append(f"Data YAML: missing data/{name}.yaml")
-
             # Linkmap JSON
-            linkmap_file = REPO_ROOT / "static" / f"{name}-linkmap.json"
+            linkmap_file = REPO_ROOT / "linkmap" / f"{name}-linkmap.json"
             if not linkmap_file.is_file():
-                errors.append(f"Linkmap: missing static/{name}-linkmap.json")
+                errors.append(f"Linkmap: missing linkmap/{name}-linkmap.json")
 
     return errors
 

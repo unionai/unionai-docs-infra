@@ -74,8 +74,7 @@ def get_generated_paths(config: dict, content_only: bool = False) -> List[str]:
         paths.append(f"{output}/classes")
         if not content_only:
             gen_name = sdk["generator_name"]
-            paths.append(f"data/{gen_name}.yaml")
-            paths.append(f"static/{gen_name}-linkmap.json")
+            paths.append(f"linkmap/{gen_name}-linkmap.json")
 
     # CLI docs
     for cli in config.get("clis", []):
@@ -95,8 +94,7 @@ def get_generated_paths(config: dict, content_only: bool = False) -> List[str]:
         name = plugin["name"]
         paths.append(f"{output_base}/{name}")
         if not content_only:
-            paths.append(f"data/{name}.yaml")
-            paths.append(f"static/{name}-linkmap.json")
+            paths.append(f"linkmap/{name}-linkmap.json")
 
     return paths
 
@@ -234,7 +232,7 @@ def main() -> int:
     parser.add_argument(
         "--content-only",
         action="store_true",
-        help="Only compare content files (skip data/ and static/).",
+        help="Only compare content files (skip linkmap/).",
     )
     args = parser.parse_args()
 

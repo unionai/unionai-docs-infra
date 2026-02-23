@@ -9,6 +9,7 @@
 layoutDir = "unionai-docs-infra/layouts"
 archetypeDir = "unionai-docs-infra/archetypes"
 themesDir = "unionai-docs-infra/themes"
+staticDir = ["unionai-docs-infra/static", "linkmap"]
 
 timeout = "5m"
 languageCode = 'en-us'

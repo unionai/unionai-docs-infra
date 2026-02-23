@@ -55,6 +55,6 @@ def generate_linkmap_metadata(
         "methods": methods_dict
     }
 
-    os.makedirs("static", exist_ok=True)
-    with open(f"static/{api_name}-linkmap.json", "w") as file:
+    os.makedirs("linkmap", exist_ok=True)
+    with open(f"linkmap/{api_name}-linkmap.json", "w") as file:
         json.dump(metadata, file, indent=2)

@@ -376,7 +376,7 @@ Every push triggers five checks. Four are GitHub Actions workflows; one is a Clo
 ```bash
 make update-api-docs
 ```
-Then commit the changed files in `content/api-reference/`, `data/flytesdk.yaml`, and `static/flytesdk-linkmap.json`.
+Then commit the changed files in `content/api-reference/` and `linkmap/flytesdk-linkmap.json`.
 
 ### Check Images (`check-images`)
 
