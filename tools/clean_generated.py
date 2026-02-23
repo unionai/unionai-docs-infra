@@ -8,7 +8,7 @@
 """Remove all generated content paths defined in api-packages.toml.
 
 Reads [[sdks]], [[clis]], and [[plugins]] to determine which directories
-and files to clean. Also removes generated data YAML and linkmap JSON files.
+and files to clean. Also removes generated linkmap JSON files.
 """
 
 import shutil
@@ -55,10 +55,9 @@ def main() -> None:
         remove_path(packages_dir, f"{sdk['output_folder']}/packages")
         remove_path(classes_dir, f"{sdk['output_folder']}/classes")
 
-        # Data YAML and linkmap JSON
+        # Linkmap JSON
         gen_name = sdk["generator_name"]
-        remove_path(REPO_ROOT / "data" / f"{gen_name}.yaml", f"data/{gen_name}.yaml")
-        remove_path(REPO_ROOT / "static" / f"{gen_name}-linkmap.json", f"static/{gen_name}-linkmap.json")
+        remove_path(REPO_ROOT / "linkmap" / f"{gen_name}-linkmap.json", f"linkmap/{gen_name}-linkmap.json")
 
     # --- CLI generated content ---
     for cli in config.get("clis", []):
@@ -81,9 +80,8 @@ def main() -> None:
         plugin_dir = REPO_ROOT / output_base / name
         remove_path(plugin_dir, f"{output_base}/{name}")
 
-        # Data YAML and linkmap JSON
-        remove_path(REPO_ROOT / "data" / f"{name}.yaml", f"data/{name}.yaml")
-        remove_path(REPO_ROOT / "static" / f"{name}-linkmap.json", f"static/{name}-linkmap.json")
+        # Linkmap JSON
+        remove_path(REPO_ROOT / "linkmap" / f"{name}-linkmap.json", f"linkmap/{name}-linkmap.json")
 
     print("Clean complete.")
 
