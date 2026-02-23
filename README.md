@@ -215,18 +215,6 @@ Set these in the Cloudflare Pages dashboard:
 3. The Python processor (`process_shortcodes.py`) converts Hugo shortcodes to markdown
 4. Output is generated in the `dist/` directory for Cloudflare Pages to serve
 
-### Testing the Cloudflare build locally
-
-To test the build process locally (without uv):
-
-```bash
-pip3 install -r requirements.txt
-chmod +x build.sh
-./build.sh
-```
-
-The build script automatically falls back from `uv run` to `python3` if uv is not available.
-
 ## Redirect management
 
 ### How redirects work
