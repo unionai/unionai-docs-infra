@@ -14,10 +14,10 @@ old files (from a git ref) against new files (in the working tree) to detect:
   - Changed heading anchors (potential broken #fragment links)
 
 Usage:
-    uv run python tools/compare_generated_docs.py
-    uv run python tools/compare_generated_docs.py --old-ref 62acd5d8
-    uv run python tools/compare_generated_docs.py --old-ref v1
-    uv run python tools/compare_generated_docs.py --content-only
+    uv run --project unionai-docs-infra python tools/compare_generated_docs.py
+    uv run --project unionai-docs-infra python tools/compare_generated_docs.py --old-ref 62acd5d8
+    uv run --project unionai-docs-infra python tools/compare_generated_docs.py --old-ref v1
+    uv run --project unionai-docs-infra python tools/compare_generated_docs.py --content-only
 """
 
 import argparse

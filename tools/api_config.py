@@ -8,16 +8,16 @@
 """Read api-packages.toml and output config values for Make or shell consumption.
 
 Usage:
-  uv run tools/api_config.py <section> [<key>]
+  uv run --project unionai-docs-infra tools/api_config.py <section> [<key>]
 
 Examples:
-  uv run tools/api_config.py plugins_config output_base
+  uv run --project unionai-docs-infra tools/api_config.py plugins_config output_base
     -> content/api-reference/integrations
 
-  uv run tools/api_config.py sdk_count
+  uv run --project unionai-docs-infra tools/api_config.py sdk_count
     -> 1
 
-  uv run tools/api_config.py sdk 0 output_folder
+  uv run --project unionai-docs-infra tools/api_config.py sdk 0 output_folder
     -> content/api-reference/flyte-sdk
 """
 
