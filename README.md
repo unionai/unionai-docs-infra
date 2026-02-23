@@ -4,14 +4,14 @@ This document describes how the Union.ai documentation platform works, including
 
 ## Repository structure
 
-The docs system is split across two repositories:
+The docs system is split across three repositories:
 
 - **[unionai-docs](https://github.com/unionai/unionai-docs)** — the parent repository containing version-specific content and configuration. Files that differ between `main` (v2) and `v1` branches live here: `content/`, `data/`, `linkmap/`, `include/`, `api-packages.toml`, `makefile.inc`, and CI workflows (`.github/`).
-- **[unionai-docs-infra](https://github.com/unionai/unionai-docs-infra)** (this repo) — shared build infrastructure, imported as a git submodule at `unionai-docs-infra/` in the parent. This includes Hugo configuration (`hugo.toml`, `hugo.site.toml`, `hugo.ver.toml`, `config.*.toml`), layouts, themes, static assets (`static/`), Python tools (`tools/`), shell scripts (`scripts/`), Makefiles, and redirect data. The contents are identical across both production branches.
+- **[unionai-docs-infra](https://github.com/unionai/unionai-docs-infra)** (this repo) — shared build infrastructure, imported as a git submodule at `unionai-docs-infra/` in the parent `unionai-docs` repo. This includes Hugo configuration (`hugo.toml`, `hugo.site.toml`, `hugo.ver.toml`, `config.*.toml`), layouts, themes, static assets (`static/`), Python tools (`tools/`), shell scripts (`scripts/`), Makefiles, and redirect data. The contents are identical across both production branches.
 
 A thin top-level `Makefile` in `unionai-docs` forwards all build targets to `unionai-docs-infra/Makefile`.
 
-A third submodule, **[unionai-examples](https://github.com/unionai/unionai-examples)** (at `unionai-examples/`), contains example code referenced by the documentation.
+A third repository, **[unionai-examples](https://github.com/unionai/unionai-examples)** (at `unionai-examples/`), contains example code referenced by the documentation. Imported as `unionai-docs-infra/` in the parent `unionai-docs` repo.
 
 ## Table of contents
 
