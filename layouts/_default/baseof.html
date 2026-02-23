@@ -47,7 +47,13 @@
     {{ end }}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.32.2/tocbot.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.32.2/tocbot.min.js"></script>
-    <script>window.__LINKMAP_SOURCES = {{ .Site.Params.api_linkmap_sources | jsonify | safeJS }};</script>
+    {{- $sources := slice -}}
+    {{- range readDir "linkmap" -}}
+      {{- if strings.HasSuffix .Name "-linkmap.json" -}}
+        {{- $sources = $sources | append (strings.TrimSuffix "-linkmap.json" .Name) -}}
+      {{- end -}}
+    {{- end -}}
+    <script>window.__LINKMAP_SOURCES = {{ $sources | jsonify | safeJS }};</script>
     {{- range .Site.Params.custom_js }}
     <script lang="javascript" src="{{- (printf "js/%s" .) | relURL -}}?v={{- $v -}}"></script>
     {{- end }}
