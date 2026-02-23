@@ -16,9 +16,10 @@
 #             e.g., "flyteplugins-<PLUGIN>[<EXTRAS>]"
 
 # Read config from api-packages.toml
-PLUGINS_OUTPUT_BASE := $(shell uv run unionai-docs-infra/tools/api_config.py plugins_config output_base)
-PLUGINS_DEFAULT_INCLUDE := $(shell uv run unionai-docs-infra/tools/api_config.py plugins_config default_include)
-PLUGINS_NO_FLATTEN := $(shell uv run unionai-docs-infra/tools/api_config.py plugins_config no_flatten)
+UV := uv run --project unionai-docs-infra
+PLUGINS_OUTPUT_BASE := $(shell $(UV) unionai-docs-infra/tools/api_config.py plugins_config output_base)
+PLUGINS_DEFAULT_INCLUDE := $(shell $(UV) unionai-docs-infra/tools/api_config.py plugins_config default_include)
+PLUGINS_NO_FLATTEN := $(shell $(UV) unionai-docs-infra/tools/api_config.py plugins_config no_flatten)
 NO_FLATTEN_FLAG := $(if $(filter true,$(PLUGINS_NO_FLATTEN)),--no-flatten true,)
 
 OUTPUT_FOLDER=$(PLUGINS_OUTPUT_BASE)/${NAME}

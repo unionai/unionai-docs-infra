@@ -10,17 +10,18 @@
 #   make -f unionai-docs-infra/Makefile.api.sdk clis                  # CLI docs only
 
 SKIP_VENV_SETUP ?= false
+UV := uv run --project unionai-docs-infra
 
 .PHONY: all
 all: sdks clis clean-venv
 
 .PHONY: sdks
 sdks:
-	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) uv run unionai-docs-infra/tools/api_sdk_generate.py
+	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) $(UV) unionai-docs-infra/tools/api_sdk_generate.py
 
 .PHONY: clis
 clis:
-	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) uv run unionai-docs-infra/tools/api_cli_generate.py
+	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) $(UV) unionai-docs-infra/tools/api_cli_generate.py
 
 .PHONY: clean-venv
 clean-venv:
@@ -32,7 +33,7 @@ endif
 
 .PHONY: clean
 clean:
-	@uv run unionai-docs-infra/tools/clean_generated.py
+	@$(UV) unionai-docs-infra/tools/clean_generated.py
 
 .PHONY: help
 help:
