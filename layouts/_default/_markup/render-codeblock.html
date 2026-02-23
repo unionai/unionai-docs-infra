@@ -7,7 +7,7 @@
 {{- $wrapped = replaceRE `data-lang="([^"]+)"` `data-syntax="$1"` $wrapped -}}
 {{- $uniqueID := printf "code-%s-%d" (sha1 .Inner) .Ordinal -}}
 
-<div class="codeblock">
+<div class="codeblock" data-code-lang="{{ .Type }}">
     <div class="copy">
         <sl-copy-button from="{{- $uniqueID -}}"></sl-copy-button>
     </div>
