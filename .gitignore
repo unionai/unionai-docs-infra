@@ -2,3 +2,4 @@ layouts/**/test.html
 themes/**/test.html
 tools/link_checker/config.yml
 __pycache__/
+*.egg-info/
