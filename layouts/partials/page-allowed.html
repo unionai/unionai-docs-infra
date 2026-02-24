@@ -23,11 +23,11 @@
 {{- end -}}
 
 {{- if and $isAllowed $isExcluded -}}
-    {{ warnf "[Page Visibility] Page %s is both allowed and excluded from variant %s. See AUTHOR.md for help." $path $variant}}
+    {{ warnf "[Page Visibility] Page %s is both allowed and excluded from variant %s. See https://www.union.ai/docs/v2/flyte/community/contributing-docs/authoring/#page-visibility for help." $path $variant}}
 {{- end -}}
 
 {{- if and (not $isAllowed) (not $isExcluded) -}}
-    {{ warnf "[Page Visibility] Page %s at path %s neither allowed nor excluded from variant %s. See AUTHOR.md for help." $path .Path $variant}}
+    {{ warnf "[Page Visibility] Page %s at path %s neither allowed nor excluded from variant %s. See https://www.union.ai/docs/v2/flyte/community/contributing-docs/authoring/#page-visibility for help." $path .Path $variant}}
 {{- end -}}
 
 {{-
