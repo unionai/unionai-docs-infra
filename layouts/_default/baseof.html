@@ -100,6 +100,15 @@
           </div>
         </div>
         {{- end -}}
+        {{- if eq .Site.Params.variant "flyte" -}}
+        <div class="flyte2-notice">
+          <sl-alert open variant="warning">
+            <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+            Flyte 2 is available today for local execution - distributed execution coming to open source soon.
+            <a href="https://www.union.ai/try-flyte-2" target="_blank">Join the Flyte 2 production trial</a>, hosted on Union.ai.
+          </sl-alert>
+        </div>
+        {{- end -}}
         <div class="four-notice" style="display: none;">
           <sl-alert open variant="danger">
             <sl-icon slot="icon" name="info-circle"></sl-icon>
