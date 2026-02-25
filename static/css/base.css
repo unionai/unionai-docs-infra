@@ -160,6 +160,27 @@ a:hover {
 [data-theme="dark"] a:hover {
   color: var(--union-color);
 }
+.main-content a {
+  color: #0d9488;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .main-content a {
+  color: #2dd4bf;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+}
+.main-content h1 a,
+.main-content h2 a,
+.main-content h3 a,
+.main-content h4 a,
+.main-content h5 a,
+.main-content h6 a {
+  text-decoration: none;
+}
+.main-content a:hover {
+  text-decoration-color: currentColor;
+}
 code {
   background: var(--code-bg);
   padding: 0.2em 0.4em;
