@@ -67,21 +67,20 @@
     margin: 0;
 }
 
-.codeblock .highlight .syntax-python A {
-    /* color: dodgerblue; */
-    color: unset;
+.highlight a {
+    color: #f8f8f2;
     text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.3) !important;
+    text-underline-offset: 2px;
 }
-
-/* Support both old language-* and new syntax-* classes for compatibility */
-.codeblock .highlight [class*="language-"] A,
-.codeblock .highlight [class*="syntax-"] A {
-    color: unset;
-    text-decoration: underline;
+.highlight a:hover {
+    text-decoration-color: rgba(255, 255, 255, 0.8) !important;
 }
 
 A > CODE {
     text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(0, 0, 0, 0.3);
 }
 
 /* Minimal protection: Prevent extensions from adding interactive styles */
