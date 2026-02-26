@@ -100,7 +100,7 @@
           </div>
         </div>
         {{- end -}}
-        {{- if eq .Site.Params.variant "flyte" -}}
+        {{- if and (eq .Site.Params.variant "flyte") (eq .Site.Params.current_version "v2") -}}
         <div class="flyte2-notice">
           <sl-alert open variant="primary">
             <sl-icon slot="icon" name="info-circle"></sl-icon>
