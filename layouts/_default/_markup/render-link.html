@@ -1,2 +1,3 @@
 {{ $link := partial "rel-link.html" .Destination }}
-<a href="{{ $link | safeURL }}">{{.Text | safeHTML }}</a>
+{{ $isExternal := or (hasPrefix $link "http://") (hasPrefix $link "https://") }}
+<a href="{{ $link | safeURL }}"{{ if $isExternal }} target="_blank" rel="noopener noreferrer"{{ end }}>{{.Text | safeHTML }}</a>

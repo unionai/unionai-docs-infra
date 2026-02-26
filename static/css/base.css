@@ -161,13 +161,11 @@ a:hover {
   color: var(--union-color);
 }
 .main-content a {
-  color: #0d9488;
   text-decoration: underline;
   text-underline-offset: 2px;
   text-decoration-color: rgba(0, 0, 0, 0.3);
 }
 [data-theme="dark"] .main-content a {
-  color: #2dd4bf;
   text-decoration-color: rgba(255, 255, 255, 0.3);
 }
 .main-content h1 a,
