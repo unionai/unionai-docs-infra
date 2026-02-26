@@ -899,7 +899,7 @@ www.union.ai/docs/serverless/user-guide/development-cycle/union-remote,https://w
 www.union.ai/docs/serverless/user-guide/development-cycle/union-remote/union-remote-examples,https://www.union.ai/docs/serverless/user-guide/development-cycle/remote-management/remote-examples,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/anatomy-of-a-run,https://www.union.ai/docs/v2/byoc/user-guide/core-concepts/runs-and-actions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/caching,https://www.union.ai/docs/v2/byoc/user-guide/task-configuration/caching,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/configuration,https://www.union.ai/docs/v2/byoc/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/configuration,https://www.union.ai/docs/v2/byoc/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/container-images,https://www.union.ai/docs/v2/byoc/user-guide/task-configuration/container-images,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/dataclasses-and-structures,https://www.union.ai/docs/v2/byoc/user-guide/task-programming/dataclasses-and-structures,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/error-handling,https://www.union.ai/docs/v2/byoc/user-guide/task-programming/error-handling,302,TRUE,FALSE,TRUE,TRUE
@@ -915,7 +915,7 @@ www.union.ai/docs/v2/byoc/user-guide/tasks-and-environments,https://www.union.ai
 www.union.ai/docs/v2/byoc/user-guide/traces,https://www.union.ai/docs/v2/byoc/user-guide/task-programming/traces,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/user-guide/anatomy-of-a-run,https://www.union.ai/docs/v2/flyte/user-guide/core-concepts/runs-and-actions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/user-guide/caching,https://www.union.ai/docs/v2/flyte/user-guide/task-configuration/caching,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/user-guide/configuration,https://www.union.ai/docs/v2/flyte/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/configuration,https://www.union.ai/docs/v2/flyte/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/user-guide/container-images,https://www.union.ai/docs/v2/flyte/user-guide/task-configuration/container-images,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/user-guide/dataclasses-and-structures,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/dataclasses-and-structures,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/user-guide/error-handling,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/error-handling,302,TRUE,FALSE,TRUE,TRUE
@@ -931,7 +931,7 @@ www.union.ai/docs/v2/flyte/user-guide/tasks-and-environments,https://www.union.a
 www.union.ai/docs/v2/flyte/user-guide/traces,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/traces,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/anatomy-of-a-run,https://www.union.ai/docs/v2/selfmanaged/user-guide/core-concepts/runs-and-actions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/caching,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/caching,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/configuration,https://www.union.ai/docs/v2/selfmanaged/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/configuration,https://www.union.ai/docs/v2/selfmanaged/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/container-images,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/container-images,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/dataclasses-and-structures,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/dataclasses-and-structures,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/error-handling,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/error-handling,302,TRUE,FALSE,TRUE,TRUE
@@ -947,7 +947,7 @@ www.union.ai/docs/v2/selfmanaged/user-guide/tasks-and-environments,https://www.u
 www.union.ai/docs/v2/selfmanaged/user-guide/traces,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/traces,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/anatomy-of-a-run,https://www.union.ai/docs/v2/serverless/user-guide/core-concepts/runs-and-actions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/caching,https://www.union.ai/docs/v2/serverless/user-guide/task-configuration/caching,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/serverless/user-guide/configuration,https://www.union.ai/docs/v2/serverless/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/serverless/user-guide/configuration,https://www.union.ai/docs/v2/serverless/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/container-images,https://www.union.ai/docs/v2/serverless/user-guide/task-configuration/container-images,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/dataclasses-and-structures,https://www.union.ai/docs/v2/serverless/user-guide/task-programming/dataclasses-and-structures,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/error-handling,https://www.union.ai/docs/v2/serverless/user-guide/task-programming/error-handling,302,TRUE,FALSE,TRUE,TRUE
@@ -1109,10 +1109,10 @@ www.union.ai/docs/v2/byoc/user-guide/getting-started/serving-apps,https://www.un
 www.union.ai/docs/v2/flyte/user-guide/getting-started/serving-apps,https://www.union.ai/docs/v2/flyte/user-guide/first-project/serving-apps,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/getting-started/serving-apps,https://www.union.ai/docs/v2/selfmanaged/user-guide/first-project/serving-apps,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/getting-started/serving-apps,https://www.union.ai/docs/v2/serverless/user-guide/first-project/serving-apps,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/byoc/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/flyte/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/selfmanaged/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/serverless/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/serverless/user-guide/local-setup,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/byoc/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/flyte/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/selfmanaged/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/serverless/user-guide/getting-started/local-setup,https://www.union.ai/docs/v2/serverless/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/api-reference/integrations/snowflake/packages/flyteplugins.connectors.snowflake/snowflakeconnector,https://www.union.ai/docs/v2/byoc/api-reference/integrations/snowflake/packages/flyteplugins.snowflake.connector/snowflakeconnector,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/api-reference/integrations/snowflake/packages/flyteplugins.connectors.snowflake/snowflakeconnector,https://www.union.ai/docs/v2/flyte/api-reference/integrations/snowflake/packages/flyteplugins.snowflake.connector/snowflakeconnector,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/api-reference/integrations/snowflake/packages/flyteplugins.connectors.snowflake/snowflakeconnector,https://www.union.ai/docs/v2/selfmanaged/api-reference/integrations/snowflake/packages/flyteplugins.snowflake.connector/snowflakeconnector,302,TRUE,FALSE,TRUE,TRUE
@@ -1149,3 +1149,7 @@ www.union.ai/docs/v1/byoc/api-reference/plugins/airflow/packages/flytekitplugins
 www.union.ai/docs/v1/flyte/api-reference/plugins/airflow/packages/flytekitplugins.airflow.agent,https://www.union.ai/docs/v1/flyte/api-reference/plugins/airflow/packages/flytekitplugins.airflow.connector,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/selfmanaged/api-reference/plugins/airflow/packages/flytekitplugins.airflow.agent,https://www.union.ai/docs/v1/selfmanaged/api-reference/plugins/airflow/packages/flytekitplugins.airflow.connector,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/api-reference/plugins/airflow/packages/flytekitplugins.airflow.agent,https://www.union.ai/docs/v1/serverless/api-reference/plugins/airflow/packages/flytekitplugins.airflow.connector,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/local-setup,https://www.union.ai/docs/v2/byoc/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/local-setup,https://www.union.ai/docs/v2/flyte/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/local-setup,https://www.union.ai/docs/v2/selfmanaged/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/serverless/user-guide/local-setup,https://www.union.ai/docs/v2/serverless/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
