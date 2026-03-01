@@ -29,20 +29,38 @@
     {{ if .Params.mermaid }}
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
-      mermaid.initialize({
-        startOnLoad: true,
-        theme: 'base',
-        themeVariables: {
-          primaryColor: getComputedStyle(document.documentElement).getPropertyValue('--union-color').trim(),
-          primaryTextColor: getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim(),
-          primaryBorderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim(),
-          lineColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim(),
-          background: getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim(),
-          edgeLabelBackground: getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim(),
-          secondaryColor: getComputedStyle(document.documentElement).getPropertyValue('--union-color-very-light').trim(),
-          tertiaryColor: getComputedStyle(document.documentElement).getPropertyValue('--union-color-very-light').trim(),
-        }
+
+      function getMermaidTheme() {
+        return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
+      }
+
+      async function renderMermaid() {
+        const theme = getMermaidTheme();
+        mermaid.initialize({ startOnLoad: false, theme });
+        // Restore original source and re-render
+        document.querySelectorAll('.mermaid').forEach(el => {
+          if (el.dataset.mermaidSrc) {
+            el.removeAttribute('data-processed');
+            el.innerHTML = el.dataset.mermaidSrc;
+          }
+        });
+        await mermaid.run();
+      }
+
+      // Save original mermaid source before first render
+      document.querySelectorAll('.mermaid').forEach(el => {
+        el.dataset.mermaidSrc = el.textContent;
       });
+      await renderMermaid();
+
+      // Re-render on theme toggle
+      const toggle = document.getElementById('theme-toggle');
+      if (toggle) {
+        toggle.addEventListener('click', () => {
+          // Small delay to let setTheme() update data-theme first
+          setTimeout(renderMermaid, 50);
+        });
+      }
     </script>
     {{ end }}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.32.2/tocbot.css">
