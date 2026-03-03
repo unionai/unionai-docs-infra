@@ -100,7 +100,7 @@ Change how the development environment works by setting values in `hugo.local.to
 
 ### Changing variants
 
-Variants are flavors of the site (flyte, byoc, selfmanaged, serverless). During development, render any variant by setting it in `hugo.local.toml`:
+Variants are flavors of the site (flyte, byoc, selfmanaged). During development, render any variant by setting it in `hugo.local.toml`:
 
 ```toml
 variant = "byoc"
@@ -170,7 +170,7 @@ This is the main production build command. It performs the following steps:
 
 1. Converts Jupyter notebooks from `unionai-examples` to markdown
 2. Runs `make update-redirects` to detect moved pages and update `redirects.csv`
-3. Builds all four Hugo variants (flyte, byoc, selfmanaged, serverless) into the `dist/` directory
+3. Builds all three Hugo variants (flyte, byoc, selfmanaged) into the `dist/` directory
 4. Generates LLM-optimized documentation (`llms-full.txt`) for each variant
 5. Regenerates API reference documentation from the latest SDK packages
 

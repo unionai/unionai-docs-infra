@@ -15,7 +15,7 @@ def process_file(file_path):
     # Pattern: https://www.union.ai/docs/v2/{variant}/{path}
     # Result: {{< docs_home {variant} v2 >}}/{path}
     docs_url_pattern = re.compile(
-        r'https://www\.union\.ai/docs/(v\d+)/(flyte|byoc|serverless|selfmanaged)/([^\s\)\"\'>\]]+)'
+        r'https://www\.union\.ai/docs/(v\d+)/(flyte|byoc|selfmanaged)/([^\s\)\"\'>\]]+)'
     )
     def replace_docs_url(match):
         version = match.group(1)

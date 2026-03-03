@@ -78,7 +78,7 @@ check-images:
 
 validate-urls:
 	@echo "Validating URLs across all variants..."
-	@for variant in flyte byoc serverless selfmanaged; do \
+	@for variant in flyte byoc selfmanaged; do \
 		echo "Checking $$variant..."; \
 		if [ -d "dist/docs/${VERSION}/$$variant" ]; then \
 			$(UV) python3 unionai-docs-infra/tools/validate_urls.py dist/docs/${VERSION}/$$variant; \
@@ -89,7 +89,7 @@ validate-urls:
 
 url-stats:
 	@echo "URL statistics across all variants:"
-	@for variant in flyte byoc serverless selfmanaged; do \
+	@for variant in flyte byoc selfmanaged; do \
 		echo "=== $$variant ==="; \
 		if [ -d "dist/docs/${VERSION}/$$variant" ]; then \
 			$(UV) python3 unionai-docs-infra/tools/validate_urls.py dist/docs/${VERSION}/$$variant --stats; \

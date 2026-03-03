@@ -15,5 +15,4 @@ generate:
 			+flyte \
 			+byoc \
 			+selfmanaged \
-			+serverless \
 		--include ../../include/api.YOUR_API.md
