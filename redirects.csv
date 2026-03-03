@@ -2223,3 +2223,5 @@ www.union.ai/docs/v1/serverless/user-guide/programming/failure-node,https://www.
 www.union.ai/docs/v1/serverless/user-guide/programming/intratask_checkpoints,https://www.union.ai/docs/v1/byoc/user-guide/programming/intratask_checkpoints,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/user-guide/programming/nested-parallelism,https://www.union.ai/docs/v1/byoc/user-guide/programming/nested-parallelism,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/user-guide/programming/waiting_for_external_inputs,https://www.union.ai/docs/v1/byoc/user-guide/programming/waiting_for_external_inputs,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/_r_/flyte/,https://www.union.ai/docs/flyte/user-guide,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/,https://www.union.ai/_static/downloads/flyte-v0.1.0.pdf,302,TRUE,FALSE,TRUE,TRUE
