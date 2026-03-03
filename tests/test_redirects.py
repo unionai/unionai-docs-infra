@@ -357,12 +357,19 @@ class TestURLFormat:
         """Source and destination URLs should not have trailing slashes.
 
         The canonical URL form in this CSV is without trailing slash.
-        The hosting layer normalizes /foo/ to /foo before redirect matching.
+        A few entries intentionally have trailing-slash duplicates because
+        their incoming traffic arrives both ways (e.g., _r_/flyte/ from
+        docs.flyte.org). These are allowed.
         """
+        # Sources that are known to need both slash and no-slash variants
+        TRAILING_SLASH_ALLOWED = {
+            "www.union.ai/_r_/flyte/",
+            "www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/",
+        }
         rows = load_rows()
         bad = []
         for i, row in enumerate(rows, 1):
-            if row[0].endswith("/"):
+            if row[0].endswith("/") and row[0] not in TRAILING_SLASH_ALLOWED:
                 bad.append((i, "source", row[0]))
             dest_path = urlparse(row[1]).path
             if dest_path.endswith("/") and dest_path != "/":
