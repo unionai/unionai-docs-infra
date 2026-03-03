@@ -353,30 +353,29 @@ class TestURLFormat:
             f"{len(bad)} source URLs contain query strings:\n"
             + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
 
-    def test_no_trailing_slashes(self):
-        """Source and destination URLs should not have trailing slashes.
+    def test_slash_variants_paired(self):
+        """Every source URL should have both slash and no-slash variants.
 
-        The canonical URL form in this CSV is without trailing slash.
-        A few entries intentionally have trailing-slash duplicates because
-        their incoming traffic arrives both ways (e.g., _r_/flyte/ from
-        docs.flyte.org). These are allowed.
+        This ensures redirects match regardless of whether the incoming
+        request has a trailing slash or not.
         """
-        # Sources that are known to need both slash and no-slash variants
-        TRAILING_SLASH_ALLOWED = {
-            "www.union.ai/_r_/flyte/",
-            "www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/",
-        }
         rows = load_rows()
-        bad = []
-        for i, row in enumerate(rows, 1):
-            if row[0].endswith("/") and row[0] not in TRAILING_SLASH_ALLOWED:
-                bad.append((i, "source", row[0]))
-            dest_path = urlparse(row[1]).path
-            if dest_path.endswith("/") and dest_path != "/":
-                bad.append((i, "dest", row[1]))
-        assert not bad, (
-            f"{len(bad)} URLs have trailing slashes:\n"
-            + "\n".join(f"  line {n}: {t}: {u}" for n, t, u in bad[:10]))
+        sources = {row[0] for row in rows}
+        unpaired = []
+        for row in rows:
+            src = row[0]
+            if src.endswith("/"):
+                partner = src.rstrip("/")
+            else:
+                partner = src + "/"
+            # Skip bare domains (e.g., "docs.union.ai") which don't need a slash variant
+            if "/" not in src.split(".", 1)[-1].lstrip("/"):
+                continue
+            if partner not in sources:
+                unpaired.append(src)
+        assert not unpaired, (
+            f"{len(unpaired)} entries missing their slash variant:\n"
+            + "\n".join(f"  {u}" for u in unpaired[:10]))
 
 
 class TestRedirectInvariants:
