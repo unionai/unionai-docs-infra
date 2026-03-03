@@ -365,6 +365,9 @@ class TestURLFormat:
         mismatched = []
         for row in rows:
             src = row[0]
+            # Skip bare domains — CF treats domain/ as duplicate of domain
+            if "/" not in src:
+                continue
             if src.endswith("/"):
                 partner = src.rstrip("/")
             else:
