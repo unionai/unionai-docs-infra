@@ -353,6 +353,24 @@ class TestURLFormat:
             f"{len(bad)} source URLs contain query strings:\n"
             + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
 
+    def test_no_trailing_slashes(self):
+        """Source and destination URLs should not have trailing slashes.
+
+        The canonical URL form in this CSV is without trailing slash.
+        The hosting layer normalizes /foo/ to /foo before redirect matching.
+        """
+        rows = load_rows()
+        bad = []
+        for i, row in enumerate(rows, 1):
+            if row[0].endswith("/"):
+                bad.append((i, "source", row[0]))
+            dest_path = urlparse(row[1]).path
+            if dest_path.endswith("/") and dest_path != "/":
+                bad.append((i, "dest", row[1]))
+        assert not bad, (
+            f"{len(bad)} URLs have trailing slashes:\n"
+            + "\n".join(f"  line {n}: {t}: {u}" for n, t, u in bad[:10]))
+
 
 class TestRedirectInvariants:
     """Tests for redirect logical correctness."""
@@ -455,10 +473,9 @@ class TestServerlessMigration:
         """Key v2 serverless pages must have redirect entries."""
         rows = load_rows()
         sources = {row[0] for row in rows}
-        # Leaf pages generated from .md files get trailing slash from URL generation
         expected = [
-            "www.union.ai/docs/v2/serverless/api-reference/flyte-cli/",
-            "www.union.ai/docs/v2/serverless/api-reference/flyte-context/",
+            "www.union.ai/docs/v2/serverless/api-reference/flyte-cli",
+            "www.union.ai/docs/v2/serverless/api-reference/flyte-context",
         ]
         missing = [p for p in expected if p not in sources]
         assert not missing, f"Missing v2 serverless redirect entries: {missing}"
@@ -468,7 +485,7 @@ class TestServerlessMigration:
         rows = load_rows()
         sources = {row[0] for row in rows}
         expected = [
-            "www.union.ai/docs/v1/serverless/api-reference/flyte-context/",
+            "www.union.ai/docs/v1/serverless/api-reference/flyte-context",
         ]
         missing = [p for p in expected if p not in sources]
         assert not missing, f"Missing v1 serverless redirect entries: {missing}"
