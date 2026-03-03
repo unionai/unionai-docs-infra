@@ -353,29 +353,18 @@ class TestURLFormat:
             f"{len(bad)} source URLs contain query strings:\n"
             + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
 
-    def test_slash_variants_paired(self):
-        """Every source URL should have both slash and no-slash variants.
+    def test_no_trailing_slashes(self):
+        """Source URLs should not have trailing slashes.
 
-        This ensures redirects match regardless of whether the incoming
-        request has a trailing slash or not.
+        Cloudflare normalizes trailing slashes internally, so /foo and /foo/
+        match the same entry. We use the canonical no-slash form to avoid
+        Cloudflare's duplicate_item_value rejection.
         """
         rows = load_rows()
-        sources = {row[0] for row in rows}
-        unpaired = []
-        for row in rows:
-            src = row[0]
-            if src.endswith("/"):
-                partner = src.rstrip("/")
-            else:
-                partner = src + "/"
-            # Skip bare domains (e.g., "docs.union.ai") which don't need a slash variant
-            if "/" not in src.split(".", 1)[-1].lstrip("/"):
-                continue
-            if partner not in sources:
-                unpaired.append(src)
-        assert not unpaired, (
-            f"{len(unpaired)} entries missing their slash variant:\n"
-            + "\n".join(f"  {u}" for u in unpaired[:10]))
+        bad = [(i, row[0]) for i, row in enumerate(rows, 1) if row[0].endswith("/")]
+        assert not bad, (
+            f"{len(bad)} source URLs have trailing slashes:\n"
+            + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
 
 
 class TestRedirectInvariants:
