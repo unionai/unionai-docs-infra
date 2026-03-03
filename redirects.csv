@@ -4447,4 +4447,3 @@ www.union.ai/docs/v1/serverless/user-guide/programming/failure-node/,https://www
 www.union.ai/docs/v1/serverless/user-guide/programming/intratask_checkpoints/,https://www.union.ai/docs/v1/byoc/user-guide/programming/intratask_checkpoints,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/user-guide/programming/nested-parallelism/,https://www.union.ai/docs/v1/byoc/user-guide/programming/nested-parallelism,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/user-guide/programming/waiting_for_external_inputs/,https://www.union.ai/docs/v1/byoc/user-guide/programming/waiting_for_external_inputs,302,TRUE,FALSE,TRUE,TRUE
-docs.union.ai/,https://www.union.ai/docs,302,TRUE,FALSE,TRUE,TRUE
