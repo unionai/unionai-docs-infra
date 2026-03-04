@@ -356,12 +356,17 @@ class TestURLFormat:
     def test_no_trailing_slashes_in_sources(self):
         """Source URLs should not have trailing slashes.
 
-        Cloudflare normalizes trailing slashes for matching, and the
-        client-side 404 handler navigates up the hierarchy for unmatched
-        paths. No-slash is the canonical source form.
+        No-slash is the canonical source form. A few entries need both
+        forms because incoming traffic arrives with trailing slashes
+        from an out-of-repo redirect (docs.flyte.org -> _r_/flyte/).
         """
+        TRAILING_SLASH_ALLOWED = {
+            "www.union.ai/_r_/flyte/",
+            "www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/",
+        }
         rows = load_rows()
-        bad = [(i, row[0]) for i, row in enumerate(rows, 1) if row[0].endswith("/")]
+        bad = [(i, row[0]) for i, row in enumerate(rows, 1)
+               if row[0].endswith("/") and row[0] not in TRAILING_SLASH_ALLOWED]
         assert not bad, (
             f"{len(bad)} source URLs have trailing slashes:\n"
             + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
