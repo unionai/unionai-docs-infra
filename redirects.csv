@@ -931,8 +931,7 @@ www.union.ai/docs/v2/selfmanaged/user-guide/anatomy-of-a-run,https://www.union.a
 www.union.ai/docs/v2/selfmanaged/user-guide/caching,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/caching,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/configuration,https://www.union.ai/docs/v2/selfmanaged/user-guide/connecting-to-a-cluster,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/container-images,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/container-images,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanage
-d/user-guide/dataclasses-and-structures,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/dataclasses-and-structures,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/dataclasses-and-structures,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/dataclasses-and-structures,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/error-handling,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/error-handling,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/fanout,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/fanout,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/files-and-directories,https://www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/files-and-directories,302,TRUE,FALSE,TRUE,TRUE
