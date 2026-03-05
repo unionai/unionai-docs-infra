@@ -13,6 +13,7 @@ content/__docs_builder__/*
 # These sections were restructured during the v1 -> v2 migration.
 content/architecture/*
 content/community/*
+content/deployment/configuration/helm.md
 content/deployment/installation.md
 content/integrations/connectors/*
 content/integrations/deprecated-integrations/*
