@@ -208,8 +208,7 @@ pre code {
 }
 .main-content table {
   width: 100%;
-  display: block;
-  overflow-x: auto;
+  table-layout: fixed;
   border-collapse: collapse;
   margin: 1.5rem 0;
   font-size: 0.95rem;
@@ -219,6 +218,11 @@ pre code {
   padding: 0.75rem;
   border: 1px solid var(--border-color);
   text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.main-content td code {
+  word-break: break-all;
 }
 .main-content th {
   background-color: var(--sidebar-bg);
@@ -229,13 +233,6 @@ pre code {
 }
 .main-content tr:hover {
   background-color: var(--table-row-hover);
-}
-@media (max-width: 640px) {
-  .main-content table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
 }
 .main-content li {
   margin: 0 2rem;
