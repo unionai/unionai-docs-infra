@@ -7,7 +7,9 @@ set -euo pipefail
 #   generate_helm_docs.sh [path-to-helm-charts-repo]
 #
 # If no path is provided, auto-clones unionai/helm-charts to a temp directory.
-# Requires: helm-docs (brew install norwoodj/tap/helm-docs)
+# If helm-docs is not on PATH, auto-downloads it to a temp directory.
+
+HELM_DOCS_VERSION=1.14.2
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRA_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -21,13 +23,22 @@ DEST_DIR="$DOCS_ROOT/content/deployment/helm-chart-reference"
 CLEANUP_FILES=()
 CLEANUP_DIRS=()
 
-# --- Validate prerequisites ---
+# --- Ensure helm-docs is available ---
 
-if ! command -v helm-docs &>/dev/null; then
-  echo "ERROR: helm-docs is not installed."
-  echo "Install with: brew install norwoodj/tap/helm-docs"
-  echo "Or see: https://github.com/norwoodj/helm-docs#installation"
-  exit 1
+if command -v helm-docs &>/dev/null; then
+  HELM_DOCS=helm-docs
+else
+  # Auto-download to temp directory
+  HELM_DOCS_DIR="$(mktemp -d)"
+  CLEANUP_DIRS+=("$HELM_DOCS_DIR")
+  OS="$(uname -s)"    # Darwin or Linux
+  ARCH="$(uname -m)"  # arm64 or x86_64
+  # helm-docs uses "x86_64" and "arm64" in release names
+  TARBALL="helm-docs_${HELM_DOCS_VERSION}_${OS}_${ARCH}.tar.gz"
+  URL="https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/${TARBALL}"
+  echo "Downloading helm-docs v${HELM_DOCS_VERSION} for ${OS}/${ARCH}..."
+  curl -sSL "$URL" | tar xz -C "$HELM_DOCS_DIR" helm-docs
+  HELM_DOCS="$HELM_DOCS_DIR/helm-docs"
 fi
 
 # --- Locate or clone helm-charts repo ---
@@ -76,7 +87,7 @@ for CHART in "${CHARTS[@]}"; do
   CLEANUP_FILES+=("$TEMPLATE_DST")
 
   echo "Generating helm-docs for $CHART..."
-  helm-docs \
+  "$HELM_DOCS" \
     --chart-search-root "$CHART_DIR" \
     --template-files "$CHART.md.gotmpl" \
     --output-file README.md
