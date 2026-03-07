@@ -16,6 +16,7 @@ When SKIP_VENV_SETUP=true, uses the current environment instead.
 """
 
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -57,7 +58,7 @@ def generate_python_cli(cli: dict, python: Path) -> None:
     header = include_path.read_text().replace("%%VERSION%%", version)
 
     # Generate CLI docs
-    gen_parts = gen_command.split()
+    gen_parts = shlex.split(gen_command)
     # Use the venv's binary for the first part of the command
     if not (REPO_ROOT / gen_parts[0]).exists():
         # It's a binary in the venv
