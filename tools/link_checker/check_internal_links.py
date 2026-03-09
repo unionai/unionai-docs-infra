@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-VARIANTS = ["flyte", "byoc", "serverless", "selfmanaged"]
+VARIANTS = ["flyte", "byoc", "selfmanaged"]
 CONTENT_DIR = Path("content")
 
 

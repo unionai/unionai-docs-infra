@@ -8,7 +8,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-links check-generated-content clean clean-generated
+.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-links check-generated-content clean clean-generated
 
 all: usage
 
@@ -78,7 +78,7 @@ check-images:
 
 validate-urls:
 	@echo "Validating URLs across all variants..."
-	@for variant in flyte byoc serverless selfmanaged; do \
+	@for variant in flyte byoc selfmanaged; do \
 		echo "Checking $$variant..."; \
 		if [ -d "dist/docs/${VERSION}/$$variant" ]; then \
 			$(UV) python3 unionai-docs-infra/tools/validate_urls.py dist/docs/${VERSION}/$$variant; \
@@ -89,7 +89,7 @@ validate-urls:
 
 url-stats:
 	@echo "URL statistics across all variants:"
-	@for variant in flyte byoc serverless selfmanaged; do \
+	@for variant in flyte byoc selfmanaged; do \
 		echo "=== $$variant ==="; \
 		if [ -d "dist/docs/${VERSION}/$$variant" ]; then \
 			$(UV) python3 unionai-docs-infra/tools/validate_urls.py dist/docs/${VERSION}/$$variant --stats; \
@@ -129,3 +129,12 @@ check-llm-bundle-notes:
 
 update-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --update
+
+check-helm-docs:
+	@$(UV) unionai-docs-infra/tools/helm_generator/check_helm_versions.py --check
+
+update-helm-docs:
+	@$(UV) unionai-docs-infra/tools/helm_generator/check_helm_versions.py --update
+
+generate-helm-docs:
+	@unionai-docs-infra/tools/helm_generator/generate_helm_docs.sh

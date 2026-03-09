@@ -9,6 +9,7 @@ check_mentions_docs() {
                      | grep -v content/community/contributing-docs/redirects.md \
                      | grep -v content/api-reference/flyte-cli.md \
                      | grep -v content/api-reference/flyte-context.md \
+                     | grep -v content/deployment/helm-chart-reference/ \
                      | cut -d: -f1 | sort | uniq)
   readonly mentions_doc
 

@@ -11,7 +11,7 @@ Targets:
 
   variant VARIANT=<variant>
 
-    Build a specific variant (byoc, serverless, etc)
+    Build a specific variant (byoc, selfmanaged, etc)
 
   dev
 

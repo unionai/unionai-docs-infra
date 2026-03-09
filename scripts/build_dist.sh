@@ -40,8 +40,10 @@ run_step "Pre-build checks & setup" $MAKE_CMD base || exit 1
 run_step "Check deleted pages" $MAKE_CMD check-deleted-pages || true
 if [[ -n "$CI" || -n "$CF_PAGES" ]]; then
     run_step "Check API docs" $MAKE_CMD check-api-docs || true
+    run_step "Check helm docs" $MAKE_CMD check-helm-docs || true
 else
     run_step "Update API docs" $MAKE_CMD update-api-docs || exit 1
+    run_step "Update helm docs" $MAKE_CMD update-helm-docs || exit 1
 fi
 # Redirects must run AFTER API docs so the redirect generator sees the
 # regenerated content dirs and doesn't flag them as removed pages.
