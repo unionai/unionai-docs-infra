@@ -13,6 +13,7 @@ Supports two types of CLIs:
 
 The SDK venv (.venv) must already exist with the relevant package installed.
 When SKIP_VENV_SETUP=true, uses the current environment instead.
+Set FLYTE_SDK_PATH to a local flyte-sdk checkout to use it instead of PyPI.
 """
 
 import os
@@ -141,6 +142,18 @@ def main() -> None:
         python = Path(sys.executable)
     else:
         python = VENV_DIR / "bin" / "python"
+
+    # If FLYTE_SDK_PATH is set, install local flyte-sdk into the existing venv
+    # (handles the case where `clis` target runs standalone after venv was
+    # created by a prior `sdks` run with PyPI flyte)
+    flyte_sdk_path = os.environ.get("FLYTE_SDK_PATH")
+    if flyte_sdk_path and not skip_venv and python.exists():
+        print(f"Installing local flyte-sdk from {flyte_sdk_path}...")
+        subprocess.run([
+            "uv", "pip", "install",
+            "--python", str(python),
+            "--upgrade", flyte_sdk_path,
+        ], check=True)
 
     for cli in clis:
         if cli.get("frozen", False):
