@@ -13,6 +13,7 @@ For each SDK entry, this script:
   3. Runs the API generator to produce Hugo-compatible markdown
 
 Respects SKIP_VENV_SETUP=true env var to use the current Python instead.
+Set FLYTE_SDK_PATH to a local flyte-sdk checkout to use it instead of PyPI.
 """
 
 import os
@@ -39,6 +40,20 @@ def load_config() -> dict:
         return tomllib.load(f)
 
 
+def _substitute_local_flyte(packages: list, sdk_path: str) -> list:
+    """Replace PyPI flyte package with a local path, preserving extras."""
+    result = []
+    for pkg in packages:
+        if pkg == "flyte" or pkg.startswith("flyte["):
+            extras = pkg[len("flyte"):]  # e.g. "[connector,aiosqlite,tui]" or ""
+            local_spec = f"{sdk_path}{extras}"
+            print(f"  Using local flyte-sdk: {local_spec}")
+            result.append(local_spec)
+        else:
+            result.append(pkg)
+    return result
+
+
 def setup_venv(install_spec: str) -> None:
     """Create a fresh venv and install the package."""
     if VENV_DIR.exists():
@@ -46,7 +61,11 @@ def setup_venv(install_spec: str) -> None:
     subprocess.run(["uv", "venv", str(VENV_DIR)], check=True)
     # install_spec may contain multiple space-separated packages (with shell quoting)
     packages = shlex.split(install_spec)
-    print(f"Installing {install_spec}...")
+    # Allow local flyte-sdk override
+    flyte_sdk_path = os.environ.get("FLYTE_SDK_PATH")
+    if flyte_sdk_path:
+        packages = _substitute_local_flyte(packages, flyte_sdk_path)
+    print(f"Installing {' '.join(packages)}...")
     subprocess.run([
         "uv", "pip", "install",
         "--python", str(VENV_DIR / "bin" / "python"),

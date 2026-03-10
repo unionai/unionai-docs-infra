@@ -8,6 +8,7 @@
 #   make -f unionai-docs-infra/Makefile.api.sdk SKIP_VENV_SETUP=true  # Use current environment
 #   make -f unionai-docs-infra/Makefile.api.sdk sdks                  # SDK docs only
 #   make -f unionai-docs-infra/Makefile.api.sdk clis                  # CLI docs only
+#   FLYTE_SDK_PATH=~/repos/flyte-sdk make -f unionai-docs-infra/Makefile.api.sdk  # Use local flyte-sdk
 
 SKIP_VENV_SETUP ?= false
 UV := uv run --project unionai-docs-infra
@@ -17,11 +18,11 @@ all: sdks clis clean-venv
 
 .PHONY: sdks
 sdks:
-	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) $(UV) unionai-docs-infra/tools/api_sdk_generate.py
+	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) FLYTE_SDK_PATH=$(FLYTE_SDK_PATH) $(UV) unionai-docs-infra/tools/api_sdk_generate.py
 
 .PHONY: clis
 clis:
-	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) $(UV) unionai-docs-infra/tools/api_cli_generate.py
+	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) FLYTE_SDK_PATH=$(FLYTE_SDK_PATH) $(UV) unionai-docs-infra/tools/api_cli_generate.py
 
 .PHONY: clean-venv
 clean-venv:
@@ -48,4 +49,5 @@ help:
 	@echo "  clean - Remove all generated SDK/CLI/plugin content"
 	@echo ""
 	@echo "Options:"
-	@echo "  SKIP_VENV_SETUP=true - Skip automatic venv setup and use current environment"
+	@echo "  SKIP_VENV_SETUP=true  - Skip automatic venv setup and use current environment"
+	@echo "  FLYTE_SDK_PATH=<path> - Use local flyte-sdk checkout instead of PyPI"
