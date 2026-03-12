@@ -11,6 +11,7 @@ from lib.parser.docstring import parse_docstring
 from lib.parser.packages import get_package, should_include
 from lib.ptypes import ClassDetails, PackageInfo
 from lib.parser.methods import parse_method, parse_property, parse_variable
+from lib.parser.pydantic_utils import get_pydantic_excluded_members, is_pydantic_model
 
 
 def isclass(member: Any) -> bool:
@@ -80,8 +81,11 @@ def get_class_details(class_path: str) -> Optional[ClassDetails]:
             class_variables=[],
         )
 
-        # Determine which methods are defined directly on this class (not inherited)
-        own_members = set(cls.__dict__.keys())
+        # For Pydantic models, collect the set of members defined on BaseModel
+        # so we can exclude them (but keep user-defined members from parent classes).
+        pydantic_excluded = (
+            get_pydantic_excluded_members(cls) if is_pydantic_model(cls) else set()
+        )
 
         # Get methods, properties, and class variables
         for name, member in inspect.getmembers(cls):
@@ -89,9 +93,8 @@ def get_class_details(class_path: str) -> Optional[ClassDetails]:
             if name.startswith("_") and name != "__init__":
                 continue
 
-            # Skip inherited methods — only include methods defined on the class itself.
-            # __init__ is always included (even if inherited) since it defines the constructor.
-            if name != "__init__" and name not in own_members:
+            # Skip Pydantic built-in members (model_validate, model_dump, model_extra, etc.)
+            if name in pydantic_excluded:
                 continue
 
             # Methods

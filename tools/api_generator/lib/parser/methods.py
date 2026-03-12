@@ -32,68 +32,6 @@ def parse_method(
     return do_parse_method(name, member, framework, parent_name, cls=cls)
 
 
-def _is_pydantic_model(cls: type | None) -> bool:
-    """Check if a class is a Pydantic BaseModel."""
-    if cls is None:
-        return False
-    try:
-        from pydantic import BaseModel
-
-        return issubclass(cls, BaseModel)
-    except ImportError:
-        return False
-
-
-def _build_pydantic_init_params(cls: type) -> list[ParamInfo]:
-    """Extract constructor params from Pydantic model_fields instead of inspect.signature."""
-    params = []
-    for field_name, field_info in cls.model_fields.items():
-        field_type = ""
-        if field_info.annotation is not None:
-            field_type = _sanitize_type_str(str(field_info.annotation))
-
-        default = None
-        if field_info.default is not None:
-            from pydantic_core import PydanticUndefined
-
-            if field_info.default is not PydanticUndefined:
-                default = str(field_info.default)
-        elif field_info.default_factory is not None:
-            default = f"{field_info.default_factory.__name__}()"
-
-        params.append(
-            ParamInfo(
-                name=field_name,
-                default=default,
-                kind="KEYWORD_ONLY",
-                type=field_type,
-                doc=field_info.description,
-            )
-        )
-    return params
-
-
-def _build_pydantic_init_signature(cls: type) -> str:
-    """Build a human-readable signature string from Pydantic model_fields."""
-    parts = []
-    for field_name, field_info in cls.model_fields.items():
-        type_str = ""
-        if field_info.annotation is not None:
-            type_str = f": {_sanitize_type_str(str(field_info.annotation))}"
-
-        default_str = ""
-        if field_info.default is not None:
-            from pydantic_core import PydanticUndefined
-
-            if field_info.default is not PydanticUndefined:
-                default_str = f" = {field_info.default!r}"
-        elif field_info.default_factory is not None:
-            default_str = f" = {field_info.default_factory.__name__}()"
-
-        parts.append(f"{field_name}{type_str}{default_str}")
-    return f"({', '.join(parts)})"
-
-
 def do_parse_method(
     name: str,
     member: Any,
@@ -105,10 +43,28 @@ def do_parse_method(
     docstr = doc_info["docstring"] if doc_info else None
     params_docs = doc_info["params"] if doc_info else None
 
-    # For Pydantic __init__, extract params from model_fields
-    if name == "__init__" and _is_pydantic_model(cls):
-        params = _build_pydantic_init_params(cls)
-        sig_str = _build_pydantic_init_signature(cls)
+    # For Pydantic __init__, extract params from model_fields instead of
+    # inspect.signature which returns the opaque (**data: Any).
+    from lib.parser.pydantic_utils import is_pydantic_model
+
+    if name == "__init__" and is_pydantic_model(cls):
+        from lib.parser.pydantic_utils import (
+            get_pydantic_init_fields,
+            build_pydantic_init_signature,
+        )
+
+        fields = get_pydantic_init_fields(cls)
+        sig_str = build_pydantic_init_signature(cls)
+        params = [
+            ParamInfo(
+                name=f["name"],
+                default=f["default"],
+                kind="KEYWORD_ONLY",
+                type=f["type"],
+                doc=f["description"],
+            )
+            for f in fields
+        ]
         return_type = "None"
     else:
         sig = inspect.signature(member)
