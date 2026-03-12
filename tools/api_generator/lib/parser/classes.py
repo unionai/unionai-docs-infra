@@ -11,6 +11,7 @@ from lib.parser.docstring import parse_docstring
 from lib.parser.packages import get_package, should_include
 from lib.ptypes import ClassDetails, PackageInfo
 from lib.parser.methods import parse_method, parse_property, parse_variable
+from lib.parser.pydantic_utils import get_pydantic_excluded_members, is_pydantic_model
 
 
 def isclass(member: Any) -> bool:
@@ -80,14 +81,24 @@ def get_class_details(class_path: str) -> Optional[ClassDetails]:
             class_variables=[],
         )
 
+        # For Pydantic models, collect the set of members defined on BaseModel
+        # so we can exclude them (but keep user-defined members from parent classes).
+        pydantic_excluded = (
+            get_pydantic_excluded_members(cls) if is_pydantic_model(cls) else set()
+        )
+
         # Get methods, properties, and class variables
         for name, member in inspect.getmembers(cls):
             # Skip private members (except __init__)
             if name.startswith("_") and name != "__init__":
                 continue
 
+            # Skip Pydantic built-in members (model_validate, model_dump, model_extra, etc.)
+            if name in pydantic_excluded:
+                continue
+
             # Methods
-            method_info = parse_method(name, member, class_name)
+            method_info = parse_method(name, member, class_name, cls=cls)
             if method_info:
                 # For __init__ methods, use class-level parameter documentation if available
                 if name == "__init__" and doc_info and "params" in doc_info and doc_info["params"]:
