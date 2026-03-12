@@ -80,14 +80,22 @@ def get_class_details(class_path: str) -> Optional[ClassDetails]:
             class_variables=[],
         )
 
+        # Determine which methods are defined directly on this class (not inherited)
+        own_members = set(cls.__dict__.keys())
+
         # Get methods, properties, and class variables
         for name, member in inspect.getmembers(cls):
             # Skip private members (except __init__)
             if name.startswith("_") and name != "__init__":
                 continue
 
+            # Skip inherited methods — only include methods defined on the class itself.
+            # __init__ is always included (even if inherited) since it defines the constructor.
+            if name != "__init__" and name not in own_members:
+                continue
+
             # Methods
-            method_info = parse_method(name, member, class_name)
+            method_info = parse_method(name, member, class_name, cls=cls)
             if method_info:
                 # For __init__ methods, use class-level parameter documentation if available
                 if name == "__init__" and doc_info and "params" in doc_info and doc_info["params"]:
