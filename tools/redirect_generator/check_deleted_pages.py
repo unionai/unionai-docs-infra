@@ -81,7 +81,12 @@ def content_path_to_url(content_path: str, variant: str, version: str) -> str:
 
 
 def load_existing_redirects(csv_path: Path) -> Dict[str, str]:
-    """Load existing redirects as source -> destination map."""
+    """Load existing redirects as source -> destination map.
+
+    Keys are lowercased since Hugo lowercases all URLs and Cloudflare
+    redirects are case-insensitive. This ensures a redirect for
+    'byok-data-plane-setup-on-oci' also covers 'byok-data-plane-setup-on-OCI'.
+    """
     existing = {}
     if not csv_path.exists():
         return existing
@@ -89,7 +94,7 @@ def load_existing_redirects(csv_path: Path) -> Dict[str, str]:
         reader = csv.reader(f)
         for row in reader:
             if len(row) >= 2:
-                existing[row[0]] = row[1]
+                existing[row[0].lower()] = row[1]
     return existing
 
 
@@ -268,7 +273,7 @@ def main() -> int:
         missing_urls = []
         for variant in variants:
             url = content_path_to_url(path, variant, version)
-            if url not in redirects:
+            if url.lower() not in redirects:
                 missing_urls.append(url)
                 total_missing += 1
         if missing_urls:
