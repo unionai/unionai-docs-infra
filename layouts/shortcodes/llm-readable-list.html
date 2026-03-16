@@ -3,54 +3,64 @@
   for the current build variant, grouped by top-level section.
 
   Finds all section pages with llm_readable_bundle: true in frontmatter,
-  filters to those allowed in the current variant, groups by top-level
-  section (in weight order), and renders links with approximate token estimates.
+  filters by the current variant, groups by top-level section (in weight order),
+  and renders links with approximate token estimates. Nested bundles (e.g.
+  core-concepts/tasks inside core-concepts) render as nested sub-lists.
 
   Usage: {{< llm-readable-list >}}
 */}}
 {{- $variant := $.Site.Params.variant -}}
 {{- range .Site.Sections.ByWeight -}}
-  {{- $bundles := slice -}}
-  {{/* Check the top section itself */}}
-  {{- if and .Params.llm_readable_bundle .Params.variants -}}
-    {{- if in (split .Params.variants " ") (printf "+%s" $variant) -}}
-      {{- $bundles = $bundles | append . -}}
-    {{- end -}}
+  {{/* First pass: check if this top section has ANY bundles at any depth */}}
+  {{- $anyBundles := false -}}
+  {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
+    {{- $anyBundles = true -}}
   {{- end -}}
-  {{/* Check subsections (depth 1) */}}
   {{- range .Sections.ByWeight -}}
-    {{- if and .Params.llm_readable_bundle .Params.variants -}}
-      {{- if in (split .Params.variants " ") (printf "+%s" $variant) -}}
-        {{- $bundles = $bundles | append . -}}
-      {{- end -}}
+    {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
+      {{- $anyBundles = true -}}
     {{- end -}}
-    {{/* Check sub-subsections (depth 2) */}}
     {{- range .Sections.ByWeight -}}
-      {{- if and .Params.llm_readable_bundle .Params.variants -}}
-        {{- if in (split .Params.variants " ") (printf "+%s" $variant) -}}
-          {{- $bundles = $bundles | append . -}}
-        {{- end -}}
+      {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
+        {{- $anyBundles = true -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
-  {{- if $bundles }}
+  {{- if $anyBundles }}
 <p><strong>{{ .Title }}:</strong></p>
 <ul>
-    {{- range $bundles }}
-    {{- $contentLen := len .RawContent -}}
-    {{- range .Pages -}}
-      {{- $contentLen = add $contentLen (len .RawContent) -}}
-      {{- range .Pages -}}
-        {{- $contentLen = add $contentLen (len .RawContent) -}}
-        {{- range .Pages -}}
-          {{- $contentLen = add $contentLen (len .RawContent) -}}
-        {{- end -}}
+  {{/* Render top section itself if bundled */}}
+  {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) }}
+  <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)</li>
+  {{- end -}}
+  {{/* Render subsections */}}
+  {{- range .Sections.ByWeight -}}
+    {{- $subAllowed := partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
+    {{/* Collect bundled sub-subsections */}}
+    {{- $children := slice -}}
+    {{- range .Sections.ByWeight -}}
+      {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
+        {{- $children = $children | append . -}}
       {{- end -}}
     {{- end -}}
-    {{- $tokensK := div $contentLen 4000 -}}
-    {{- if lt $tokensK 1 -}}{{- $tokensK = 1 -}}{{- end }}
-  <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ $tokensK }}K tokens)</li>
-    {{- end }}
+    {{- if $subAllowed }}
+  <li>
+    <a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)
+      {{- if $children }}
+    <ul>
+        {{- range $children }}
+      <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)</li>
+        {{- end }}
+    </ul>
+      {{- end }}
+  </li>
+    {{- else if $children -}}
+      {{/* Subsection not bundled but has bundled children — render them at this level */}}
+      {{- range $children }}
+  <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)</li>
+      {{- end -}}
+    {{- end -}}
+  {{- end }}
 </ul>
   {{- end -}}
 {{- end -}}

@@ -1,0 +1,10 @@
+{{/* Returns true if the page has llm_readable_bundle: true and is allowed in the given variant. */}}
+{{- $page := .page -}}
+{{- $variant := .variant -}}
+{{- $allowed := false -}}
+{{- if and $page.Params.llm_readable_bundle $page.Params.variants -}}
+  {{- if in (split $page.Params.variants " ") (printf "+%s" $variant) -}}
+    {{- $allowed = true -}}
+  {{- end -}}
+{{- end -}}
+{{- return $allowed -}}
