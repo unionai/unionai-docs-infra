@@ -142,18 +142,25 @@ def check_all(config: dict) -> list[dict]:
         if cli.get("frozen", False):
             continue
         if "output_file" in cli:
-            content_missing = not (REPO_ROOT / cli["output_file"]).is_file()
+            output_path = REPO_ROOT / cli["output_file"]
+            content_missing = not output_path.is_file()
+            committed = None if content_missing else extract_frontmatter_version(output_path)
         elif "output_dir" in cli:
+            output_path = REPO_ROOT / cli["output_dir"] / "_index.md"
             content_missing = not (REPO_ROOT / cli["output_dir"]).is_dir()
+            committed = None if content_missing else extract_frontmatter_version(output_path)
         else:
             content_missing = False
+            committed = None
+        package = cli.get("package", cli["name"])
+        latest = get_pypi_latest(package) if package else None
         results.append({
             "type": "cli",
             "name": cli["name"],
-            "package": cli.get("package", cli["name"]),
-            "committed": None if content_missing else "present",
-            "latest": None,
-            "outdated": content_missing,
+            "package": package,
+            "committed": committed,
+            "latest": latest,
+            "outdated": content_missing or _is_outdated(committed, latest),
         })
 
     return results
@@ -174,13 +181,12 @@ def _is_outdated(committed: str | None, latest: str | None) -> bool:
 
 def print_results(results: list[dict]) -> None:
     for r in results:
+        status = "OUTDATED" if r["outdated"] else "up-to-date"
+        committed = r["committed"] or "not generated"
+        latest = r["latest"] or "unknown"
         if r["type"] == "cli":
-            status = "MISSING" if r["outdated"] else "present"
-            print(f"  {r['name']}-cli: [{status}]")
+            print(f"  {r['name']}-cli: committed={committed} latest={latest} [{status}]")
         else:
-            status = "OUTDATED" if r["outdated"] else "up-to-date"
-            committed = r["committed"] or "not generated"
-            latest = r["latest"] or "unknown"
             print(f"  {r['package']}: committed={committed} latest={latest} [{status}]")
 
 
@@ -247,24 +253,19 @@ def main():
         return
 
     if args.check:
-        outdated_versioned = [r for r in outdated if r["type"] != "cli"]
-        outdated_cli = [r for r in outdated if r["type"] == "cli"]
-        msgs = []
-        if outdated_versioned:
-            msgs.append(f"{len(outdated_versioned)} package(s) have newer versions on PyPI")
-        if outdated_cli:
-            msgs.append(f"{len(outdated_cli)} CLI doc(s) are missing")
-        print(f"\n{'. '.join(msgs)}.")
+        print(f"\n{len(outdated)} item(s) are outdated.")
         print("Run 'make update-api-docs' locally to regenerate.")
         sys.exit(1)
 
     # --update mode
     print(f"\n{len(outdated)} item(s) need regeneration:")
     for r in outdated:
+        committed = r["committed"] or "not generated"
+        latest = r["latest"] or "unknown"
         if r["type"] == "cli":
-            print(f"  {r['name']}-cli: missing")
+            print(f"  {r['name']}-cli: {committed} -> {latest}")
         else:
-            print(f"  {r['package']}: {r['committed'] or 'not generated'} -> {r['latest']}")
+            print(f"  {r['package']}: {committed} -> {latest}")
     regenerate(outdated)
 
     print("\nDone. Review and commit the updated docs.")
