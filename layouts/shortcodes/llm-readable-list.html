@@ -1,0 +1,56 @@
+{{/*
+  llm-readable-list: Auto-generates a list of all available section.md bundles
+  for the current build variant, grouped by top-level section.
+
+  Finds all section pages with llm_readable_bundle: true in frontmatter,
+  filters to those allowed in the current variant, groups by top-level
+  section (in weight order), and renders links with approximate token estimates.
+
+  Usage: {{< llm-readable-list >}}
+*/}}
+{{- $variant := $.Site.Params.variant -}}
+{{- range .Site.Sections.ByWeight -}}
+  {{- $bundles := slice -}}
+  {{/* Check the top section itself */}}
+  {{- if and .Params.llm_readable_bundle .Params.variants -}}
+    {{- if in (split .Params.variants " ") (printf "+%s" $variant) -}}
+      {{- $bundles = $bundles | append . -}}
+    {{- end -}}
+  {{- end -}}
+  {{/* Check subsections (depth 1) */}}
+  {{- range .Sections.ByWeight -}}
+    {{- if and .Params.llm_readable_bundle .Params.variants -}}
+      {{- if in (split .Params.variants " ") (printf "+%s" $variant) -}}
+        {{- $bundles = $bundles | append . -}}
+      {{- end -}}
+    {{- end -}}
+    {{/* Check sub-subsections (depth 2) */}}
+    {{- range .Sections.ByWeight -}}
+      {{- if and .Params.llm_readable_bundle .Params.variants -}}
+        {{- if in (split .Params.variants " ") (printf "+%s" $variant) -}}
+          {{- $bundles = $bundles | append . -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if $bundles }}
+<p><strong>{{ .Title }}:</strong></p>
+<ul>
+    {{- range $bundles }}
+    {{- $contentLen := len .RawContent -}}
+    {{- range .Pages -}}
+      {{- $contentLen = add $contentLen (len .RawContent) -}}
+      {{- range .Pages -}}
+        {{- $contentLen = add $contentLen (len .RawContent) -}}
+        {{- range .Pages -}}
+          {{- $contentLen = add $contentLen (len .RawContent) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $tokensK := div $contentLen 4000 -}}
+    {{- if lt $tokensK 1 -}}{{- $tokensK = 1 -}}{{- end }}
+  <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ $tokensK }}K tokens)</li>
+    {{- end }}
+</ul>
+  {{- end -}}
+{{- end -}}
