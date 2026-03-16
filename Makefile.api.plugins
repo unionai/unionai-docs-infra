@@ -1,5 +1,8 @@
 # Plugin API documentation generator
 #
+# Uses the shared .venv created by api_venv_setup.py (via Makefile.api.sdk setup-venv).
+# All plugin packages are pre-installed in the shared venv.
+#
 # Examples:
 #   make -f unionai-docs-infra/Makefile.api.plugins PLUGIN=flyteplugins.wandb TITLE="Weights & Biases" NAME=wandb
 #
@@ -10,10 +13,6 @@
 #   PLUGIN  - Python import path (e.g., flyteplugins.wandb) used by the parser
 #   TITLE   - The display title for the documentation
 #   NAME    - The folder name under the plugins output base directory
-#
-# Optional variables:
-#   INSTALL - pip install specifier (defaults to PLUGIN). Use to add extras,
-#             e.g., "flyteplugins-<PLUGIN>[<EXTRAS>]"
 
 # Read config from api-packages.toml
 UV := uv run --project unionai-docs-infra
@@ -27,28 +26,21 @@ API_DATA=/tmp/${NAME}.api.yaml
 LANDING_PAGE ?= $(PLUGINS_DEFAULT_INCLUDE)
 VENV_DIR=.venv
 SKIP_VENV_SETUP ?= false
-INSTALL ?= ${PLUGIN}
 
 .PHONY: all
-all: check_vars setup_venv parser generate
+all: check_vars parser generate
 
 .PHONY: check_vars
 check_vars:
 	@if [ -z "${PLUGIN}" ]; then echo "ERROR: PLUGIN is not set"; exit 1; fi
 	@if [ -z "${TITLE}" ]; then echo "ERROR: TITLE is not set"; exit 1; fi
 	@if [ -z "${NAME}" ]; then echo "ERROR: NAME is not set"; exit 1; fi
-
-.PHONY: setup_venv
-setup_venv: check_vars
 ifeq ($(SKIP_VENV_SETUP),false)
-	@echo "Setting up fresh virtual environment..."
-	rm -rf $(VENV_DIR)
-	uv venv $(VENV_DIR) --python 3.12
-	@echo "Installing ${INSTALL}..."
-	uv pip install --python $(VENV_DIR)/bin/python --upgrade ${INSTALL}
-	@echo "Virtual environment setup complete. Using $(VENV_DIR)/bin/python"
-else
-	@echo "Skipping venv setup (SKIP_VENV_SETUP=true)"
+	@if [ ! -f "$(VENV_DIR)/bin/python" ]; then \
+		echo "ERROR: shared venv not found at $(VENV_DIR)."; \
+		echo "Run 'make -f unionai-docs-infra/Makefile.api.sdk setup-venv' first."; \
+		exit 1; \
+	fi
 endif
 
 .PHONY: clean_api_data
@@ -91,16 +83,14 @@ endif
 clean_output_folder:
 	rm -rf "${OUTPUT_FOLDER}"
 
-.PHONY: clean_venv
-clean_venv:
-	rm -rf $(VENV_DIR)
-
 .PHONY: clean
-clean: clean_output_folder clean_api_data clean_venv
+clean: clean_output_folder clean_api_data
 
 .PHONY: help
 help:
 	@echo "Integration API Documentation Generator"
+	@echo ""
+	@echo "Uses the shared .venv created by 'make -f Makefile.api.sdk setup-venv'."
 	@echo ""
 	@echo "Usage:"
 	@echo "  make -f unionai-docs-infra/Makefile.api.plugins PLUGIN=<package> TITLE=\"<title>\" NAME=<folder>"
@@ -111,18 +101,14 @@ help:
 	@echo "  NAME    - The folder name under the plugins output base (from api-packages.toml)"
 	@echo ""
 	@echo "Options:"
-	@echo "  INSTALL=...          - pip install specifier (defaults to PLUGIN). Use for extras."
-	@echo "  SKIP_VENV_SETUP=true - Skip automatic venv setup and use current environment"
+	@echo "  SKIP_VENV_SETUP=true - Skip venv and use current environment"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make -f unionai-docs-infra/Makefile.api.plugins PLUGIN=flyteplugins.wandb TITLE=\"Weights & Biases\" NAME=wandb"
-	@echo "  make -f unionai-docs-infra/Makefile.api.plugins PLUGIN=flyteplugins.connectors INSTALL=\"flyteplugins-connectors[bigquery,databricks,snowflake]\" TITLE=\"Connectors\" NAME=connectors"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all              - Set up venv, parse, and generate (default)"
-	@echo "  setup_venv       - Create fresh venv and install the plugin"
+	@echo "  all              - Parse and generate (default)"
 	@echo "  parser           - Parse plugin package to extract API data"
 	@echo "  generate         - Generate documentation from API data"
 	@echo "  clean_output_folder - Remove generated output folder"
-	@echo "  clean_venv       - Remove the virtual environment"
-	@echo "  clean            - Clean both output folder and venv"
+	@echo "  clean            - Clean output folder and API data"
