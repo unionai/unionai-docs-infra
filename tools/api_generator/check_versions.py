@@ -191,8 +191,19 @@ def print_results(results: list[dict]) -> None:
 
 
 def regenerate(results: list[dict]) -> None:
-    """Invoke existing Makefiles to regenerate outdated docs."""
-    # Regenerate all SDKs together (the sdks target handles all [[sdks]] entries)
+    """Invoke existing Makefiles to regenerate outdated docs.
+
+    Sets up a shared venv once with all packages, then runs each generator.
+    """
+    # Set up shared venv with all packages (SDK + plugins)
+    print("\nSetting up shared venv...")
+    subprocess.run(
+        ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "setup-venv"],
+        cwd=REPO_ROOT,
+        check=True,
+    )
+
+    # Regenerate all SDKs together
     has_outdated_sdk = any(r["outdated"] and r["type"] == "sdk" for r in results)
     if has_outdated_sdk:
         outdated_sdks = [r["package"] for r in results if r["outdated"] and r["type"] == "sdk"]
@@ -214,6 +225,7 @@ def regenerate(results: list[dict]) -> None:
             check=True,
         )
 
+    # Regenerate outdated plugins
     for r in results:
         if not r["outdated"]:
             continue
@@ -223,13 +235,14 @@ def regenerate(results: list[dict]) -> None:
                 "make", "-f", "unionai-docs-infra/Makefile.api.plugins",
                 f"PLUGIN={r['plugin']}", f"TITLE={r['title']}", f"NAME={r['name']}",
             ]
-            # Determine the install spec: explicit install field > extras > default
-            if r.get("install"):
-                cmd.append(f"INSTALL={r['install']}")
-            elif r.get("extras"):
-                extras_str = ",".join(r["extras"])
-                cmd.append(f"INSTALL={r['package']}[{extras_str}]")
             subprocess.run(cmd, cwd=REPO_ROOT, check=True)
+
+    # Clean up shared venv
+    subprocess.run(
+        ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "clean-venv"],
+        cwd=REPO_ROOT,
+        check=True,
+    )
 
 
 def main():

@@ -8,12 +8,11 @@
 """Iterate [[clis]] from api-packages.toml and generate CLI docs for each.
 
 Supports two types of CLIs:
-  - Python CLIs (default): uses gen_command from config, run in the SDK venv
+  - Python CLIs (default): uses gen_command from config, run in the shared venv
   - Go CLIs (type = "go"): uses scripts/gen-cli-docs with the binary name
 
-The SDK venv (.venv) must already exist with the relevant package installed.
+Expects a shared .venv to already exist (created by api_venv_setup.py).
 When SKIP_VENV_SETUP=true, uses the current environment instead.
-Set FLYTE_SDK_PATH to a local flyte-sdk checkout to use it instead of PyPI.
 """
 
 import os
@@ -142,18 +141,10 @@ def main() -> None:
         python = Path(sys.executable)
     else:
         python = VENV_DIR / "bin" / "python"
-
-    # If FLYTE_SDK_PATH is set, install local flyte-sdk into the existing venv
-    # (handles the case where `clis` target runs standalone after venv was
-    # created by a prior `sdks` run with PyPI flyte)
-    flyte_sdk_path = os.environ.get("FLYTE_SDK_PATH")
-    if flyte_sdk_path and not skip_venv and python.exists():
-        print(f"Installing local flyte-sdk from {flyte_sdk_path}...")
-        subprocess.run([
-            "uv", "pip", "install",
-            "--python", str(python),
-            "--upgrade", flyte_sdk_path,
-        ], check=True)
+        if not python.exists():
+            print(f"Error: shared venv not found at {VENV_DIR}.")
+            print("Run 'make -f unionai-docs-infra/Makefile.api.sdk setup-venv' first.")
+            sys.exit(1)
 
     for cli in clis:
         if cli.get("frozen", False):
