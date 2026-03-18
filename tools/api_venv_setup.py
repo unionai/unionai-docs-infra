@@ -12,6 +12,8 @@ and all plugin packages into a single venv. This venv is then used by
 api_sdk_generate.py, api_cli_generate.py, and Makefile.api.plugins.
 
 Set FLYTE_SDK_PATH to a local flyte-sdk checkout to use it instead of PyPI.
+Both the SDK package and any plugins found under <FLYTE_SDK_PATH>/plugins/
+will be installed from local source.
 """
 
 import os
@@ -39,7 +41,15 @@ def load_config() -> dict:
 
 
 def _substitute_local_flyte(packages: list, sdk_path: str) -> list:
-    """Replace PyPI flyte package with a local path, preserving extras."""
+    """Replace PyPI flyte and plugin packages with local paths, preserving extras.
+
+    When FLYTE_SDK_PATH points to a local flyte-sdk checkout, this substitutes:
+      - ``flyte[extras]`` -> ``<sdk_path>[extras]``
+      - ``flyteplugins-<name>[extras]`` -> ``<sdk_path>/plugins/<name>[extras]``
+        (only if the plugin directory exists locally)
+    """
+    sdk = Path(sdk_path)
+    plugins_dir = sdk / "plugins"
     result = []
     for pkg in packages:
         if pkg == "flyte" or pkg.startswith("flyte["):
@@ -47,6 +57,23 @@ def _substitute_local_flyte(packages: list, sdk_path: str) -> list:
             local_spec = f"{sdk_path}{extras}"
             print(f"  Using local flyte-sdk: {local_spec}")
             result.append(local_spec)
+        elif pkg.startswith("flyteplugins-"):
+            # Extract plugin name and extras: "flyteplugins-vllm[extra]" -> ("vllm", "[extra]")
+            rest = pkg[len("flyteplugins-"):]
+            bracket = rest.find("[")
+            if bracket >= 0:
+                plugin_name = rest[:bracket]
+                extras = rest[bracket:]
+            else:
+                plugin_name = rest
+                extras = ""
+            local_plugin = plugins_dir / plugin_name
+            if local_plugin.is_dir():
+                local_spec = f"{local_plugin}{extras}"
+                print(f"  Using local plugin: {local_spec}")
+                result.append(local_spec)
+            else:
+                result.append(pkg)
         else:
             result.append(pkg)
     return result

@@ -41,6 +41,9 @@ run_step "Check deleted pages" $MAKE_CMD check-deleted-pages || true
 if [[ -n "$CI" || -n "$CF_PAGES" ]]; then
     run_step "Check API docs" $MAKE_CMD check-api-docs || true
     run_step "Check helm docs" $MAKE_CMD check-helm-docs || true
+elif [[ -n "$FLYTE_SDK_PATH" ]]; then
+    run_step "Generate API docs (local SDK)" $MAKE_CMD -f unionai-docs-infra/Makefile.api.sdk FLYTE_SDK_PATH="$FLYTE_SDK_PATH" || exit 1
+    run_step "Update helm docs" $MAKE_CMD update-helm-docs || exit 1
 else
     run_step "Update API docs" $MAKE_CMD update-api-docs || exit 1
     run_step "Update helm docs" $MAKE_CMD update-helm-docs || exit 1
