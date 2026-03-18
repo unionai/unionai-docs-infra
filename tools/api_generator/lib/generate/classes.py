@@ -182,6 +182,10 @@ def generate_class_details(
     )
 
     if init_method:
+        # Only emit Parameters heading if there are actual params to show
+        has_params = init_method.get("params") and len(init_method["params"]) > 0
+        if has_params and info["parent"] != ProtocolBaseClass:
+            output.write(f"{'#' * doc_level} Parameters\n\n")
         generate_method_decl(
             info["name"],
             init_method,

@@ -107,6 +107,24 @@ def main():
             for k, v in cli.items():
                 print(f"{k}={v}")
 
+    elif section == "plugin":
+        if len(sys.argv) < 3:
+            print("Usage: api_config.py plugin <index> [<key>]", file=sys.stderr)
+            sys.exit(1)
+        idx = int(sys.argv[2])
+        plugins = config.get("plugins", [])
+        if idx >= len(plugins):
+            print(f"Plugin index {idx} out of range (have {len(plugins)})", file=sys.stderr)
+            sys.exit(1)
+        plugin = plugins[idx]
+        if len(sys.argv) >= 4:
+            key = sys.argv[3]
+            val = plugin.get(key, "")
+            print(val)
+        else:
+            for k, v in plugin.items():
+                print(f"{k}={v}")
+
     else:
         print(f"Unknown section: {section}", file=sys.stderr)
         sys.exit(1)

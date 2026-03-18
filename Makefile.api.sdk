@@ -1,6 +1,6 @@
-# Config-driven SDK and CLI API doc generator
+# Config-driven SDK, CLI, and plugin API doc generator
 #
-# Reads [[sdks]] and [[clis]] from api-packages.toml.
+# Reads [[sdks]], [[clis]], and [[plugins]] from api-packages.toml.
 # Delegates actual generation to Python scripts.
 #
 # A shared .venv is created once by setup-venv with ALL packages
@@ -17,7 +17,7 @@ SKIP_VENV_SETUP ?= false
 UV := uv run --project unionai-docs-infra
 
 .PHONY: all
-all: setup-venv sdks clis clean-venv
+all: setup-venv sdks clis plugins clean-venv
 
 .PHONY: setup-venv
 setup-venv:
@@ -34,6 +34,19 @@ sdks:
 .PHONY: clis
 clis:
 	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) $(UV) unionai-docs-infra/tools/api_cli_generate.py
+
+.PHONY: plugins
+plugins:
+	@PLUGIN_COUNT=$$($(UV) unionai-docs-infra/tools/api_config.py plugin_count); \
+	for i in $$(seq 0 $$((PLUGIN_COUNT - 1))); do \
+		PLUGIN=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i plugin); \
+		TITLE=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i title); \
+		NAME=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i name); \
+		echo "Generating plugin docs: $$NAME ($$PLUGIN)"; \
+		$(MAKE) -f unionai-docs-infra/Makefile.api.plugins \
+			PLUGIN="$$PLUGIN" TITLE="$$TITLE" NAME="$$NAME" \
+			SKIP_VENV_SETUP=false; \
+	done
 
 .PHONY: clean-venv
 clean-venv:
@@ -55,10 +68,11 @@ help:
 	@echo "Creates a shared venv with all packages (SDK + plugins)."
 	@echo ""
 	@echo "Targets:"
-	@echo "  all       - Set up venv, generate SDK and CLI docs, clean up (default)"
+	@echo "  all       - Set up venv, generate SDK, CLI, and plugin docs, clean up (default)"
 	@echo "  setup-venv - Create shared venv with all packages"
 	@echo "  sdks      - Generate SDK API docs (venv must exist)"
 	@echo "  clis      - Generate CLI docs (venv must exist)"
+	@echo "  plugins   - Generate all plugin API docs (venv must exist)"
 	@echo "  clean-venv - Remove the shared venv"
 	@echo "  clean     - Remove all generated SDK/CLI/plugin content"
 	@echo ""
