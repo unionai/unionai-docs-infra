@@ -88,7 +88,7 @@ def main() -> None:
     if VENV_DIR.exists():
         shutil.rmtree(VENV_DIR)
     print("Creating shared venv...")
-    subprocess.run(["uv", "venv", str(VENV_DIR)], check=True)
+    subprocess.run(["uv", "venv", "--python", "3.12", str(VENV_DIR)], check=True)
 
     # Install all packages
     print(f"Installing {len(packages)} packages: {' '.join(packages)}")
