@@ -76,6 +76,8 @@ def get_class_details(class_path: str) -> Optional[ClassDetails]:
                 base.__name__ for base in cls.__bases__ if base.__name__ != "object"
             ],
             is_exception=issubclass(cls, Exception),
+            raises=doc_info.get("raises") if doc_info else None,
+            notes=doc_info.get("notes") if doc_info else None,
             methods=[],
             properties=[],
             class_variables=[],

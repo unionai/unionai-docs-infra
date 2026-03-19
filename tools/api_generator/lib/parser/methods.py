@@ -104,6 +104,8 @@ def do_parse_method(
         and doc_info["return_doc"] is not None
         else None
     )
+    raises = doc_info.get("raises") if doc_info else None
+    notes = doc_info.get("notes") if doc_info else None
 
     method_info = MethodInfo(
         name=name,
@@ -113,6 +115,8 @@ def do_parse_method(
         params_doc=params_docs,
         return_type=_sanitize_type_str(str(return_type)),
         return_doc=return_doc,
+        raises=raises,
+        notes=notes,
         framework=framework,
         parent_name=parent_name,
     )

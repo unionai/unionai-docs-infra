@@ -210,6 +210,48 @@ def generate_method_link(name: str) -> str:
     return f"#{anchor}"
 
 
+def generate_return_doc(info, output: io.TextIOWrapper):
+    """Render return documentation. Works with MethodInfo or any dict with return_doc."""
+    return_doc = info.get("return_doc")
+    if not return_doc:
+        return
+    return_doc = escape_html_preserve_code_blocks(return_doc)
+    if "\n" in return_doc:
+        output.write(f"**Returns**\n\n{return_doc}\n\n")
+    else:
+        output.write(f"**Returns:** {return_doc}\n\n")
+
+
+def generate_raises(info, output: io.TextIOWrapper):
+    """Render raises documentation. Works with MethodInfo, ClassDetails, or any dict with raises."""
+    raises = info.get("raises")
+    if not raises:
+        return
+    output.write("**Raises**\n\n")
+    output.write("| Exception | Description |\n")
+    output.write("|-|-|\n")
+    for entry in raises:
+        exc = f"`{entry['exception']}`" if entry.get("exception") else ""
+        doc = (entry.get("doc") or "").replace("\n", " ").replace("|", "\\|").strip()
+        doc = escape_html_preserve_code_blocks(doc)
+        output.write(f"| {exc} | {doc} |\n")
+    output.write("\n")
+
+
+def generate_notes(info, output: io.TextIOWrapper):
+    """Render notes as a Hugo notice block. Works with MethodInfo, ClassDetails, or any dict with notes."""
+    notes = info.get("notes")
+    if not notes:
+        return
+    output.write("> [!NOTE]\n")
+    for line in notes.strip().split("\n"):
+        if line.strip():
+            output.write(f"> {line}\n")
+        else:
+            output.write(">\n")
+    output.write("\n")
+
+
 def generate_method(method: MethodInfo, output: io.TextIOWrapper, doc_level: int):
     output.write(f"{'#' * (doc_level+1)} {method['name']}()\n\n")
     generate_method_decl(method["name"], method, output)
@@ -218,3 +260,6 @@ def generate_method(method: MethodInfo, output: io.TextIOWrapper, doc_level: int
         doc = escape_html_preserve_code_blocks(method["doc"])
         output.write(f"{doc}\n\n")
     generate_params(method, output)
+    generate_return_doc(method, output)
+    generate_raises(method, output)
+    generate_notes(method, output)
