@@ -30,6 +30,8 @@ class MethodInfo(TypedDict):
     params_doc: Optional[ParamDict]
     return_type: str
     return_doc: Optional[str]
+    raises: Optional[list]
+    notes: Optional[str]
     framework: FrameworkType
     parent_name: Optional[str]
 
@@ -42,6 +44,8 @@ class ClassDetails(TypedDict):
     parent: Optional[str]
     bases: List[str]
     is_exception: bool
+    raises: Optional[list]
+    notes: Optional[str]
     methods: List[MethodInfo]
     properties: List[PropertyInfo]
     class_variables: List[VariableInfo]

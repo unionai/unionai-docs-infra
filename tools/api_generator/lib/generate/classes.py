@@ -9,7 +9,10 @@ from lib.generate.methods import (
     generate_method,
     generate_method_decl,
     generate_method_list,
+    generate_notes,
     generate_params,
+    generate_raises,
+    generate_return_doc,
 )
 from lib.generate.properties import generate_props
 from lib.ptypes import ClassDetails, ClassMap, ClassPackageMap, PackageInfo
@@ -199,6 +202,16 @@ def generate_class_details(
             output.write(f"{doc}\n\n")
         if info["parent"] != ProtocolBaseClass:
             generate_params(init_method, output)
+        # Render __init__-level return/raises/notes
+        generate_return_doc(init_method, output)
+        generate_raises(init_method, output)
+        generate_notes(init_method, output)
+
+    # Render class-level raises/notes (from class docstring, if not already on __init__)
+    if info.get("raises") and not (init_method and init_method.get("raises")):
+        generate_raises(info, output)
+    if info.get("notes") and not (init_method and init_method.get("notes")):
+        generate_notes(info, output)
 
     if info["properties"]:
         output.write(f"{'#' * (doc_level)} Properties\n\n")

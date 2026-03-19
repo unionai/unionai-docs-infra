@@ -5,17 +5,28 @@ from typing import TypedDict, Optional
 from lib.ptypes import ParamDict, ParamInfo
 
 
-_returns = [
-    "return",
-    "rcode",
-    "result",
-    "rtype",
-]
+# Google-style section headers → internal section names
+_GOOGLE_SECTIONS = {
+    "Args:": "args",
+    "Arguments:": "args",
+    "Attributes:": "args",
+    "Returns:": "returns",
+    "Return:": "returns",
+    "Raises:": "raises",
+    "Note:": "notes",
+    "Notes:": "notes",
+}
+
+# Sphinx return-like directives
+_SPHINX_RETURNS = ["return", "rcode", "result", "rtype"]
+
 
 class DocstringInfo(TypedDict):
     docstring: str
     params: ParamDict
     return_doc: Optional[str]
+    raises: Optional[list]
+    notes: Optional[str]
 
 
 def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
@@ -26,136 +37,205 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
         return None
 
     try:
-        # Attempt to check if the signature matches. If yes, we have no docs.
-        #if f"inspect.signature(source) == inspect.signature(eval(docstring)):
-        #    return None
         method_decl = f"{source.__name__}{inspect.signature(source)}"
         if method_decl.startswith(docstring):
             return None
     except:
         pass
 
-    # Removes the specicial !!!! notes
+    # Removes the special !!!! notes
     docstring = format_three_exclamation_notes(docstring)
 
     lines = docstring.split("\n")
-    # print(lines)
 
-    result = DocstringInfo(docstring="", params={}, return_doc=None)
+    result = DocstringInfo(
+        docstring="", params={}, return_doc=None, raises=None, notes=None
+    )
 
-    current_param = None
-    in_args = False
-    leading_spaces = -1
-    args_leading_spaces = -1
-    args_continuation_spaces = -1
+    sphinx_param = None     # Current Sphinx :param: being accumulated
+    section = None          # Active Google section: "args", "returns", "raises", "notes"
+    leading_spaces = -1     # Docstring base indentation
+    section_indent = -1     # Content indentation within a Google section
+    cont_indent = -1        # Further indentation for continuation lines
+    args_param = None       # Current Args parameter name
+    raises_entry = None     # Current Raises entry dict
 
-    # Enumerate lines
-    for i, line in enumerate(lines):
+    for line in lines:
+        # Determine base indentation from first non-empty line
         if leading_spaces == -1:
-            # Wait for the first line
             if line.strip() == "":
                 continue
-
             leading_spaces = len(line) - len(line.lstrip())
-            # print(leading_spaces, file=stderr)
 
         line = line[leading_spaces:]
-        # print(leading_spaces, ">", line, file=stderr)
+        stripped = line.strip()
+        at_base = bool(stripped) and not line[0:1].isspace()
 
-        if not in_args and line.strip() == "Args:":
-            in_args = True
-            args_leading_spaces = -1
+        # Non-empty line at base indentation exits any active Google section
+        if section is not None and at_base:
+            section = None
+            section_indent = -1
+            cont_indent = -1
+            args_param = None
+            raises_entry = None
+
+        # Check for Google-style section header
+        if at_base and stripped in _GOOGLE_SECTIONS:
+            section = _GOOGLE_SECTIONS[stripped]
+            section_indent = -1
+            cont_indent = -1
+            args_param = None
+            raises_entry = None
+            sphinx_param = None
             continue
 
-        if in_args:
-            if args_leading_spaces == -1:
-                args_leading_spaces = len(line) - len(line.lstrip())
-            if args_leading_spaces != -1:
-                line = line[args_leading_spaces:]
+        # --- Inside a Google section ---
 
-            # print(args_leading_spaces, ">>", line)
-
-            if len(line.strip()) == 0:
+        if section == "args":
+            if not stripped:
                 continue
+            if section_indent == -1:
+                section_indent = len(line) - len(line.lstrip())
+            content = line[section_indent:]
 
-            if line[0] != " ":
-                # New parameter
-                param_parts = line.split(":")
-                if len(param_parts) != 2:
+            if not content[0:1].isspace():
+                # New parameter: "name: desc" or "name (type): desc"
+                colon = content.find(":")
+                if colon < 0:
                     continue
-                param_name_and_type = param_parts[0].strip()
-                param_description = param_parts[1].strip()
+                name_part = content[:colon].strip()
+                desc_part = content[colon + 1:].strip()
 
-                # Extract type information from format: param_name (type)
                 param_type = None
-                if "(" in param_name_and_type and param_name_and_type.endswith(")"):
-                    # Find the last opening parenthesis to handle cases like "param_name (Dict[str, int])"
-                    type_start = param_name_and_type.rfind("(")
-                    current_param = param_name_and_type[:type_start].strip()
-                    param_type = param_name_and_type[type_start+1:-1].strip()
+                if "(" in name_part and name_part.endswith(")"):
+                    paren = name_part.rfind("(")
+                    args_param = name_part[:paren].strip()
+                    param_type = name_part[paren + 1:-1].strip()
                 else:
-                    current_param = param_name_and_type
+                    args_param = name_part
 
-                param = ParamInfo(
-                    name=current_param,
-                    doc=param_description,
-                    type=param_type,
-                    default=None,
-                    kind=None,
+                result["params"][args_param] = ParamInfo(
+                    name=args_param, doc=desc_part, type=param_type,
+                    default=None, kind=None,
                 )
-                result["params"][current_param] = param
-                args_continuation_spaces = -1
-            elif current_param:
-                if args_continuation_spaces == -1:
-                    args_continuation_spaces = len(line) - len(line.lstrip())
-                if args_continuation_spaces != -1:
-                    line = line[args_continuation_spaces:]
+                cont_indent = -1
+            elif args_param:
+                # Continuation of previous param description
+                if cont_indent == -1:
+                    cont_indent = len(content) - len(content.lstrip())
+                text = content[cont_indent:]
+                p = result["params"][args_param]
+                p["doc"] = (p["doc"] + "\n" + text) if p["doc"] else text
+            continue
 
-                # Param doc
-                param = result["params"][current_param]
-                # Ensure param["doc"] is initialized properly before concatenating
-                if "doc" not in param or param["doc"] is None:
-                    param["doc"] = line
+        if section == "returns":
+            if section_indent == -1:
+                if not stripped:
+                    continue  # Skip leading blanks
+                section_indent = len(line) - len(line.lstrip())
+            content = line[section_indent:] if section_indent > 0 else line
+            if result["return_doc"] is not None:
+                result["return_doc"] += "\n" + content
+            else:
+                result["return_doc"] = content
+            continue
+
+        if section == "raises":
+            if not stripped:
+                continue
+            if section_indent == -1:
+                section_indent = len(line) - len(line.lstrip())
+            content = line[section_indent:]
+
+            if not content[0:1].isspace():
+                # New entry: "ExceptionType: description"
+                colon = content.find(":")
+                if colon >= 0:
+                    exc = content[:colon].strip()
+                    doc = content[colon + 1:].strip()
                 else:
-                    param["doc"] = param["doc"] + "\n" + line
-        else:
-            line_params = line.strip()
-
-            for r in _returns:
-                if line_params.startswith(f":{r}:"):
-                    result["return_doc"] = line_params[len(r):].strip()
-                    continue
-
-            if not current_param and not line_params.startswith(":param"):
-                result["docstring"] += line + "\n"
-
-            if current_param:
-                if not line_params.startswith(":param"):
-                    param = result["params"][current_param]
-                    # Ensure param["doc"] is initialized properly before concatenating
-                    if "doc" not in param or param["doc"] is None:
-                        param["doc"] = line_params
-                    else:
-                        param["doc"] = param["doc"] + "\n" + line_params
-                    continue
-
-            if line_params.startswith(":param"):
-                param_parts = line_params.split(":")
-                param_name = param_parts[1].strip().replace("param ", "")
-                param_doc = param_parts[2].strip() if len(param_parts) > 2 else ""
-                current_param = param_name
-                param = ParamInfo(
-                    name=param_name,
-                    doc=param_doc,
-                    type=None,
-                    default=None,
-                    kind=None,
+                    exc = content.strip()
+                    doc = ""
+                raises_entry = {"exception": exc, "doc": doc}
+                if result["raises"] is None:
+                    result["raises"] = []
+                result["raises"].append(raises_entry)
+                cont_indent = -1
+            elif raises_entry:
+                if cont_indent == -1:
+                    cont_indent = len(content) - len(content.lstrip())
+                text = content[cont_indent:]
+                raises_entry["doc"] = (
+                    (raises_entry["doc"] + " " + text) if raises_entry["doc"] else text
                 )
-                result["params"][current_param] = param
-                # print("PARAM: ", param_name, param_doc)
+            continue
 
-        # if not current_param:
-        #     print(f"DOC: {line}")
+        if section == "notes":
+            if section_indent == -1:
+                if not stripped:
+                    continue  # Skip leading blanks
+                section_indent = len(line) - len(line.lstrip())
+            content = line[section_indent:] if section_indent > 0 else line
+            if result["notes"] is not None:
+                result["notes"] += "\n" + content
+            else:
+                result["notes"] = content
+            continue
+
+        # --- No Google section: Sphinx directives and regular text ---
+
+        # Sphinx :return:/:rtype: etc.
+        sphinx_return = False
+        for r in _SPHINX_RETURNS:
+            prefix = f":{r}:"
+            if stripped.startswith(prefix):
+                result["return_doc"] = stripped[len(prefix):].strip()
+                sphinx_param = None
+                sphinx_return = True
+                break
+        if sphinx_return:
+            continue
+
+        # Sphinx :raises ExcType: description
+        if stripped.startswith(":raises"):
+            rest = stripped[len(":raises"):].lstrip()
+            if rest.startswith(":"):
+                exc, doc = "", rest[1:].strip()
+            else:
+                colon = rest.find(":")
+                if colon >= 0:
+                    exc = rest[:colon].strip()
+                    doc = rest[colon + 1:].strip()
+                else:
+                    exc, doc = rest.strip(), ""
+            if result["raises"] is None:
+                result["raises"] = []
+            result["raises"].append({"exception": exc, "doc": doc})
+            sphinx_param = None
+            continue
+
+        # Sphinx :param name: description
+        if stripped.startswith(":param"):
+            parts = stripped.split(":")
+            name = parts[1].strip().replace("param ", "")
+            doc = parts[2].strip() if len(parts) > 2 else ""
+            sphinx_param = name
+            result["params"][name] = ParamInfo(
+                name=name, doc=doc, type=None, default=None, kind=None,
+            )
+            continue
+
+        # Continuation of Sphinx :param:
+        if sphinx_param:
+            if not stripped.startswith(":"):
+                p = result["params"][sphinx_param]
+                p["doc"] = (p["doc"] + "\n" + stripped) if p["doc"] else stripped
+                continue
+            else:
+                sphinx_param = None
+
+        # Regular text → docstring
+        result["docstring"] += line + "\n"
 
     return result
 
@@ -214,6 +294,28 @@ def test_parse_args():
         python_exec: Python executable to use for install packages
     """
     print(json.dumps(parse_docstring(doc_with_args, source=None), indent=2))
+
+
+def test_parse_google_sections():
+    doc = """
+    Open a file for reading or writing.
+
+    Args:
+        mode: The mode to open the file in (default: 'rb').
+        block_size: Size of blocks for reading in bytes.
+
+    Returns:
+        An async file-like object that can be used with async read/write operations.
+
+    Raises:
+        ValueError: If the mode is not supported.
+        FileNotFoundError: If the file does not exist.
+
+    Note:
+        This method is async and should be awaited.
+    """
+    print(json.dumps(parse_docstring(doc, source=None), indent=2))
+
 
 def convert_pydantic_links(text: str) -> str:
     """
@@ -355,6 +457,7 @@ def format_three_exclamation_notes(docstring: str) -> str:
 def main():
     test_parse_params()
     test_parse_args()
+    test_parse_google_sections()
 
 
 if __name__ == "__main__":
