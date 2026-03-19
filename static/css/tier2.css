@@ -1,0 +1,40 @@
+/* Tier 2 secondary navigation band */
+.tier2-nav {
+  border-bottom: 1px solid var(--border-color);
+  background: var(--sidebar-bg);
+  height: var(--tier2-height);
+  padding: 0 1.5rem;
+  z-index: 100;
+}
+
+.tier2-container {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 0;
+}
+
+.tier2-tab {
+  padding: 0 1rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: var(--sidebar-font-size);
+  font-weight: 500;
+  color: var(--text-color);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.tier2-tab:hover {
+  color: var(--union-color-dark);
+  text-decoration: none;
+}
+
+.tier2-tab.active {
+  color: var(--union-color-dark);
+  border-bottom-color: var(--union-color-dark);
+  font-weight: 600;
+}

@@ -1,6 +1,6 @@
 .container .toc-container {
   position: fixed;
-  top: calc(var(--header-height) + var(--tabs-height) + 1px);
+  top: calc(var(--header-height) + var(--tabs-height) + var(--tier2-height) + 1px);
   bottom: 0;
   right: var(--scrollbar-width);
   width: var(--toc-width);
@@ -16,7 +16,7 @@
 
 .container .toc-container .toc {
   overflow-y: auto;
-  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--toc-header-height));
+  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--tier2-height) - var(--toc-header-height));
   padding: 1rem;
 }
 

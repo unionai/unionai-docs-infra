@@ -1,0 +1,27 @@
+{{- /* Tier 2 secondary navigation band.
+     When a top-level section has tier2_band: true in its frontmatter,
+     its direct children are rendered as horizontal tabs here, and
+     the sidebar starts one level lower (showing only the active child's subtree).
+*/ -}}
+{{- $topSection := false -}}
+{{- range .Site.Sections -}}
+  {{- if eq $.Section .Section -}}
+    {{- $topSection = . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if and $topSection $topSection.Params.tier2_band -}}
+<nav class="tier2-nav" aria-label="Sub-section navigation">
+  <div class="tier2-container">
+    {{- range $topSection.Pages.ByWeight -}}
+      {{- $access := partial "page-allowed.html" . -}}
+      {{- if $access.allowed -}}
+        {{- $isActive := hasPrefix $.RelPermalink .RelPermalink -}}
+        <a href="{{- .RelPermalink -}}" class="tier2-tab{{- if $isActive }} active{{- end -}}">
+          {{- .Title -}}
+        </a>
+      {{- end -}}
+    {{- end -}}
+  </div>
+</nav>
+{{- end -}}
