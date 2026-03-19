@@ -2365,9 +2365,12 @@ www.union.ai/docs/v2/selfmanaged/deployment/configuration/helm,https://www.union
 www.union.ai/docs/v2/byoc/deployment/byok-data-plane-setup-on-aws,https://www.union.ai/docs/v2/byoc/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-aws,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/byok-data-plane-setup-on-aws,https://www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/deployment/byok-data-plane-setup-on-aws/cdk,https://www.union.ai/docs/v2/byoc/deployment/selfmanaged-aws/cdk,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-aws/cdk,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws/cdk,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/deployment/byok-data-plane-setup-on-aws/cdk,https://www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged-aws/cdk,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/deployment/byok-data-plane-setup-on-aws/cdk,https://www.union.ai/docs/v2/byoc/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-aws/cdk,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/deployment/byok-data-plane-setup-on-aws/cdk,https://www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/deployment/selfmanaged-aws/cdk,https://www.union.ai/docs/v2/byoc/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws/cdk,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged-aws/cdk,https://www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/deployment/byok-data-plane-setup-on-aws/manual,https://www.union.ai/docs/v2/byoc/deployment/selfmanaged-aws/manual,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-aws/manual,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws/manual,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/byok-data-plane-setup-on-aws/manual,https://www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged-aws/manual,302,TRUE,FALSE,TRUE,TRUE
