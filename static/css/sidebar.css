@@ -54,7 +54,7 @@
   cursor: pointer;
 }
 .site-nav .section-title.active {
-  color: var(--union-color);
+  color: var(--union-color-dark);
 }
 .site-nav .page-link {
   display: block;
