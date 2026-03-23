@@ -39,7 +39,7 @@
 {{- $product_full_name := index .Site.Params.key.product_full_name $variant -}}
 {{- $image := "" -}}
 {{- if eq $product_full_name "Flyte OSS" -}}
-  {{- $image = printf "%s/images/icon-logo-flyte.png" (strings.TrimSuffix "/" .Site.BaseURL) -}}
+  {{- $image = printf "%s/images/icon-logo-flyte.svg" (strings.TrimSuffix "/" .Site.BaseURL) -}}
 {{- else -}}
   {{- $image = printf "%s/images/icon-logo.svg" (strings.TrimSuffix "/" .Site.BaseURL) -}}
 {{- end -}}

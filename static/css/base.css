@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
+
 :root {
   /* Light theme variables (default) */
   --primary-color: var(--union-color);
@@ -18,8 +20,8 @@
   --menu-submenu-indent: 1rem;
   --menu-v-space: 0.2rem;
   --sidepanels-padding: 1rem 1.5rem;
-  --sidebar-width: 256px;
-  --sidebar-font-size: 0.75rem;
+  --sidebar-width: 300px;
+  --sidebar-font-size: 0.85rem;
   --toc-width: 256px;
   --toc-font-size: 0.75rem;
   --toc-header-height: 96px;
@@ -36,7 +38,7 @@
   --toc-bg: var(--bg-color);
   --docsearch-primary-color: #edab1c !important;
   --docsearch-highlight-color: var(--docsearch-primary-color) !important;
-  --docsearch-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
+  --docsearcowh-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
   --breadcrumbs-height: 128px;
   --old-version-border: 3px solid var(--union-color);
   --old-version-background: hsl(0, 0%, 97%);
@@ -45,12 +47,12 @@
 
 :root .variant-flyte {
   --primary-color: var(--union-color);
-  --union-color: #7652A2;
-  --union-color-light: #b89dd2;
-  --union-color-dark: #523a82;
-  --union-color-very-light: #c7b1dc;
-  --docsearch-primary-color: #7652A2 !important;
-  --docsearch-highlight-color: #7652A2 !important;
+  --union-color: #6f2aef;
+  --union-color-light: #cbb5f5;
+  --union-color-dark: #621ce4;
+  --union-color-very-light: #d5c5f4;
+  --docsearch-primary-color: #6f2aef !important;
+  --docsearch-highlight-color: #6f2aef !important;
   --docsearch-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
   --old-version-border: 3px solid var(--union-color);
 }
@@ -77,14 +79,17 @@
 
 [data-theme="dark"] .variant-flyte {
   --primary-color: var(--union-color-light);
-  --union-color: #674591;
-  --union-color-light: #8566a1;
-  --union-color-dark: #432d6e;
-  --union-color-very-light: #88749a;
-  --docsearch-primary-color: #7652A2 !important;
-  --docsearch-highlight-color: #7652A2 !important;
+  --union-color: #6f2aef;
+  --union-color-light: #9065e1;
+  --union-color-dark: #43139d;
+  --union-color-very-light: #966fde;
+  --docsearch-primary-color: #6f2aef !important;
+  --docsearch-highlight-color: #6f2aef !important;
   --table-row-even: #1a1720;
   --table-row-hover: #292532;
+  --bg-color: #050310;
+  --sidebar-bg: #100e18;
+  --toc-bg: #050310;
 }
 
 * {
@@ -93,7 +98,7 @@
   box-sizing: border-box;
 }
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Instrument Sans", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text-color);
   line-height: 1.6;
   background: var(--bg-color);

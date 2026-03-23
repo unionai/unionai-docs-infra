@@ -79,6 +79,9 @@
     {{ if not hugo.IsProduction }}
     <link rel="stylesheet" href="{{- "css/dev_mode.css" | relURL -}}?v={{- $v -}}" />
     {{ end }}
+    {{- if not .Site.Params.show_deprecation_message -}}
+    <link rel="stylesheet" href="{{- "css/runllm.css" | relURL -}}?v={{- $v -}}" />
+    {{- end -}}
   </head>
   <body class="variant-{{ .Site.Params.variant }}">
     <!-- Google Tag Manager (noscript) -->

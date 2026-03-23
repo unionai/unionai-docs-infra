@@ -1,10 +1,11 @@
 .sidebar {
   position: fixed;
   width: var(--sidebar-width);
-  padding: 1rem 1.5rem;
+  padding: 1rem 0.5rem 1rem 1.5rem;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border-color);
   overflow-y: auto;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
   height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--banner-height));
@@ -28,12 +29,22 @@
   color: var(--text-color);
   transition: all 0.2s;
 }
+.site-nav div.content {
+  margin: 0.25rem 0.5rem;
+}
 .site-nav a:hover {
   background-color: var(--union-color-very-light);
+  color: var(--text-color);
+  border-radius: 0.25rem;
+}
+.site-nav a.disabled:hover {
+  color: red;
 }
 .site-nav .active {
+  color: var(--union-color-dark);
   background-color: var(--union-color-light);
   font-weight: 500;
+  border-radius: 0.25rem;
 }
 .site-nav .section-title {
   font-size: var(--sidebar-font-size);
@@ -42,6 +53,9 @@
   padding: var(--menu-v-space) 0;
   cursor: pointer;
 }
+.site-nav .section-title.active {
+  color: var(--union-color-dark);
+}
 .site-nav .page-link {
   display: block;
   padding: var(--menu-v-space) 0;
@@ -49,9 +63,15 @@
   font-size: var(--sidebar-font-size);
 }
 .site-nav .section-pages {
-  padding-left: var(--menu-submenu-indent);
+  margin-top: 0.25rem;
+  margin-left: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border-color);
   overflow: hidden;
   transition: max-height 0.3s ease-in-out;
+}
+.site-nav .section-pages div.content {
+  margin: 0.1rem 0.5rem;
 }
 .site-nav .section-pages.collapsed {
   display: none;
@@ -77,16 +97,35 @@
   display: flex;
   align-items: center;
 }
+.site-nav .content > div {
+  order: 1;
+  min-width: 0;
+}
+.site-nav .content .chevron {
+  order: 2;
+}
+.site-nav .content > sl-tooltip {
+  order: 3;
+  flex-shrink: 0;
+}
 .site-nav .chevron {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
   width: 12px;
   height: 12px;
-  margin-right: 5px;
+  margin-left: 0.35rem;
+  margin-right: 0;
   transition: transform 0.3s ease;
-}
-
-[data-theme="dark"] .site-nav .chevron {
-  -webkit-filter: invert(100%);
-  filter: invert(100%);
+  background-color: currentColor;
+  -webkit-mask-image: url("../images/chevron-down.svg");
+  mask-image: url("../images/chevron-down.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .site-nav .chevron.rotated {

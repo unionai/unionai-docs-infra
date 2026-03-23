@@ -31,21 +31,18 @@ body > .tabs .tabs-nav {
 
 .tab .text {
   padding: 0.25rem 0.5rem;
+  color: var(--text-color) !important;
 }
 
 .tab .text:hover {
-  color: var(--union-color);
-  background-color: var(--union-color-very-light);
+  color: var(--union-color-dark);
+  background-color: var(--union-color-light);
   border-radius: 6px;
   transition: color 0.2s, background-color 0.2s;
 }
 
 .tab.active {
-  color: var(--union-color-dark);
-}
-
-.variant-flyte .tab.active {
-  color: var(--flyte-color-dark);
+  color: var(--union-dark);
 }
 
 .tab.active::after {

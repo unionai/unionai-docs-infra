@@ -20,7 +20,7 @@
   transition: color 0.2s;
 }
 .breadcrumb-item a:hover {
-  color: var(--union-color-dark);
+  color: var(--union-color);
 }
 .breadcrumb-item.active {
   color: var(--text-color);

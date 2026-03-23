@@ -1,0 +1,52 @@
+#runllm-trigger {
+  position: fixed;
+  bottom: 64px;
+  right: 64px;
+  padding: 14px 28px;
+  border-radius: 28px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  border: 1px solid var(--union-color);
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 9999;
+  font-size: 16px;
+  font-weight: 500;
+  transition: box-shadow 0.2s;
+  touch-action: none;
+}
+
+#runllm-trigger .runllm-sparkle {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: block;
+  background-color: var(--union-color);
+  -webkit-mask-image: url("../images/ask-ai.svg");
+  mask-image: url("../images/ask-ai.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+#runllm-trigger:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+#runllm-trigger:active {
+  cursor: grabbing;
+}
+
+[data-theme="dark"] #runllm-trigger {
+  background: var(--sidebar-bg);
+  color: var(--text-color);
+  border: 2px solid var(--union-color-dark);
+}

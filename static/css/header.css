@@ -25,8 +25,14 @@ header .separator {
   margin-left: 0.5rem;
 }
 
+.logo-container a:first-child {
+  height: 32px;
+}
+
 .logo-container .title {
   color: unset;
+  font-weight: 400;
+  font-size: 1.25rem;
   white-space: nowrap;
 }
 
@@ -123,14 +129,18 @@ sl-button.signup-button::part(base) {
   border-color: var(--union-color) !important;
 }
 
+[data-theme="dark"] .variant-flyte sl-button.signup-button::part(base) {
+  color: var(--text-color) !important;
+}
+
 sl-button.signup-button::part(base):hover {
   border-color: var(--union-color-dark) !important;
   background-color: var(--union-color-dark) !important;
 }
 
 .variant-flyte sl-button.signup-button::part(base):hover {
-  border-color: var(--union-color-light) !important;
-  background-color: var(--union-color-light) !important;
+  border-color: var(--union-color-dark) !important;
+  background-color: var(--union-color-dark) !important;
 }
 
 .old-version {

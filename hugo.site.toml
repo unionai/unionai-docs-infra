@@ -156,12 +156,12 @@ byoc = "map"
 selfmanaged = "map"
 
 [params.key.logo]
-flyte = "icon-logo-flyte.png"
+flyte = "icon-logo-flyte.svg"
 byoc = "icon-logo.svg"
 selfmanaged = "icon-logo.svg"
 
 [params.key.favicon]
-flyte = "icon-logo-flyte.png"
+flyte = "icon-logo-flyte.svg"
 byoc = "favicon.ico"
 selfmanaged = "favicon.ico"
 
