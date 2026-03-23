@@ -1,6 +1,6 @@
 .container .toc-container {
   position: fixed;
-  top: calc(var(--header-height) + var(--tabs-height) + 1px);
+  top: calc(var(--header-height) + var(--tabs-height) + 50px);
   bottom: 0;
   right: var(--scrollbar-width);
   width: var(--toc-width);

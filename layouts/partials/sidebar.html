@@ -142,10 +142,10 @@
                   <div class="content">
                     {{- if and .page.IsSection (gt (len .page.Pages) 0) -}}
                         {{- if not .page.Params.top_menu -}}
-                          <img src="{{- "images/chevron-down.svg" | relURL }}" class="chevron{{ if not $isActive }} rotated{{ end -}}" />
+                          <span class="chevron{{ if not $isActive }} rotated{{ end -}}" aria-hidden="true"></span>
                         {{- end -}}
                     {{- else -}}
-                      <img src="{{- "images/pixel.svg" | relURL }}" class="chevron hidden" />
+                      <span class="chevron hidden" aria-hidden="true"></span>
                     {{- end -}}
                     <div style="flex: 1" {{- if .page.IsSection }} itemprop="name"{{ end -}}>{{- partial "page-title.html" .page -}}</div>
                     {{- if and $access.variant $access.excluded -}}
