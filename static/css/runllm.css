@@ -44,3 +44,9 @@
 #runllm-trigger:active {
   cursor: grabbing;
 }
+
+[data-theme="dark"] #runllm-trigger {
+  background: var(--sidebar-bg);
+  color: var(--text-color);
+  border: 2px solid var(--union-color-dark);
+}
