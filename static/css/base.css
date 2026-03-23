@@ -81,12 +81,15 @@
   --primary-color: var(--union-color-light);
   --union-color: #6f2aef;
   --union-color-light: #9065e1;
-  --union-color-dark: #621ce4;
+  --union-color-dark: #43139d;
   --union-color-very-light: #966fde;
   --docsearch-primary-color: #6f2aef !important;
   --docsearch-highlight-color: #6f2aef !important;
   --table-row-even: #1a1720;
   --table-row-hover: #292532;
+  --bg-color: #050310;
+  --sidebar-bg: #100e18;
+  --toc-bg: #050310;
 }
 
 * {
