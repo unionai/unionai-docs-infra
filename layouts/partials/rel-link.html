@@ -4,8 +4,21 @@
 {{/* If a shortcode starts the link, use it AS IS */}}
 {{- if or $hasShortcode (hasPrefix $target "http://") (hasPrefix $target "https://") (hasPrefix $target "mailto:") -}}
     {{/* do nothing */}}
-{{- else if or (in page.RelPermalink "/api-reference/") -}}
-    {{/* do nothing */}}
+{{- else if (in page.RelPermalink "/api-reference/") -}}
+    {{/* API reference: strip _index and .md but don't rewrite relative paths */}}
+    {{ $fragment := "" }}
+    {{ $path := $target }}
+    {{ if (in $target "#") }}
+        {{ $parts := split $target "#" }}
+        {{ $path = index $parts 0 }}
+        {{ $fragment = printf "#%s" (index $parts 1) }}
+    {{ end }}
+    {{ $path = strings.TrimSuffix ".md" $path }}
+    {{ if or (eq $path "_index") (hasSuffix $path "/_index") }}
+        {{ $path = strings.TrimSuffix "_index" $path }}
+        {{ $path = strings.TrimSuffix "/" $path }}
+    {{ end }}
+    {{- $link = printf "%s%s" $path $fragment -}}
 {{- else -}}
     {{/* 1. Extract fragment FIRST, before any suffix trimming */}}
     {{ $fragment := "" }}
