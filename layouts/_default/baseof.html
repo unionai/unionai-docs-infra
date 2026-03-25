@@ -1,6 +1,11 @@
 {{- $v := now.Format "20060102150405" }}
 {{- $variant := .Site.Params.variant -}}
 {{- $access := partial "page-allowed.html" . -}}
+{{- $topSection := false -}}
+{{- range .Site.Sections -}}
+  {{- if eq $.Section .Section -}}{{- $topSection = . -}}{{- end -}}
+{{- end -}}
+{{- $hasTier2 := and $topSection $topSection.Params.tier2_band -}}
 {{- if $access.allowed -}}
 <!DOCTYPE html>
 <html lang="{{- .Site.Language.Lang -}}">
@@ -83,7 +88,7 @@
     <link rel="stylesheet" href="{{- "css/runllm.css" | relURL -}}?v={{- $v -}}" />
     {{- end -}}
   </head>
-  <body class="variant-{{ .Site.Params.variant }}">
+  <body class="variant-{{ .Site.Params.variant }}{{- if $hasTier2 }} has-tier2{{- end -}}">
     <!-- Google Tag Manager (noscript) -->
     <noscript>
       <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MB6L88S" height="0" width="0" style="display:none;visibility:hidden"></iframe>
@@ -92,6 +97,7 @@
     {{- partial "flyte-banner.html" . -}}
     <header>{{- partial "header.html" . -}}</header>
     <div class="tabs">{{- partial "tabs.html" (dict "page" .) -}}</div>
+    {{- partial "tier2.html" . -}}
     <div class="container">
       <div class="sidebar">{{- partial "sidebar.html" . -}}</div>
       <div class="main-content">
