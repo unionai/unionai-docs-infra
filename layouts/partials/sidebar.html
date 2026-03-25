@@ -67,8 +67,23 @@
     {{- $current := . -}}
     {{- range .Site.Sections -}}
         {{- if eq $current.Section .Section -}}
-          {{- range .Pages.ByWeight -}}
-            {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
+          {{- if .Params.tier2_band -}}
+            {{- /* Tier 2 active: find the active child and render only its subtree */ -}}
+            {{- $activeChild := false -}}
+            {{- range .Pages.ByWeight -}}
+              {{- if and (not $activeChild) (hasPrefix $current.RelPermalink .RelPermalink) -}}
+                {{- $activeChild = . -}}
+              {{- end -}}
+            {{- end -}}
+            {{- if and $activeChild $activeChild.IsSection -}}
+              {{- range $activeChild.Pages.ByWeight -}}
+                {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
+              {{- end -}}
+            {{- end -}}
+          {{- else -}}
+            {{- range .Pages.ByWeight -}}
+              {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
+            {{- end -}}
           {{- end -}}
         {{- end -}}
     {{- end -}}
