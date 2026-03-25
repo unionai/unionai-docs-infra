@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple, Optional
 from lib.generate.docstring import docstring_summary
 from lib.generate.hugo import FrontMatterExtra, write_front_matter
 from lib.generate.methods import (
+    generate_examples,
     generate_method,
     generate_method_decl,
     generate_method_list,
@@ -202,16 +203,19 @@ def generate_class_details(
             output.write(f"{doc}\n\n")
         if info["parent"] != ProtocolBaseClass:
             generate_params(init_method, output)
-        # Render __init__-level return/raises/notes
+        # Render __init__-level return/raises/notes/examples
         generate_return_doc(init_method, output)
         generate_raises(init_method, output)
         generate_notes(init_method, output)
+        generate_examples(init_method, output)
 
-    # Render class-level raises/notes (from class docstring, if not already on __init__)
+    # Render class-level raises/notes/examples (from class docstring, if not already on __init__)
     if info.get("raises") and not (init_method and init_method.get("raises")):
         generate_raises(info, output)
     if info.get("notes") and not (init_method and init_method.get("notes")):
         generate_notes(info, output)
+    if info.get("examples") and not (init_method and init_method.get("examples")):
+        generate_examples(info, output)
 
     if info["properties"]:
         output.write(f"{'#' * (doc_level)} Properties\n\n")

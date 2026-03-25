@@ -41,6 +41,14 @@
     display: none;
   }
 
+  .tier2-nav {
+    display: none;
+  }
+
+  body.has-tier2 {
+    --tier2-height: 0px;
+  }
+
   .sidebar .tabs-nav {
     display: block;
   }

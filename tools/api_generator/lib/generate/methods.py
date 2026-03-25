@@ -252,6 +252,32 @@ def generate_notes(info, output: io.TextIOWrapper):
     output.write("\n")
 
 
+def generate_examples(info, output: io.TextIOWrapper):
+    """Render Example/Examples sections. Wraps code content in fenced code blocks."""
+    examples = info.get("examples")
+    if not examples:
+        return
+    text = examples.strip()
+    output.write("**Example:**\n\n")
+    if "```" in text:
+        # Already has fenced code blocks — write as-is
+        output.write(text + "\n\n")
+    elif ">>>" in text:
+        # Doctest markers — wrap in fenced block
+        output.write("```python\n")
+        output.write(text + "\n")
+        output.write("```\n\n")
+    elif all(line == "" or line.startswith("    ") or line.startswith("\t") for line in text.split("\n")):
+        # Indented code block (from RST Example::) — dedent and fence
+        import textwrap
+        output.write("```python\n")
+        output.write(textwrap.dedent(text) + "\n")
+        output.write("```\n\n")
+    else:
+        # Regular text example
+        output.write(text + "\n\n")
+
+
 def generate_method(method: MethodInfo, output: io.TextIOWrapper, doc_level: int):
     output.write(f"{'#' * (doc_level+1)} {method['name']}()\n\n")
     generate_method_decl(method["name"], method, output)
@@ -263,3 +289,4 @@ def generate_method(method: MethodInfo, output: io.TextIOWrapper, doc_level: int
     generate_return_doc(method, output)
     generate_raises(method, output)
     generate_notes(method, output)
+    generate_examples(method, output)
