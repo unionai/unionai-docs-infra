@@ -1,5 +1,6 @@
 import inspect
 import json
+import re
 from typing import TypedDict, Optional
 
 from lib.ptypes import ParamDict, ParamInfo
@@ -15,6 +16,8 @@ _GOOGLE_SECTIONS = {
     "Raises:": "raises",
     "Note:": "notes",
     "Notes:": "notes",
+    "Example:": "examples",
+    "Examples:": "examples",
 }
 
 # Sphinx return-like directives
@@ -27,6 +30,7 @@ class DocstringInfo(TypedDict):
     return_doc: Optional[str]
     raises: Optional[list]
     notes: Optional[str]
+    examples: Optional[str]
 
 
 def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
@@ -43,13 +47,21 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
     except:
         pass
 
+    # Normalize indentation: handles docstrings where the first line is on
+    # the same line as """ (no indent) but continuation lines are indented.
+    docstring = inspect.cleandoc(docstring)
+
+    # Convert RST-style "Example::" to Google-style "Example:" so the
+    # section parser picks it up. Also handles "Examples::".
+    docstring = re.sub(r'^(\s*Examples?)::', r'\1:', docstring, flags=re.MULTILINE)
+
     # Removes the special !!!! notes
     docstring = format_three_exclamation_notes(docstring)
 
     lines = docstring.split("\n")
 
     result = DocstringInfo(
-        docstring="", params={}, return_doc=None, raises=None, notes=None
+        docstring="", params={}, return_doc=None, raises=None, notes=None, examples=None
     )
 
     sphinx_param = None     # Current Sphinx :param: being accumulated
@@ -180,6 +192,18 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
                 result["notes"] += "\n" + content
             else:
                 result["notes"] = content
+            continue
+
+        if section == "examples":
+            if section_indent == -1:
+                if not stripped:
+                    continue  # Skip leading blanks
+                section_indent = len(line) - len(line.lstrip())
+            content = line[section_indent:] if section_indent > 0 else line
+            if result["examples"] is not None:
+                result["examples"] += "\n" + content
+            else:
+                result["examples"] = content
             continue
 
         # --- No Google section: Sphinx directives and regular text ---

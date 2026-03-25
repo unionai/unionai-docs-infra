@@ -1,4 +1,6 @@
+import inspect
 import os
+import re
 from typing import Dict, List, Optional
 
 from lib.generate.classes import generate_class_details, generate_classes_and_error_list
@@ -87,6 +89,8 @@ def generate_package_folders(
 
             doc = pkg["doc"] if "doc" in pkg else ""
             if doc:
+                doc = inspect.cleandoc(doc)
+                doc = re.sub(r'^(\s*Examples?)::', r'\1:', doc, flags=re.MULTILINE)
                 index.write(f"{doc}\n")
 
             classDefs = classes[pkg["name"]]
