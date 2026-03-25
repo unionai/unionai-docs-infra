@@ -95,7 +95,7 @@ def main() -> None:
         if plugin.get("frozen"):
             continue
         if plugin.get("install"):
-            packages.append(plugin["install"])
+            packages.extend(shlex.split(plugin["install"]))
         elif plugin.get("extras"):
             extras = ",".join(plugin["extras"])
             packages.append(f"{plugin['package']}[{extras}]")
