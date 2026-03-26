@@ -2389,3 +2389,12 @@ www.union.ai/docs/v2/selfmanaged/deployment/byok-data-plane-setup-on-oci,https:/
 www.union.ai/docs/v2/byoc/deployment/byok-data-plane-setup-on-AWS,https://www.union.ai/docs/v2/byoc/deployment/selfmanaged-aws/manual,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-AWS,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws/manual,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/byok-data-plane-setup-on-AWS,https://www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged-aws/manual,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/security/company-overview,https://www.union.ai/docs/v2/byoc/security,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/security/company-overview,https://www.union.ai/docs/v2/flyte/security,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/security/company-overview,https://www.union.ai/docs/v2/selfmanaged/security,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/security/security-faq,https://www.union.ai/docs/v2/byoc/security,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/security/security-faq,https://www.union.ai/docs/v2/flyte/security,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/security/security-faq,https://www.union.ai/docs/v2/selfmanaged/security,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/security/appendix,https://www.union.ai/docs/v2/byoc/security/data-residency-summary,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/security/appendix,https://www.union.ai/docs/v2/flyte/security/data-residency-summary,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/security/appendix,https://www.union.ai/docs/v2/selfmanaged/security/data-residency-summary,302,TRUE,FALSE,TRUE,TRUE
