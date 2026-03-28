@@ -35,7 +35,7 @@ from _repo import INFRA_ROOT
 REDIRECTS_FILE = INFRA_ROOT / "redirects.csv"
 
 # Valid variants that should appear in destinations (serverless is discontinued)
-ACTIVE_VARIANTS = {"flyte", "byoc", "selfmanaged"}
+ACTIVE_VARIANTS = {"flyte", "byoc", "selfmanaged", "union"}
 DISCONTINUED_VARIANTS = {"serverless"}
 ALL_KNOWN_VARIANTS = ACTIVE_VARIANTS | DISCONTINUED_VARIANTS
 

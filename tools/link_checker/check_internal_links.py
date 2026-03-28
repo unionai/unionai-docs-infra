@@ -6,7 +6,7 @@ rules, and reports broken links per variant.  Also enforces link notation
 standards (no .md extension, explicit _index for section references, etc.).
 
 Usage:
-    python tools/link_checker/check_internal_links.py [--variant byoc] [--exclude-file .link-checker-exclude]
+    python tools/link_checker/check_internal_links.py [--variant union] [--exclude-file .link-checker-exclude]
 """
 
 import argparse
@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-VARIANTS = ["flyte", "byoc", "selfmanaged"]
+VARIANTS = ["flyte", "byoc", "selfmanaged", "union"]
 CONTENT_DIR = Path("content")
 
 

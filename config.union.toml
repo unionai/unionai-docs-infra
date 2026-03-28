@@ -1,0 +1,5 @@
+baseURL = '/docs/union/'
+
+[params]
+_merge = "deep"
+variant = "union"
