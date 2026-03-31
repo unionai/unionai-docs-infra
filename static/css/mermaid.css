@@ -53,6 +53,6 @@
 }
 
 .mermaid-fullscreen .mermaid svg {
-  max-width: 95vw;
-  max-height: 90vh;
+  width: 95vw;
+  height: 90vh;
 }
