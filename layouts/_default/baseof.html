@@ -58,6 +58,15 @@
       });
       await renderMermaid();
 
+      // Close fullscreen mermaid on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.mermaid-fullscreen').forEach(el => {
+            el.classList.remove('mermaid-fullscreen');
+          });
+        }
+      });
+
       // Re-render on theme toggle
       const toggle = document.getElementById('theme-toggle');
       if (toggle) {
