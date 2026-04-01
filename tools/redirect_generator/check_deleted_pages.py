@@ -235,6 +235,9 @@ def main() -> int:
             still_exist.append(path)
         elif f"{stem}/_index.md" in existing_paths:
             still_exist.append(path)
+        elif rel.endswith('/_index.md') and rel.removesuffix('/_index.md') + '.md' in existing_paths:
+            # foo/_index.md -> foo.md conversion (section to leaf page)
+            still_exist.append(path)
         else:
             truly_deleted.append(path)
 
