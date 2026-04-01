@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.8"
+# requires-python = ">=3.10"
 # ///
 """
 Check if committed Helm chart docs are up-to-date with the helm-charts repo.

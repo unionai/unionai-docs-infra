@@ -2,7 +2,7 @@
 name = "unionai-docs-tools"
 version = "0.1.0"
 description = "Documentation build tools for Union.ai"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "toml>=0.10.2",
 ]
