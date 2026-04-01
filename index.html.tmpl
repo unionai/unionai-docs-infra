@@ -23,22 +23,7 @@
 
             setTimeout(() => {
                 if ("@@BASE@@".indexOf("BASE") === -1) {
-                    // Redirect to the first available variant directory.
-                    const candidates = ["union", "byoc"];
-                    const base = "@@BASE@@";
-                    (async () => {
-                        for (const v of candidates) {
-                            try {
-                                const resp = await fetch(base + "/" + v + "/", {method: "HEAD"});
-                                if (resp.ok) {
-                                    document.location = base + "/" + v + "/";
-                                    return;
-                                }
-                            } catch (e) { /* try next */ }
-                        }
-                        // Fallback: try first candidate anyway
-                        document.location = base + "/" + candidates[0] + "/";
-                    })();
+                    document.location = "@@BASE@@/@@DEFAULT_VARIANT@@/";
                 }
             }, 0);
         </script>
@@ -53,7 +38,7 @@
             <p>You are being automatically redirected to the documentation.</p>
 
             <p>
-                If this page does not automatically refresh, please <a id="fallback_link" href="@@BASE@@/union/">click here</a>.
+                If this page does not automatically refresh, please <a id="fallback_link" href="@@BASE@@/@@DEFAULT_VARIANT@@/">click here</a>.
             </p>
         </div>
     </body>
