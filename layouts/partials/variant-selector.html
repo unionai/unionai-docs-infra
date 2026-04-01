@@ -51,11 +51,16 @@
     disabled
 {{- end -}}
 >
+        {{- /* Only show variants that are referenced (+ or -) in the current page's variants field.
+               This filters out variants from other branches (e.g., byoc/selfmanaged on v2, union on v1). */ -}}
         {{- range $variants -}}
             {{- $variantName := .name -}}
             {{- $isAllowed := in $variantAcl (printf "+%s" $variantName) -}}
+            {{- $isDeclared := or $isAllowed (in $variantAcl (printf "-%s" $variantName)) -}}
+            {{- if $isDeclared -}}
             <option value="{{- $variantName -}}" data-allowed="{{- $isAllowed -}}" {{- if eq $variantName $.Site.Params.variant -}}selected{{ end -}}>
                 {{- index $.Site.Params.key "product_full_name" $variantName -}}
             </option>
+            {{- end -}}
         {{- end -}}
 </select>

@@ -10,6 +10,7 @@ check_mentions_docs() {
                      | grep -v content/api-reference/flyte-cli.md \
                      | grep -v content/api-reference/flyte-context.md \
                      | grep -v content/deployment/helm-chart-reference/ \
+                     | grep -v content/deployment/selfmanaged/helm-chart-reference/ \
                      | cut -d: -f1 | sort | uniq)
   readonly mentions_doc
 

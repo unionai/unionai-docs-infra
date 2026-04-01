@@ -593,7 +593,8 @@ class LLMDocBuilder:
         variant_names = {
             'flyte': 'Flyte Open Source',
             'byoc': 'Union.ai BYOC (Bring Your Own Cloud)',
-            'selfmanaged': 'Union.ai Self-managed'
+            'selfmanaged': 'Union.ai Self-managed',
+            'union': 'Union.ai'
         }
 
         variant_display = variant_names.get(variant, variant.title())

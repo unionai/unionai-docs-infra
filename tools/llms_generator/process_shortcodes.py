@@ -6,7 +6,7 @@ This script post-processes Hugo-generated markdown files to convert shortcodes
 into clean markdown equivalents.
 
 Usage:
-    python process_shortcodes.py --variant=byoc --version=v2 --input-dir=dist/docs/v2/byoc/tmp-md --output-dir=dist/docs/v2/byoc
+    python process_shortcodes.py --variant=union --version=v2 --input-dir=dist/docs/v2/union/tmp-md --output-dir=dist/docs/v2/union
 """
 
 import argparse
@@ -65,7 +65,7 @@ class ShortcodeProcessor:
 
             # Transform the nested structure to a flat mapping per variant
             mappings = {}
-            variants = ['flyte', 'byoc', 'selfmanaged']
+            variants = ['flyte', 'byoc', 'selfmanaged', 'union']
 
             for variant in variants:
                 mappings[variant] = {}
@@ -317,7 +317,7 @@ class ShortcodeProcessor:
         def replace_variant(match):
             variant_spec, variant_content = match.groups()
 
-            # Parse variant specification (e.g., "byoc selfmanaged" or "!flyte")
+            # Parse variant specification (e.g., "union" or "!flyte")
             # Handle space-separated variants and negation
             variants = [v.strip() for v in variant_spec.split()]
 
@@ -654,7 +654,7 @@ class ShortcodeProcessor:
 
 def main():
     parser = argparse.ArgumentParser(description='Process Hugo shortcodes in markdown files')
-    parser.add_argument('--variant', required=True, help='Site variant (e.g., byoc, flyte)')
+    parser.add_argument('--variant', required=True, help='Site variant (e.g., union, flyte)')
     parser.add_argument('--version', help='Documentation version (e.g., v1, v2)', default='v2')
     parser.add_argument('--input-dir', required=True, help='Input directory with markdown files')
     parser.add_argument('--output-dir', required=True, help='Output directory for processed files')
