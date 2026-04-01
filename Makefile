@@ -1,9 +1,10 @@
 # unionai-docs-infra/Makefile — Shared build logic.
 # Invoked from the thin top-level Makefile via: make -f unionai-docs-infra/Makefile <target>
 # Working directory is always the repo root (not unionai-docs-infra/).
-# VERSION, VARIANTS, REPO_ROOT, PORT are exported by the top-level Makefile.
+# VERSION, VARIANTS, DEFAULT_VARIANT, REPO_ROOT, PORT are exported by the top-level Makefile.
 
 PREFIX := $(if $(VERSION),docs/$(VERSION),docs)
+DEFAULT_VARIANT ?= byoc
 PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
@@ -33,8 +34,8 @@ base:
 	rm -rf dist
 	mkdir -p dist
 	mkdir -p dist/docs
-	cat unionai-docs-infra/index.html.tmpl | sed 's#@@BASE@@#/${PREFIX}#g' > dist/index.html
-	cat unionai-docs-infra/index.html.tmpl | sed 's#@@BASE@@#/${PREFIX}#g' > dist/docs/index.html
+	cat unionai-docs-infra/index.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/index.html
+	cat unionai-docs-infra/index.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/docs/index.html
 
 dist:
 	@VARIANTS="$(VARIANTS)" PARALLEL_HUGO="$(PARALLEL_HUGO)" unionai-docs-infra/scripts/build_dist.sh
