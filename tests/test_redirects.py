@@ -455,17 +455,17 @@ class TestServerlessMigration:
             f"{len(bad)} destinations still contain /serverless/:\n"
             + "\n".join(f"  line {n}: {d}" for n, d in bad[:10]))
 
-    def test_serverless_sources_redirect_to_byoc(self):
-        """Every source with /serverless/ should redirect to /byoc/."""
+    def test_serverless_sources_redirect_to_union(self):
+        """Every source with /serverless/ should redirect to /union/ (or /byoc/ for v1)."""
         rows = load_rows()
         bad = []
         for i, row in enumerate(rows, 1):
             src = parse_source_url(row[0])
             dst = parse_dest_url(row[1])
-            if src.get("variant") == "serverless" and dst.get("variant") != "byoc":
+            if src.get("variant") == "serverless" and dst.get("variant") not in ("byoc", "union"):
                 bad.append((i, row[0], row[1], dst.get("variant")))
         assert not bad, (
-            f"{len(bad)} serverless sources don't redirect to BYOC:\n"
+            f"{len(bad)} serverless sources don't redirect to union/byoc:\n"
             + "\n".join(f"  line {n}: {s} -> {d} (variant: {v})"
                         for n, s, d, v in bad[:10]))
 
@@ -565,14 +565,14 @@ class TestEdgeCases:
         rows = load_rows()
         roots = [row for row in rows if row[0].endswith("serverless/")]
         for row in roots:
-            assert "byoc" in row[1], (
-                f"Root redirect {row[0]} doesn't point to byoc: {row[1]}")
+            assert "byoc" in row[1] or "union" in row[1], (
+                f"Root redirect {row[0]} doesn't point to byoc/union: {row[1]}")
 
     def test_404_page_redirects(self):
         rows = load_rows()
         fours = [row for row in rows if "serverless/404" in row[0]]
         for row in fours:
-            assert "byoc/404" in row[1], (
+            assert "byoc/404" in row[1] or "union/404" in row[1], (
                 f"404 redirect wrong: {row[0]} -> {row[1]}")
 
     def test_api_reference_redirects(self):
