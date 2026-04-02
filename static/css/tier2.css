@@ -38,8 +38,8 @@
 }
 
 .tier2-tab .text:hover {
-  color: var(--union-color-dark);
-  background-color: var(--union-color-light);
+  color: var(--text-color);
+  background-color: var(--border-color);
   border-radius: 6px;
   transition: color 0.2s, background-color 0.2s;
 }
