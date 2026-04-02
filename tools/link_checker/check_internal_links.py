@@ -202,8 +202,15 @@ def classify_link(url: str) -> str:
 
 
 def resolve_relative_link(link_path: str, source_file: Path, content_dir: Path,
-                          variant_pages: set[str], page_files: dict[str, Path]) -> tuple[bool, str, Path | None]:
+                          variant_pages: set[str], page_files: dict[str, Path],
+                          browser_resolves: bool = False) -> tuple[bool, str, Path | None]:
     """Resolve a relative link and check if it exists in the given variant.
+
+    Args:
+        browser_resolves: If True, resolve as the browser would (for pages where
+            Hugo's render hook passes through links without rewriting). Non-_index
+            pages render to page_name/index.html, so relative links resolve from
+            one level deeper than the filesystem source directory.
 
     Returns:
         (is_valid, error_message, target_file_path)
@@ -214,6 +221,11 @@ def resolve_relative_link(link_path: str, source_file: Path, content_dir: Path,
     anchor = parts[1] if len(parts) > 1 else None
 
     source_dir = source_file.parent
+
+    # For browser-resolved links from non-_index pages, the URL is one level
+    # deeper than the filesystem path (page.md -> page/index.html).
+    if browser_resolves and source_file.name != "_index.md":
+        source_dir = source_dir / source_file.stem
 
     # Handle empty file_part (anchor-only was already classified separately)
     if not file_part:
@@ -405,10 +417,22 @@ def check_variant(variant: str, content_dir: Path, variant_pages: dict[str, set[
         if not source_file:
             continue
 
-        # Skip api-reference (auto-generated, has render hook passthrough)
         source_rel = str(source_file.relative_to(content_dir))
-        if source_rel.startswith("api-reference"):
+
+        # Skip auto-generated API reference content (generated from source
+        # code docstrings — fix link issues in the generator, not the output)
+        if source_rel.startswith((
+            "api-reference/flyte-sdk",
+            "api-reference/flyte-cli",
+            "api-reference/flyte-context",
+            "api-reference/uctl-cli",
+            "api-reference/integrations",
+        )):
             continue
+
+        # Pages under api-reference/ use render hook passthrough (see
+        # rel-link.html) — links are resolved by the browser, not Hugo
+        browser_resolves = source_rel.startswith("api-reference/")
 
         try:
             content = source_file.read_text(encoding="utf-8")
@@ -439,7 +463,8 @@ def check_variant(variant: str, content_dir: Path, variant_pages: dict[str, set[
 
             # Relative link — resolve and validate
             is_valid, err_msg, target_file = resolve_relative_link(
-                link_url, source_file, content_dir, pages, page_files
+                link_url, source_file, content_dir, pages, page_files,
+                browser_resolves=browser_resolves
             )
 
             if not is_valid:
