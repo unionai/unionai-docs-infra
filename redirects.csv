@@ -2456,3 +2456,5 @@ www.union.ai/docs/v2/union/user-guide/getting-started/basic-concepts,https://www
 www.union.ai/docs/v2/union/user-guide/tasks-and-environments,https://www.union.ai/docs/v2/union/user-guide/task-configuration,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/security,https://www.union.ai/docs/v2/union/security,302,TRUE,FALSE,TRUE,TRUE
