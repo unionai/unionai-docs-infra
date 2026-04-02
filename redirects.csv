@@ -2454,5 +2454,5 @@ www.union.ai/docs/v2/union/security/security-faq,https://www.union.ai/docs/v2/un
 www.union.ai/docs/v2/union/user-guide/getting-started,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/user-guide/getting-started/basic-concepts,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/user-guide/tasks-and-environments,https://www.union.ai/docs/v2/union/user-guide/task-configuration,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v2/byoc,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
