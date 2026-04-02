@@ -18,7 +18,7 @@
       {{- if $access.allowed -}}
         {{- $isActive := hasPrefix $.RelPermalink .RelPermalink -}}
         <a href="{{- .RelPermalink -}}" class="tier2-tab{{- if $isActive }} active{{- end -}}">
-          {{- .Title -}}
+          <span class="text">{{- .Title -}}</span>
         </a>
       {{- end -}}
     {{- end -}}
