@@ -28,6 +28,10 @@
   white-space: nowrap;
 }
 
+[data-theme="dark"] .tier2-tab {
+  color: var(--text-color);
+}
+
 .tier2-tab:hover {
   color: var(--text-color);
   text-decoration: none;
