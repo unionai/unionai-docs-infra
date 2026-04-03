@@ -139,7 +139,19 @@
   font-size: 1.25rem;
 }
 
-.tabs-buttons,
+.drawer-sidebar .drawer-section-tabs {
+  padding: 0 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.drawer-sidebar .drawer-section-tabs-label {
+  display: block;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+}
+
 .tabs-buttons select {
   font-size: 1rem;
   padding: 0.5rem;

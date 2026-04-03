@@ -1,8 +1,10 @@
 {{- $currentPage := .page -}}
 <nav class="tabs-nav">
     {{- if eq .style "buttons" -}}
-    <div class="tabs-buttons">
-        <select onchange="handleTopicChange(event)">
+    <div class="drawer-section-tabs">
+        <label for="drawer-section-select" class="drawer-section-tabs-label">Section:</label>
+        <div class="tabs-buttons">
+        <select id="drawer-section-select" onchange="handleTopicChange(event)">
         {{- range .page.Site.Sections.ByWeight -}}
             {{- $access := partial "page-allowed.html" . -}}
             {{- if and $access.allowed .Params.top_menu -}}
@@ -12,6 +14,7 @@
             {{- end -}}
         {{- end -}}
         </select>
+        </div>
     </div>
     <script>
         function handleTopicChange(event) {

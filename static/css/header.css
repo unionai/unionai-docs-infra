@@ -13,6 +13,24 @@ header {
   padding: 0.5rem;
 }
 
+header .product-version-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+header .product-version-controls .version-selector-block {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+header .header-toolbar-spacer {
+  min-width: 0;
+}
+
 header .separator {
   margin: 0 2rem;
   opacity: 0.5;
@@ -121,6 +139,47 @@ header label {
 
 header .toggle-sidebar {
   display: none;
+}
+
+/* Product + version selectors live in the mobile drawer below 1200px (see sidebar.html) */
+.drawer-sidebar .drawer-product-version-host {
+  width: 100%;
+}
+
+.drawer-sidebar .product-version-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 0 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.drawer-sidebar .product-version-controls label {
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+}
+
+.drawer-sidebar .product-version-controls .version-selector-block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.drawer-sidebar .product-version-controls #variant-selector,
+.drawer-sidebar .product-version-controls #version-selector {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+}
+
+.drawer-sidebar .product-version-controls .developer {
+  position: static;
+  margin: 0;
 }
 
 sl-button.signup-button::part(base) {

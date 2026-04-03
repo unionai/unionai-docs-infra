@@ -1,7 +1,8 @@
 {{- $versions := .Site.Params.versions -}}
 {{- $currentVersion := .Site.Params.current_version | default (index $versions 0) -}}
 {{- if $versions -}}
-Version:
+<div class="version-selector-block">
+<label for="version-selector">Version:</label>
 <select id="version-selector" onchange="handleVersionChange(event)"
 {{- if not hugo.IsProduction -}}
     onmouseenter="document.getElementById('verwarn').style.display = '';"
@@ -15,4 +16,5 @@ Version:
         </option>
     {{- end -}}
 </select>
+</div>
 {{- end -}}
