@@ -33,10 +33,6 @@
     margin: 0 0.75rem;
   }
 
-  header label {
-    display: none;
-  }
-
   body > .tabs {
     display: none;
   }
@@ -66,9 +62,5 @@
   header .signup,
   header .search {
     display: none;
-  }
-
-  header #variant-selector {
-    margin-left: 1rem;
   }
 }

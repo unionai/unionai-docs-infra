@@ -6,6 +6,7 @@
   </div>
   <slot part="body">
     <div class="show-on-mobile">
+      <div class="drawer-product-version-host"></div>
       {{- partial "search.html" . -}}
       {{- partial "tabs.html" (dict "page" . "style" "buttons") -}}
       {{- partial "signup.html" . -}}
@@ -35,6 +36,11 @@
       drawer.show();
     });
 
+    const productVersion = document.querySelector('.product-version-controls');
+    const mobileProductHost = document.querySelector('.drawer-product-version-host');
+    const headerEl = document.querySelector('header');
+    const toolbarSpacer = document.querySelector('.header-toolbar-spacer');
+
     const evaluate = (matches) => {
       sidebar.parentNode.removeChild(sidebar);
 
@@ -46,6 +52,14 @@
       }
 
       openButton.style.display = matches ? 'none' : 'block';
+
+      if (productVersion && mobileProductHost && headerEl && toolbarSpacer) {
+        if (matches) {
+          headerEl.insertBefore(productVersion, toolbarSpacer);
+        } else {
+          mobileProductHost.appendChild(productVersion);
+        }
+      }
     }
 
     evaluate(prefersOpen.matches);

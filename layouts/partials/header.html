@@ -5,6 +5,7 @@
 </div>
 {{- partial "header-logo.html" . -}}
 <div class="separator">|</div>
+<div class="product-version-controls">
 <label for="variant-selector">Product:</label>
 {{- partial "variant-selector.html" . -}}
 {{- if not hugo.IsProduction -}}
@@ -18,7 +19,8 @@
     {{- $ver_warn -}}
 </div>
 {{- end -}}
-<div style="flex: 1;"></div>
+</div>
+<div class="header-toolbar-spacer" style="flex: 1;"></div>
 {{- partial "search.html" . -}}
 {{- partial "signup.html" . -}}
 <div class="theme-selector">
