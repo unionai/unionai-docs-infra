@@ -427,6 +427,7 @@ def check_variant(variant: str, content_dir: Path, variant_pages: dict[str, set[
             "api-reference/flyte-context",
             "api-reference/uctl-cli",
             "api-reference/integrations",
+            "api-reference/plugins",  # v1 equivalent of integrations/
         )):
             continue
 
