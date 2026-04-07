@@ -1,20 +1,20 @@
-/* Tier 2 secondary navigation band — matches tier 1 visual plane */
-.tier2-nav {
+/* Secondary topnav: horizontal navigation band shown below the primary top nav */
+.secondary-topnav {
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-color);
-  height: var(--tier2-height);
+  height: var(--secondary-topnav-height);
   padding: 0 1.5rem;
   z-index: 100;
 }
 
-.tier2-container {
+.secondary-topnav-container {
   display: flex;
   align-items: center;
   height: 100%;
   gap: 2rem;
 }
 
-.tier2-tab {
+.secondary-topnav-tab {
   padding: 0 0.5rem;
   height: 100%;
   display: flex;
@@ -28,27 +28,27 @@
   white-space: nowrap;
 }
 
-[data-theme="dark"] .tier2-tab {
+[data-theme="dark"] .secondary-topnav-tab {
   color: var(--text-color);
 }
 
-.tier2-tab:hover {
+.secondary-topnav-tab:hover {
   color: var(--text-color);
   text-decoration: none;
 }
 
-.tier2-tab .text {
+.secondary-topnav-tab .text {
   padding: 0.25rem 0.5rem;
 }
 
-.tier2-tab .text:hover {
+.secondary-topnav-tab .text:hover {
   color: var(--text-color);
   background-color: var(--border-color);
   border-radius: 6px;
   transition: color 0.2s, background-color 0.2s;
 }
 
-.tier2-tab.active::after {
+.secondary-topnav-tab.active::after {
   content: "";
   position: absolute;
   bottom: 0;

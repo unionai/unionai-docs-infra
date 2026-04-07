@@ -8,7 +8,7 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--tier2-height) - var(--banner-height));
+  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--secondary-topnav-height) - var(--banner-height));
 }
 
 .sidebar:has(> nav[enabled="false"]) {

@@ -37,7 +37,7 @@ custom_css = [
   "search.css",
   "sidebar.css",
   "tabs.css",
-  "tier2.css",
+  "secondary-topnav.css",
   "toc.css",
 ]
 custom_js = [

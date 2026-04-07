@@ -43,11 +43,11 @@
   --old-version-border: 3px solid var(--union-color);
   --old-version-background: hsl(0, 0%, 97%);
   --banner-height: 48px;
-  --tier2-height: 0px;
+  --secondary-topnav-height: 0px;
 }
 
-body.has-tier2 {
-  --tier2-height: 50px;
+body.has-secondary-topnav {
+  --secondary-topnav-height: 50px;
 }
 
 :root .variant-flyte {
@@ -114,7 +114,7 @@ body {
   z-index: 100;
 }
 .container {
-  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--tier2-height) - var(--banner-height));
+  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--secondary-topnav-height) - var(--banner-height));
   overflow-y: auto;
 }
 .main-content {
