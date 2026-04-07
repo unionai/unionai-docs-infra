@@ -143,7 +143,12 @@
         <div class="four-notice" style="display: none;">
           <sl-alert open variant="danger">
             <sl-icon slot="icon" name="info-circle"></sl-icon>
-            The page you navigated to <span class="four-page"></span> does not exist, so we brought you to the closest page to it.
+            <span class="four-notice-default">
+              The page you navigated to <span class="four-page"></span> does not exist, so we brought you to the closest page to it.
+            </span>
+            <span class="four-notice-variant-switch" style="display: none;">
+              You have switched from the <span class="four-from-variant"></span> to the <span class="four-to-variant"></span> variant of this site. There is no <span class="four-to-variant-2"></span> equivalent of <span class="four-page"></span>. We have taken you to the closest page in the <span class="four-to-variant-3"></span> variant.
+            </span>
           </sl-alert>
         </div>
         {{- partial "breadcrumb.html" . -}}
