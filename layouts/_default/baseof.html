@@ -1,11 +1,7 @@
 {{- $v := now.Format "20060102150405" }}
 {{- $variant := .Site.Params.variant -}}
 {{- $access := partial "page-allowed.html" . -}}
-{{- $topSection := false -}}
-{{- range .Site.Sections -}}
-  {{- if eq $.Section .Section -}}{{- $topSection = . -}}{{- end -}}
-{{- end -}}
-{{- $hasTier2 := and $topSection $topSection.Params.tier2_band -}}
+{{- $hasTier2 := partial "tier2-active.html" . -}}
 {{- if $access.allowed -}}
 <!DOCTYPE html>
 <html lang="{{- .Site.Language.Lang -}}">
