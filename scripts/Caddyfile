@@ -12,7 +12,26 @@ handle_errors {
         expression {http.error.status_code} == 404
     }
 
-    # Match specific product sections and serve appropriate 404 pages
+    # Versioned paths: /docs/v<N>/<variant>/...
+    @v_byoc_path {
+        path_regexp v_byoc ^/docs/(v[0-9]+)/byoc(/.*)?$
+    }
+    @v_selfmanaged_path {
+        path_regexp v_selfmanaged ^/docs/(v[0-9]+)/selfmanaged(/.*)?$
+    }
+    @v_union_path {
+        path_regexp v_union ^/docs/(v[0-9]+)/union(/.*)?$
+    }
+    @v_flyte_path {
+        path_regexp v_flyte ^/docs/(v[0-9]+)/flyte(/.*)?$
+    }
+
+    rewrite @v_byoc_path /docs/{re.v_byoc.1}/byoc/404.html
+    rewrite @v_selfmanaged_path /docs/{re.v_selfmanaged.1}/selfmanaged/404.html
+    rewrite @v_union_path /docs/{re.v_union.1}/union/404.html
+    rewrite @v_flyte_path /docs/{re.v_flyte.1}/flyte/404.html
+
+    # Unversioned paths (legacy): /docs/<variant>/...
     @byoc_path {
         path_regexp byoc ^/docs/byoc(/.*)?$
     }
@@ -26,7 +45,6 @@ handle_errors {
         path_regexp flyte ^/docs/flyte(/.*)?$
     }
 
-    # Rewrite to appropriate 404 pages based on path
     rewrite @byoc_path /docs/byoc/404.html
     rewrite @selfmanaged_path /docs/selfmanaged/404.html
     rewrite @union_path /docs/union/404.html

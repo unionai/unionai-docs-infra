@@ -43,3 +43,97 @@
 .four-o-four.container .direct {
     display: block;
 }
+
+/* Toast-style 404 walk-up notice card.
+   Slides up from the bottom-right after a walk-up redirect, then auto-dismisses
+   (or can be manually closed). Hidden by default; shown by 404.js. */
+.four-notice {
+    position: fixed;
+    /* Sit above the runllm "Ask AI" trigger (which is at bottom: 64px;
+       right: 64px; ~58px tall) so the notice doesn't cover it. */
+    bottom: 9rem;
+    right: 1.5rem;
+    z-index: 10000; /* above the runllm trigger (z-index: 9999) */
+    max-width: 26rem;
+    padding: 1rem 2.5rem 1rem 1rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.75rem;
+    align-items: start;
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--union-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    transform: translateY(calc(100% + 2rem));
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease-out;
+}
+
+.four-notice[hidden] {
+    display: none;
+}
+
+.four-notice.is-visible {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.four-notice-icon {
+    color: var(--union-color);
+    font-size: 1.25rem;
+    line-height: 1;
+    padding-top: 0.1rem;
+}
+
+.four-notice-body p {
+    margin: 0;
+}
+
+.four-notice-body p + p {
+    margin-top: 0.25rem;
+}
+
+.four-notice-body a {
+    color: var(--union-color);
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.four-notice-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.four-notice-close:hover {
+    opacity: 1;
+    background: var(--border-color);
+}
+
+.four-notice-close:focus-visible {
+    outline: 2px solid var(--union-color);
+    outline-offset: 1px;
+}
+
+@media (max-width: 600px) {
+    .four-notice {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        max-width: none;
+    }
+}
