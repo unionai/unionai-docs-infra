@@ -1,16 +1,14 @@
 {{- /* Tier 2 secondary navigation band.
-     When a top-level section has tier2_band: true in its frontmatter,
-     its direct children are rendered as horizontal tabs here, and
-     the sidebar starts one level lower (showing only the active child's subtree).
+     When a top-level section has tier2_band in its frontmatter, its direct
+     children are rendered as horizontal tabs here, and the sidebar starts
+     one level lower (showing only the active child's subtree).
+     See partials/tier2-active.html for the variant-aware activation logic.
 */ -}}
+{{- if partial "tier2-active.html" . -}}
 {{- $topSection := false -}}
 {{- range .Site.Sections -}}
-  {{- if eq $.Section .Section -}}
-    {{- $topSection = . -}}
-  {{- end -}}
+  {{- if eq $.Section .Section -}}{{- $topSection = . -}}{{- end -}}
 {{- end -}}
-
-{{- if and $topSection $topSection.Params.tier2_band -}}
 <nav class="tier2-nav" aria-label="Sub-section navigation">
   <div class="tier2-container">
     {{- range $topSection.Pages.ByWeight -}}

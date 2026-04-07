@@ -1,0 +1,26 @@
+{{- /* Returns true if the tier2 nav band is active for the current page+variant.
+
+     A page's top-level section is "tier2-active" when its frontmatter has
+     `tier2_band` set to a variant string that includes the current variant.
+
+     tier2_band syntax (same as page variants):
+       tier2_band: "+union -flyte"   # active in union, inactive in flyte
+       tier2_band: "+flyte +union"   # active in both
+*/ -}}
+{{- $topSection := false -}}
+{{- range .Site.Sections -}}
+  {{- if eq $.Section .Section -}}{{- $topSection = . -}}{{- end -}}
+{{- end -}}
+
+{{- $active := false -}}
+{{- if and $topSection $topSection.Params.tier2_band -}}
+  {{- $variant := .Site.Params.variant -}}
+  {{- $rules := split $topSection.Params.tier2_band " " -}}
+  {{- $isAllowed := in $rules (printf "+%s" $variant) -}}
+  {{- $isExcluded := in $rules (printf "-%s" $variant) -}}
+  {{- if and $isAllowed (not $isExcluded) -}}
+    {{- $active = true -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $active -}}
