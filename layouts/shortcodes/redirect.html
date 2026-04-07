@@ -1,3 +1,11 @@
 <script>
-    document.location = '{{- .Get 0 | safeURL -}}';
+    // Preserve the query string across the redirect so flags like ?404=...
+    // (set by the walk-up 404 handler) reach the destination page.
+    (function () {
+        const target = new URL('{{- .Get 0 | safeURL -}}', document.location);
+        if (document.location.search) {
+            target.search = document.location.search;
+        }
+        document.location = target.toString();
+    })();
 </script>

@@ -40,8 +40,22 @@ function handleVariantChange(event, queryString) {
     const newPrefix = "{{- .Site.BaseURL -}}".replace("{{- .Site.Params.variant -}}", newVariant);
     newTarget.pathname = newTarget.pathname.replace(oldPrefix, newPrefix);
     if (!inVariant) {
-        // if not inVariant, we need to add information for variant notice
+        // if not inVariant, we need to add information for variant notice.
+        // Pass it both via the URL query string (consumed by the walk-up 404
+        // handler) and via sessionStorage (survives any redirect that drops
+        // the query string).
         newTarget.search = queryString + "&targetVariant=" + newVariant;
+        try {
+            sessionStorage.setItem('variantSwitch', JSON.stringify({
+                source: new URLSearchParams(queryString).get('source') || '',
+                fromVariant: "{{- .Site.Params.variant -}}",
+                targetVariant: newVariant,
+                originalUrl: document.location.toString(),
+                ts: Date.now()
+            }));
+        } catch (e) {
+            // sessionStorage may be unavailable (e.g. private browsing)
+        }
     }
 
     console.log('Reloading', newTarget.toString());
