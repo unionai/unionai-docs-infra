@@ -79,10 +79,10 @@
   <span class="sr-only" itemprop="description">Documentation navigation for {{ .Site.Params.variant | humanize }} including user guides, tutorials, API references, and integration examples</span>
   <ul>
     {{- $current := . -}}
-    {{- $tier2Active := partial "tier2-active.html" $current -}}
+    {{- $secondaryTopnavActive := partial "secondary-topnav-active.html" $current -}}
     {{- range .Site.Sections -}}
         {{- if eq $current.Section .Section -}}
-          {{- if $tier2Active -}}
+          {{- if $secondaryTopnavActive -}}
             {{- /* Tier 2 active: find the active child and render only its subtree */ -}}
             {{- $activeChild := false -}}
             {{- range .Pages.ByWeight -}}

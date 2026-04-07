@@ -37,12 +37,12 @@
     display: none;
   }
 
-  .tier2-nav {
+  .secondary-topnav {
     display: none;
   }
 
-  body.has-tier2 {
-    --tier2-height: 0px;
+  body.has-secondary-topnav {
+    --secondary-topnav-height: 0px;
   }
 
   .sidebar .tabs-nav {
