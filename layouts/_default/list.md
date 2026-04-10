@@ -2,7 +2,9 @@
 {{- /*
 Template for generating markdown versions of section/list pages.
 This renders section content and lists child pages in markdown format.
+Only emit content for pages allowed in the current variant.
 */ -}}
+{{- if (partial "page-allowed.html" .).variant }}
 {{- if .Params.description }}
 
 {{ .Params.description }}
@@ -16,7 +18,7 @@ This renders section content and lists child pages in markdown format.
 
 {{- $sortedPages := .Pages.ByWeight }}
 {{- range $sortedPages }}
-{{- if (partial "page-allowed.html" .).allowed }}
+{{- if (partial "page-allowed.html" .).variant }}
 {{- $section := "" }}
 {{- if eq .Kind "section" }}
 {{- /* For section pages (directories), get the directory name from File.Dir */}}
@@ -34,4 +36,5 @@ This renders section content and lists child pages in markdown format.
 ---
 **Source**: https://github.com/unionai/unionai-docs/blob/main/content/{{ .File.Path }}
 **HTML**: https://www.union.ai{{ .Permalink }}
+{{- end }}
 {{ end }}
