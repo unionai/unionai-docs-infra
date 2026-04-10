@@ -702,6 +702,10 @@ def main():
         try:
             processed_content = processor.process_file(md_file)
 
+            # Skip variant-excluded pages (Hugo emits empty .txt for them)
+            if not processed_content.strip():
+                continue
+
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(processed_content)
 

@@ -66,3 +66,6 @@ content/user-guide/flyte-basics/*
 content/user-guide/why-flyte.md
 content/user-guide/second-project/*
 content/user-guide/feature-showcase/*
+
+# Never published in flyte variant (variants: -flyte +union)
+content/deployment/selfmanaged/selfmanaged-aws/manual.md
