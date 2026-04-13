@@ -1,20 +1,26 @@
 sl-card::part(base) {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Ensures the card itself stretches */
-  transition: all 0.1s ease-in-out; /* Smooth transition */
+  height: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 sl-card:hover::part(base) {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Elevation effect */
-  transform: translateY(-5px); /* Slight lift effect */
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+  border-color: color-mix(in srgb, var(--union-color) 40%, var(--border-color));
+  transform: translateY(-3px);
   cursor: pointer;
 }
 
 .card-content {
-  flex-grow: 1; /* Ensures content inside grows to fill */
+  flex-grow: 1;
 }
 
 .card-header {
-  font-weight: bold;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }

@@ -7,6 +7,9 @@
 button.DocSearch {
     width: 100%;
     margin: 0;
+    border-radius: 999px !important;
+    border: 1px solid var(--border-color) !important;
+    background: var(--surface-elevated) !important;
 }
 kbd.DocSearch-Commands-Key:not(.compound) {
     padding: 0;
@@ -32,6 +35,15 @@ div.DocSearch-Logo .cls-2 {
 
 .DocSearch-MagnifierLabel, .DocSearch-Reset {
     color: var(--docsearch-primary-color) !important;
+}
+
+.DocSearch-Button-Placeholder {
+    font-size: 0.9rem;
+}
+
+.DocSearch-Button:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--union-color) 75%, white) !important;
+    outline-offset: 2px !important;
 }
 
 .DocSearch-Hits mark {
