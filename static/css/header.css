@@ -219,23 +219,18 @@ header .separator {
   top: calc(100% + 6px);
   right: 0;
   min-width: 180px;
-  background: var(--surface-color);
+  background-color: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
   padding: 6px;
   display: none;
   z-index: 200;
-  animation: versionDropIn 0.15s ease-out;
+  opacity: 1;
 }
 
 .version-dropdown.open .version-menu {
   display: block;
-}
-
-@keyframes versionDropIn {
-  from { transform: translateY(-4px); }
-  to   { transform: translateY(0); }
 }
 
 .version-item {
@@ -299,7 +294,7 @@ header .separator {
 }
 
 [data-theme="dark"] .version-menu {
-  background: var(--surface-elevated);
+  background-color: #141d33;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
 }
 
