@@ -2,22 +2,22 @@
   position: fixed;
   bottom: 64px;
   right: 64px;
-  padding: 14px 28px;
-  border-radius: 28px;
+  padding: 10px 20px;
+  border-radius: 6px;
   box-sizing: border-box;
-  background: #fff;
-  color: #000;
-  border: 1px solid var(--union-color);
+  background: var(--code-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   cursor: grab;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 8px rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   z-index: 9999;
-  font-size: 16px;
-  font-weight: 500;
-  transition: box-shadow 0.2s;
+  font-size: 14px;
+  font-weight: 600;
+  transition: box-shadow 0.2s, border-color 0.2s;
   touch-action: none;
 }
 
@@ -38,7 +38,8 @@
 }
 
 #runllm-trigger:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-color: var(--separator);
+  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 #runllm-trigger:active {
@@ -46,7 +47,8 @@
 }
 
 [data-theme="dark"] #runllm-trigger {
-  background: var(--sidebar-bg);
+  background: var(--code-bg);
   color: var(--text-color);
-  border: 2px solid var(--union-color-dark);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
