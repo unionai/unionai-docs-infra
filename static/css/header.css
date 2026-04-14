@@ -377,7 +377,8 @@ sl-button.signup-button::part(base) {
   border-color: var(--union-color) !important;
   border-radius: 6px !important;
   font-weight: 600 !important;
-  padding: 0.25rem 0.9rem !important;
+  height: 34px !important;
+  padding: 0 0.9rem !important;
 }
 
 [data-theme="dark"] .variant-flyte sl-button.signup-button::part(base) {
