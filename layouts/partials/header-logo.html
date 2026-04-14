@@ -3,6 +3,6 @@
         <img src="{{ printf "images/%s" (index .Site.Params.Key.logo .Site.Params.variant) | relURL }}" class="logo" />
     </a>
     <a href="{{ .Site.BaseURL }}" class="title">
-        <div>Docs</div>
+        <div>{{ index .Site.Params.Key.product_name .Site.Params.variant }} Docs</div>
     </a>
 </div>

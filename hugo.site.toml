@@ -52,10 +52,10 @@ custom_js = [
 ]
 
 [params.variant_weights]
-flyte = 1
-byoc = 2
-selfmanaged = 3
-union = 2
+flyte = 2
+byoc = 3
+selfmanaged = 4
+union = 1
 
 
 #----------------------------------------------------------

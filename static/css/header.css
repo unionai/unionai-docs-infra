@@ -89,8 +89,9 @@ header .separator {
 /* ── Product toggle ── */
 .product-toggle {
   display: flex;
-  background: color-mix(in srgb, var(--border-color) 60%, var(--bg-color));
-  border-radius: 10px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
   padding: 3px;
   gap: 2px;
   position: relative;
@@ -104,7 +105,7 @@ header .separator {
   gap: 6px;
   padding: 7px 18px;
   border: none;
-  border-radius: 8px;
+  border-radius: 3px;
   background: transparent;
   font-family: inherit;
   font-size: 0.84rem;
@@ -116,7 +117,7 @@ header .separator {
 }
 
 .product-toggle button.active {
-  background: var(--surface-color);
+  background: var(--surface-elevated);
   color: var(--text-color);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
@@ -124,7 +125,7 @@ header .separator {
 
 .product-toggle button:not(.active):hover {
   color: var(--text-color);
-  background: color-mix(in srgb, var(--surface-color) 45%, transparent);
+  background: var(--code-bg);
 }
 
 .product-toggle button:disabled {
@@ -138,6 +139,11 @@ header .separator {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.product-toggle button:not(.active) .dot {
+  opacity: 0.35;
 }
 
 .product-toggle .dot.union { background: #e6a720; }
@@ -154,7 +160,7 @@ header .separator {
   gap: 6px;
   padding: 7px 14px;
   border: 1.5px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 4px;
   font-family: inherit;
   font-size: 0.84rem;
   font-weight: 600;
@@ -206,7 +212,8 @@ header .separator {
   right: 0;
   min-width: 180px;
   background: var(--surface-color);
-  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
   padding: 6px;
   display: none;
@@ -228,7 +235,7 @@ header .separator {
   text-align: left;
   padding: 9px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: 3px;
   font-family: inherit;
   font-size: 0.84rem;
   font-weight: 500;
@@ -272,7 +279,7 @@ header .separator {
 
 /* ── Dark theme overrides ── */
 [data-theme="dark"] .product-toggle {
-  background: color-mix(in srgb, var(--surface-color) 80%, var(--bg-color));
+  background: var(--surface-color);
 }
 
 [data-theme="dark"] .product-toggle button.active {
@@ -358,6 +365,7 @@ header .toggle-sidebar {
   position: static;
   box-shadow: none;
   border: 1px solid var(--border-color);
+  border-radius: 4px;
   margin-top: 4px;
 }
 
