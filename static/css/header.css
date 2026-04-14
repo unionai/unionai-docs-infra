@@ -90,8 +90,7 @@ header .separator {
 /* ── Product toggle ── */
 .product-toggle {
   display: flex;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
+  background: var(--code-bg);
   border-radius: 6px;
   padding: 3px;
   gap: 2px;
@@ -118,10 +117,10 @@ header .separator {
 }
 
 .product-toggle button.active {
-  background: var(--surface-elevated);
+  background: var(--surface-color);
   color: var(--text-color);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .product-toggle button:not(.active):hover {
@@ -166,16 +165,17 @@ header .separator {
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
-  background: var(--surface-elevated);
+  background: var(--code-bg);
   color: var(--text-color);
+  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04);
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   white-space: nowrap;
 }
 
 .version-btn:hover {
+  background: var(--bg-color);
   border-color: var(--separator);
-  background: var(--surface-color);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .version-btn:disabled {
@@ -279,13 +279,10 @@ header .separator {
 }
 
 /* ── Dark theme overrides ── */
-[data-theme="dark"] .product-toggle {
-  background: var(--surface-color);
-}
-
+/* In dark mode, --code-bg (#1e293b) is the track, --surface-elevated (#141d33) the active segment */
 [data-theme="dark"] .product-toggle button.active {
   background: var(--surface-elevated);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .version-btn .badge,
