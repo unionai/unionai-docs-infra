@@ -1,12 +1,10 @@
 {{- $dev_warn := "Attention Developer! To change the variant use hugo.local.toml\n(copy from hugo.local toml~samples to get started)" -}}
-{{- $ver_warn := "Attention Developer! You cannot change versions in developer mode" -}}
 <div class="sidebar-icon">
     <sl-icon-button name="list" label="Toggle sidebar" class="toggle-sidebar"></sl-icon-button>
 </div>
 {{- partial "header-logo.html" . -}}
-<div class="separator">|</div>
+<div class="separator"></div>
 <div class="product-version-controls">
-<label for="variant-selector">Product:</label>
 {{- partial "variant-selector.html" . -}}
 {{- if not hugo.IsProduction -}}
 <div id="devwarn" class="developer" style="display: none;">
@@ -14,11 +12,6 @@
 </div>
 {{- end -}}
 {{- partial "versions.html" . -}}
-{{- if not hugo.IsProduction -}}
-<div id="verwarn" class="developer" style="display: none;">
-    {{- $ver_warn -}}
-</div>
-{{- end -}}
 </div>
 <div class="header-toolbar-spacer" style="flex: 1;"></div>
 {{- partial "search.html" . -}}
@@ -32,9 +25,9 @@
 
 <script>
 function handleVariantChange(event, queryString) {
-    const opt = event.target.options[event.target.selectedIndex];
-    const inVariant = opt.getAttribute('data-allowed') === 'true';
-    const newVariant = opt.value;
+    const btn = event.currentTarget;
+    const inVariant = btn.getAttribute('data-allowed') === 'true';
+    const newVariant = btn.getAttribute('data-variant');
     const newTarget = new URL(document.location.toString());
     const oldPrefix = "{{- .Site.BaseURL -}}";
     const newPrefix = "{{- .Site.BaseURL -}}".replace("{{- .Site.Params.variant -}}", newVariant);
@@ -58,11 +51,16 @@ function handleVariantChange(event, queryString) {
         }
     }
 
+    // Update active state visually
+    const toggle = btn.closest('.product-toggle');
+    toggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
     console.log('Reloading', newTarget.toString());
     redirect(newTarget);
 }
 
-function handleVersionChange(event, queryString) {
+function handleVersionChange(event) {
     // URL is one of the following:
     // /...
     // /docs/<variant>/...
@@ -70,16 +68,16 @@ function handleVersionChange(event, queryString) {
     //
     // Redirect is always in the format /docs/<version>/<variant>/...
 
-    const opt = event.target.options[event.target.selectedIndex];
-    const newVersion = opt.value;
+    const btn = event.currentTarget;
+    const newVersion = btn.getAttribute('data-version');
     const newTarget = new URL(document.location.toString());
     const currentVariant = "{{- .Site.Params.variant -}}";
     const oldBaseURL = "{{- .Site.BaseURL -}}";
     let newPrefix;
-    
+
     // All builds have /v<version>/<variant>/... in them
     newPrefix = `/docs/${newVersion}/${currentVariant}/`;
-    
+
     // Replace the old base URL with the new one
     if (newTarget.pathname.includes(currentVariant)) {
         newTarget.pathname = newTarget.pathname.replace(oldBaseURL, newPrefix);
@@ -88,13 +86,31 @@ function handleVersionChange(event, queryString) {
         newTarget.pathname = `/${newVersion}/${currentVariant}/${newTarget.pathname}`;
     }
 
+    // Update selected state visually
+    const menu = btn.closest('.version-menu');
+    menu.querySelectorAll('.version-item').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    // Close the dropdown
+    const dropdown = document.getElementById('version-dropdown');
+    if (dropdown) dropdown.classList.remove('open');
+
     console.log('Reloading', newTarget.toString());
     redirect(newTarget);
-
-    // Prevent option from changing the version
-    event.preventDefault();
-    event.target.value = "{{- index .Site.Params.current_version | default (index .Site.Params.versions 0) -}}";
 }
+
+function toggleVersionMenu() {
+    const dropdown = document.getElementById('version-dropdown');
+    if (dropdown) dropdown.classList.toggle('open');
+}
+
+// Close version dropdown on outside click
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('version-dropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');

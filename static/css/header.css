@@ -20,11 +20,8 @@ header .product-version-controls {
   flex-wrap: wrap;
 }
 
-header .product-version-controls .version-selector-block {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
+header .product-version-controls .version-dropdown {
+  margin-left: auto;
 }
 
 header .header-toolbar-spacer {
@@ -32,8 +29,10 @@ header .header-toolbar-spacer {
 }
 
 header .separator {
-  margin: 0 2rem;
-  opacity: 0.5;
+  width: 1px;
+  height: 28px;
+  background: linear-gradient(180deg, transparent, var(--separator), transparent);
+  margin: 0 0.75rem;
 }
 
 .logo-container {
@@ -52,11 +51,6 @@ header .separator {
   font-weight: 400;
   font-size: 1.25rem;
   white-space: nowrap;
-}
-
-header label {
-  font-weight: 500;
-  color: var(--text-color);
 }
 
 #theme-toggle {
@@ -92,56 +86,241 @@ header label {
   display: none;
 }
 
-#variant-selector, #version-selector {
-  padding: 0.5rem 2rem 0.5rem 0.5rem;
-  cursor: pointer;
+/* ── Product toggle ── */
+.product-toggle {
+  display: flex;
+  background: color-mix(in srgb, var(--border-color) 60%, var(--bg-color));
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+  position: relative;
 }
 
-#devwarn, #verwarn {
-  color: gray;
+.product-toggle button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-color-light);
+  cursor: pointer;
+  transition: color 0.2s, background 0.25s;
+  white-space: nowrap;
+}
+
+.product-toggle button.active {
+  background: var(--surface-color);
+  color: var(--text-color);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.product-toggle button:not(.active):hover {
+  color: var(--text-color);
+  background: color-mix(in srgb, var(--surface-color) 45%, transparent);
+}
+
+.product-toggle button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* Colored dots — hardcoded since --union-color changes per variant build */
+.product-toggle .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.product-toggle .dot.union { background: #e6a720; }
+.product-toggle .dot.flyte { background: #6f2aef; }
+
+/* ── Version dropdown ── */
+.version-dropdown {
+  position: relative;
+}
+
+.version-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--surface-elevated);
+  color: var(--text-color);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.version-btn:hover {
+  border-color: var(--separator);
+  background: var(--surface-color);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.version-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.version-btn .badge {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  letter-spacing: 0.04em;
+}
+
+.version-btn .chevron-icon {
+  margin-left: 2px;
+  transition: transform 0.2s;
+}
+
+.version-dropdown.open .version-btn .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.version-dropdown.open .version-btn {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 12%, transparent);
+}
+
+.version-menu {
   position: absolute;
-  left: 500px;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--surface-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  padding: 6px;
+  display: none;
+  z-index: 200;
+  animation: versionDropIn 0.15s ease-out;
+}
+
+.version-dropdown.open .version-menu {
+  display: block;
+}
+
+@keyframes versionDropIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.version-item {
+  width: 100%;
+  text-align: left;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-color-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.version-item:hover {
+  background: var(--code-bg);
+  color: var(--text-color);
+}
+
+.version-item.selected {
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.version-item .badge {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.version-item .check-icon {
+  margin-left: auto;
+  opacity: 0;
+}
+
+.version-item.selected .check-icon {
+  opacity: 1;
+}
+
+/* ── Dark theme overrides ── */
+[data-theme="dark"] .product-toggle {
+  background: color-mix(in srgb, var(--surface-color) 80%, var(--bg-color));
+}
+
+[data-theme="dark"] .product-toggle button.active {
+  background: var(--surface-elevated);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .version-btn .badge,
+[data-theme="dark"] .version-item .badge {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .version-menu {
+  background: var(--surface-elevated);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .version-item:hover {
+  background: var(--code-bg);
+}
+
+[data-theme="dark"] .version-item.selected {
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+}
+
+/* ── Dev mode warnings ── */
+#devwarn, #verwarn {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
   background: yellow;
+  color: gray;
   padding: 4px 8px;
-  border: 1px solid yellow;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-left: 10px;
-}
-
-#verwarn {
-  left: 680px;
-}
-
-/* Create tooltip arrow */
-#devwarn:before, #verwarn:before {
-  content: "";
-  position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-width: 8px 8px 8px 0;
-  border-style: solid;
-  border-color: transparent #ccc transparent transparent;
-}
-
-/* Arrow overlay to match background */
-#devwarn:after, #verwarn:after {
-  content: "";
-  position: absolute;
-  left: -7px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-width: 8px 8px 8px 0;
-  border-style: solid;
-  border-color: transparent yellow transparent transparent;
+  white-space: nowrap;
+  z-index: 201;
+  font-size: 0.75rem;
 }
 
 header .toggle-sidebar {
   display: none;
 }
 
-/* Product + version selectors live in the mobile drawer below 1200px (see sidebar.html) */
+/* Product + version controls live in the mobile drawer below 1200px (see sidebar.html) */
 .drawer-sidebar .drawer-product-version-host {
   width: 100%;
 }
@@ -156,25 +335,30 @@ header .toggle-sidebar {
   border-bottom: 1px solid var(--border-color);
 }
 
-.drawer-sidebar .product-version-controls label {
-  font-weight: 500;
-  color: var(--text-color);
-  margin-bottom: 0.25rem;
-}
-
-.drawer-sidebar .product-version-controls .version-selector-block {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.25rem;
-}
-
-.drawer-sidebar .product-version-controls #variant-selector,
-.drawer-sidebar .product-version-controls #version-selector {
+.drawer-sidebar .product-toggle {
   width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 0.5rem;
+  justify-content: center;
+}
+
+.drawer-sidebar .product-toggle button {
+  padding: 5px 14px;
+  font-size: 0.8rem;
+}
+
+.drawer-sidebar .version-dropdown {
+  width: 100%;
+}
+
+.drawer-sidebar .version-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.drawer-sidebar .version-menu {
+  position: static;
+  box-shadow: none;
+  border: 1px solid var(--border-color);
+  margin-top: 4px;
 }
 
 .drawer-sidebar .product-version-controls .developer {

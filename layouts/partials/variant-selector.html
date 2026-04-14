@@ -44,11 +44,10 @@
 {{ $escapedURL := .Permalink | urlquery }}
 {{ $params := printf "source=%s&variant=%s&origin=%s" $escapedTitle $escapedVariant $escapedURL }}
 
-<select id="variant-selector" onchange="handleVariantChange(event, '{{ $params }}')"
+<div class="product-toggle" id="variant-selector-group"
 {{- if not hugo.IsProduction -}}
     onmouseenter="document.getElementById('devwarn').style.display = '';"
-    onmouseout="document.getElementById('devwarn').style.display = 'none';"
-    disabled
+    onmouseleave="document.getElementById('devwarn').style.display = 'none';"
 {{- end -}}
 >
         {{- /* Only show variants that are referenced (+ or -) in the current page's variants field.
@@ -58,9 +57,13 @@
             {{- $isAllowed := in $variantAcl (printf "+%s" $variantName) -}}
             {{- $isDeclared := or $isAllowed (in $variantAcl (printf "-%s" $variantName)) -}}
             {{- if $isDeclared -}}
-            <option value="{{- $variantName -}}" data-allowed="{{- $isAllowed -}}" {{- if eq $variantName $.Site.Params.variant -}}selected{{ end -}}>
+            <button data-variant="{{- $variantName -}}" data-allowed="{{- $isAllowed -}}"
+                    class="{{- if eq $variantName $.Site.Params.variant -}}active{{- end -}}"
+                    onclick="handleVariantChange(event, '{{ $params }}')"
+                    {{- if not hugo.IsProduction }} disabled{{ end -}}>
+                <span class="dot {{ $variantName }}"></span>
                 {{- index $.Site.Params.key "product_full_name" $variantName -}}
-            </option>
+            </button>
             {{- end -}}
         {{- end -}}
-</select>
+</div>
