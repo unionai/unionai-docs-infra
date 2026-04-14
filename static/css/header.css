@@ -51,6 +51,7 @@ header .separator {
   font-weight: 400;
   font-size: 1.25rem;
   white-space: nowrap;
+  min-width: 7em; /* prevent layout shift between "Union.ai Docs" and "Flyte Docs" */
 }
 
 #theme-toggle {
