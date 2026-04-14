@@ -44,6 +44,14 @@ header .separator {
 
 .logo-container a:first-child {
   height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.logo-container a:first-child img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
 }
 
 .logo-container .title {
@@ -51,7 +59,7 @@ header .separator {
   font-weight: 400;
   font-size: 1.25rem;
   white-space: nowrap;
-  min-width: 7em; /* prevent layout shift between "Union.ai Docs" and "Flyte Docs" */
+  min-width: 9em; /* prevent layout shift between "Union.ai Docs" and "Flyte Docs" */
 }
 
 #theme-toggle {
