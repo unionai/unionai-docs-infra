@@ -52,10 +52,10 @@ custom_js = [
 ]
 
 [params.variant_weights]
-flyte = 1
-byoc = 2
-selfmanaged = 3
-union = 2
+flyte = 2
+byoc = 3
+selfmanaged = 4
+union = 1
 
 
 #----------------------------------------------------------
@@ -79,7 +79,7 @@ selfmanaged = "flytesnacks"
 union = "flytesnacks"
 
 [params.key.product_full_name]
-flyte = "Flyte OSS"
+flyte = "Flyte"
 byoc = "Union.ai BYOC"
 selfmanaged = "Union.ai Self-managed"
 union = "Union.ai"

@@ -5,7 +5,12 @@
 <link rel="preconnect" href="https://{{ $app }}-dsn.algolia.net" crossorigin />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3" />
 
-<div id="docsearch"></div>
+<div id="docsearch" style="display:none;"></div>
+<button id="search-trigger" title="Search" class="header-search">
+  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8.5" r="6"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
+  Search
+  <span class="search-keys"><kbd>&#x2318;</kbd><kbd>K</kbd></span>
+</button>
 
 <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@3"></script>
 <script>
@@ -33,5 +38,11 @@
         ].filter(Boolean) // remove empty strings
         },
         debug: true
+    });
+
+    // Connect custom button to DocSearch modal
+    document.getElementById('search-trigger').addEventListener('click', function() {
+        var dsBtn = document.querySelector('#docsearch .DocSearch-Button');
+        if (dsBtn) dsBtn.click();
     });
 </script>

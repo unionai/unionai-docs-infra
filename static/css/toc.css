@@ -24,6 +24,7 @@
 
 .container .toc-container .toc > .toc-list {
   border-left: 1px solid var(--blockquote-border-trans);
+  padding-left: 1rem;
 }
 
 .container .toc-container .toc-header {
@@ -42,6 +43,10 @@
   margin-top: 0.5rem;
 }
 
+.container .toc-container .toc > .toc-list > .toc-list-item:first-child {
+  margin-top: 0;
+}
+
 .container .toc-container .node-name--H1 {
   padding: 0.5rem 0;
 }
@@ -58,26 +63,30 @@
 }
 
 .container .toc-container .toc-llm-link {
-  margin-top: 2rem;
   margin-bottom: 0;
+  padding: 0 1rem;
+  color: var(--text-color);
+}
+
+.container .toc-container .toc-llm-link .toc-llm-header {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.container .toc-container .toc-llm-link .toc-llm-list {
+  border-left: 1px solid var(--blockquote-border-trans);
   padding-left: 1rem;
-  color: var(--text-secondary-color, #666);
 }
 
 .container .toc-container .toc-llm-link a {
   display: block;
-  color: var(--text-secondary-color, #666);
+  color: var(--text-color);
   text-decoration: none;
   font-weight: normal;
 }
 
-.container .toc-container .toc-llm-link > a:first-child {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.container .toc-container .toc-llm-link > a:not(:first-child) {
-  padding-left: 1rem;
+.container .toc-container .toc-llm-link .toc-llm-list a {
+  margin-top: 0.5rem;
 }
 
 .container .toc-container .toc-llm-link a:hover {

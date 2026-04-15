@@ -53,10 +53,6 @@
     display: block;
   }
 
-  #devwarn {
-    position: initial;
-  }
-
   .sidebar,
   header .separator,
   header .signup,
