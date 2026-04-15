@@ -16,7 +16,7 @@
 
 .container .toc-container .toc {
   overflow-y: auto;
-  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--secondary-topnav-height) - var(--toc-header-height));
+  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--secondary-topnav-height) - var(--toc-header-height) - 50px);
   padding: 1rem;
 }
 
