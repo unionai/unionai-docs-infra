@@ -7,17 +7,19 @@
   padding: var(--sidepanels-padding);
   font-weight: 100;
   font-size: var(--toc-font-size);
-  overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
   background-color: var(--toc-bg);
-  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .container .toc-container .toc {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--secondary-topnav-height) - var(--toc-header-height));
-  padding: 1rem;
+  padding: 1rem 1rem 2rem;
 }
 
 .container .toc-container .toc > .toc-list {
