@@ -68,7 +68,7 @@ A third repository, **[unionai-examples](https://github.com/unionai/unionai-exam
    Copy the sample configuration and customize it:
 
    ```
-   cp unionai-docs-infra/hugo.local.toml~sample hugo.local.toml
+   cp hugo.local.toml~sample hugo.local.toml
    ```
 
    Review `hugo.local.toml` before starting development. See [Controlling the development environment](#controlling-the-development-environment) for available settings.

@@ -401,8 +401,8 @@ header .toggle-sidebar {
   transition: background-color 0.2s, border-color 0.2s;
 }
 
-[data-theme="dark"] .variant-flyte .signup-button {
-  color: var(--text-color);
+[data-theme="dark"] .signup-button {
+  color: #fff;
 }
 
 .signup-button:hover {
