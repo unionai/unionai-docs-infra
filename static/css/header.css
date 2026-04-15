@@ -125,7 +125,7 @@ header .separator {
 }
 
 .product-toggle button.active {
-  background: var(--surface-color);
+  background: #e2e8f0;
   color: var(--text-color);
   font-weight: 600;
   box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -281,9 +281,9 @@ header .separator {
 }
 
 /* ── Dark theme overrides ── */
-/* In dark mode, --code-bg (#1e293b) is the track, --surface-elevated (#141d33) the active segment */
+/* In dark mode, --code-bg (#2d3748) is the track, #141d33 is the active segment */
 [data-theme="dark"] .product-toggle button.active {
-  background: var(--surface-elevated);
+  background: #141d33;
   box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
