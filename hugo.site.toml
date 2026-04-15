@@ -79,7 +79,7 @@ selfmanaged = "flytesnacks"
 union = "flytesnacks"
 
 [params.key.product_full_name]
-flyte = "Flyte"
+flyte = "Flyte OSS"
 byoc = "Union.ai BYOC"
 selfmanaged = "Union.ai Self-managed"
 union = "Union.ai"
