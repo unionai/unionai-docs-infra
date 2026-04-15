@@ -1,51 +1,68 @@
 /* ==========================================================================
-   DocSearch Styles
+   Search Styles
    ========================================================================== */
 
-
-/* docsearch button — match site control styling (Primer 6px radius, gray fill) */
-button.DocSearch {
-    width: 100%;
-    margin: 0;
-    border-radius: 6px !important;
-    background: var(--code-bg) !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04) !important;
-    color: var(--text-color-light) !important;
-    padding: 0 12px !important;
+/* Custom search trigger button */
+#search-trigger {
     height: 34px;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
+    box-sizing: border-box;
+    padding: 0 12px;
+    border-radius: 6px;
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04);
+    color: var(--text-color-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-button.DocSearch:hover {
-    border-color: var(--separator) !important;
-    box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07) !important;
+#search-trigger:hover {
+    border-color: var(--separator);
+    box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
 }
 
-.DocSearch-Button-Keys {
-    min-width: auto !important;
+#search-trigger svg {
+    flex-shrink: 0;
+    color: var(--text-color-light);
+}
+
+.search-keys {
+    display: flex;
+    align-items: center;
     gap: 2px;
+    margin-left: 4px;
 }
 
-.DocSearch-Button-Key {
-    background: var(--surface-color) !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: none !important;
-    border-radius: 4px !important;
-    padding: 0 4px !important;
-    font-size: 0.7rem !important;
-    color: var(--text-color-light) !important;
-    width: auto !important;
-    height: auto !important;
-    line-height: 1.4 !important;
+.search-keys kbd {
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0 4px;
+    font-family: inherit;
+    font-size: 0.7rem;
+    color: var(--text-color-light);
+    line-height: 1.4;
 }
 
+[data-theme="dark"] #search-trigger {
+    background: var(--code-bg);
+    color: var(--text-color-light);
+    border: 1px solid var(--border-color);
+}
+
+/* DocSearch modal styles (keep for the search overlay) */
 kbd.DocSearch-Commands-Key:not(.compound) {
     padding: 0;
 }
 
 div.DocSearch-Hit-content-wrapper {
-    /* prevent scrollbar from showing up */
     overflow-y: hidden;
 }
 
@@ -70,32 +87,11 @@ div.DocSearch-Logo .cls-2 {
     padding: 0;
 }
 
-/* make sure content header doesn't pop out when docsearch model is active */
 body.DocSearch--active div.bd-header-article {
     z-index: 1;
 }
 
-/* Ensure DocSearch is properly styled on tablets */
-@media (min-width: 769px) and (max-width: 960px) {
-
-    /* DocSearch button adjustments */
-    button.DocSearch {
-        font-size: 13px;
-        padding: 0 8px;
-    }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-    .DocSearch-Button {
-        width: auto;
-        min-width: 160px;
-    }
-
-    .DocSearch-Button-Keys {
-        display: flex !important;
-    }
-}
-
+/* Responsive */
 @media (max-width: 768px) {
     .mobile-search {
         padding: 1rem 0;
@@ -107,19 +103,15 @@ body.DocSearch--active div.bd-header-article {
         margin: 0;
     }
 
-    /* Hide keyboard shortcut on mobile */
     .DocSearch-Button-Keys {
         display: none !important;
     }
 
-    /* Center the text and icon */
     .DocSearch-Button-Container {
         margin: 0 auto;
     }
 
-    /* Adjust search button styling for mobile */
     .DocSearch-Button {
         border-radius: 6px;
     }
-
 }

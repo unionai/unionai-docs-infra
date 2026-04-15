@@ -16,7 +16,7 @@ header {
 header .product-version-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -99,10 +99,13 @@ header .separator {
 .product-toggle {
   display: flex;
   background: var(--code-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  padding: 3px;
+  padding: 4px;
   gap: 2px;
   position: relative;
+  height: 34px;
+  box-sizing: border-box;
 }
 
 .product-toggle button {
@@ -111,7 +114,7 @@ header .separator {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 18px;
+  padding: 3px 18px;
   border: none;
   border-radius: 6px;
   background: transparent;
@@ -125,9 +128,9 @@ header .separator {
 }
 
 .product-toggle button.active {
-  background: #e2e8f0;
+  background: #cbd5e1;
   color: var(--text-color);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -166,18 +169,20 @@ header .separator {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 0 14px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   font-family: inherit;
   font-size: 0.84rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   background: var(--code-bg);
   color: var(--text-color);
   box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04);
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   white-space: nowrap;
+  height: 34px;
+  box-sizing: border-box;
 }
 
 .version-btn:hover {
@@ -259,7 +264,7 @@ header .separator {
 .version-item.selected {
   background: color-mix(in srgb, var(--primary-color) 10%, transparent);
   color: var(--primary-color);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .version-item .badge {
@@ -272,8 +277,11 @@ header .separator {
 }
 
 .version-item .check-icon {
-  margin-left: auto;
   opacity: 0;
+}
+
+.badge-hidden {
+  visibility: hidden;
 }
 
 .version-item.selected .check-icon {
@@ -374,28 +382,34 @@ header .toggle-sidebar {
   margin: 0;
 }
 
-sl-button.signup-button::part(base) {
-  background-color: var(--union-color) !important;
-  color: var(--sl-color-neutral-0) !important;
-  border-color: var(--union-color) !important;
-  border-radius: 6px !important;
-  font-weight: 600 !important;
-  height: 34px !important;
-  padding: 0 0.9rem !important;
+.signup-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 0.9rem;
+  background-color: var(--union-color);
+  color: #fff;
+  border: 1px solid var(--union-color);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
-[data-theme="dark"] .variant-flyte sl-button.signup-button::part(base) {
-  color: var(--text-color) !important;
+[data-theme="dark"] .variant-flyte .signup-button {
+  color: var(--text-color);
 }
 
-sl-button.signup-button::part(base):hover {
-  border-color: var(--union-color-dark) !important;
-  background-color: var(--union-color-dark) !important;
-}
-
-.variant-flyte sl-button.signup-button::part(base):hover {
-  border-color: var(--union-color-dark) !important;
-  background-color: var(--union-color-dark) !important;
+.signup-button:hover {
+  background-color: var(--union-color-dark);
+  border-color: var(--union-color-dark);
+  color: #fff;
 }
 
 .old-version {

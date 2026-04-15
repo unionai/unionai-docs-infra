@@ -9,10 +9,8 @@
 >
     <button class="version-btn" onclick="toggleVersionMenu()"
         {{- if not hugo.IsProduction }} disabled{{ end -}}>
-        {{- if eq $currentVersion (index $versions 0) -}}
-        <span class="badge">LATEST</span>
-        {{- end -}}
         <span class="version-label">{{- $currentVersion -}}</span>
+        <span class="badge{{- if ne $currentVersion (index $versions 0) }} badge-hidden{{- end -}}">LATEST</span>
         <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="version-menu">
@@ -21,8 +19,8 @@
                 data-version="{{- $ver -}}" data-latest="{{- eq $i 0 -}}"
                 onclick="handleVersionChange(event)">
             <svg class="check-icon" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7.5L5.5 10L11 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            {{- if eq $i 0 -}}<span class="badge">LATEST</span>{{- end -}}
             <span>{{- $ver -}}</span>
+            {{- if eq $i 0 -}}<span class="badge">LATEST</span>{{- end -}}
         </button>
         {{- end -}}
     </div>

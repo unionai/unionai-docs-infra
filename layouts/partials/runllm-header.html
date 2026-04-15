@@ -1,0 +1,15 @@
+{{- if not .Site.Params.show_deprecation_message -}}
+<button id="runllm-trigger" title="Ask AI" class="header-ask-ai">
+  <span class="runllm-sparkle" aria-hidden="true"></span>
+  Ask AI
+  <span class="runllm-keys"><kbd>&#x2318;</kbd><kbd>L</kbd></span>
+</button>
+<script>
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'l') {
+    e.preventDefault();
+    if (window.runllm) window.runllm.open();
+  }
+});
+</script>
+{{- end -}}
