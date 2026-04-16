@@ -52,13 +52,26 @@
   }
 
   .sidebar,
-  header .separator,
-  header .signup {
+  header .separator {
     display: none;
   }
 
+  /* Collapse search, Ask AI, and signup to icon-only */
   #search-trigger .search-label,
-  #search-trigger .search-keys {
+  #search-trigger .search-keys,
+  #runllm-trigger .runllm-label,
+  #runllm-trigger .runllm-keys,
+  .signup-label {
     display: none;
+  }
+
+  .signup-button {
+    padding: 0;
+    width: 34px;
+    height: 34px;
+  }
+
+  .signup-icon {
+    display: block;
   }
 }
