@@ -228,7 +228,7 @@ header .separator {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  min-width: 180px;
+  width: max-content;
   background-color: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -373,11 +373,13 @@ header .toggle-sidebar {
 }
 
 .drawer-sidebar .version-menu {
-  position: static;
-  box-shadow: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: max-content;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  margin-top: 4px;
+  z-index: 200;
 }
 
 .drawer-sidebar .product-version-controls .developer {
