@@ -53,8 +53,12 @@
 
   .sidebar,
   header .separator,
-  header .signup,
-  header .search {
+  header .signup {
+    display: none;
+  }
+
+  #search-trigger .search-label,
+  #search-trigger .search-keys {
     display: none;
   }
 }

@@ -136,34 +136,9 @@
   font-size: 1.25rem;
 }
 
-.drawer-sidebar .drawer-section-tabs {
-  padding: 0 0.5rem 0.75rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.drawer-sidebar .drawer-section-tabs-label {
-  display: block;
-  font-weight: 500;
-  color: var(--text-color);
-  margin-bottom: 0.25rem;
-}
-
-.tabs-buttons select {
-  font-size: 1rem;
-  padding: 0.5rem;
-  width: 100%;
-}
-
-.drawer-sidebar .signup {
-  margin: 1rem;
-  text-align: center;
-}
-
-.drawer-sidebar .signup sl-button {
-  width: 60%;
-  margin: auto;
-  margin-bottom: 1rem;
+.drawer-nav > ul > li > a,
+.drawer-nav > ul > li > .section-pages {
+  padding-left: 0.75rem;
 }
 
 .drawer-sidebar .variant-selector-container {

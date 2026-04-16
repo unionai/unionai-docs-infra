@@ -7,9 +7,36 @@
   <slot part="body">
     <div class="show-on-mobile">
       <div class="drawer-product-version-host"></div>
-      {{- partial "search.html" . -}}
-      {{- partial "tabs.html" (dict "page" . "style" "buttons") -}}
-      {{- partial "signup.html" . -}}
+      {{- $current := . -}}
+      <nav class="site-nav drawer-nav" role="navigation">
+        <ul>
+          {{- range .Site.Sections.ByWeight -}}
+            {{- $access := partial "page-allowed.html" . -}}
+            {{- if and $access.allowed .Params.top_menu -}}
+              {{- $isActive := eq $current.Section .Section -}}
+              <li>
+                <a href="{{- .RelPermalink -}}" class="section-title{{ if $isActive }} active{{ end }}">
+                  <div class="content">
+                    {{- if and .IsSection (gt (len .Pages) 0) -}}
+                    <span class="chevron{{ if not $isActive }} rotated{{ end }}" aria-hidden="true"></span>
+                    {{- else -}}
+                    <span class="chevron hidden" aria-hidden="true"></span>
+                    {{- end -}}
+                    <div style="flex: 1">{{- .Title -}}</div>
+                  </div>
+                </a>
+                {{- if and .IsSection (gt (len .Pages) 0) -}}
+                <ul class="section-pages{{ if not $isActive }} collapsed{{ end }}">
+                  {{- range .Pages.ByWeight -}}
+                    {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
+                  {{- end -}}
+                </ul>
+                {{- end -}}
+              </li>
+            {{- end -}}
+          {{- end -}}
+        </ul>
+      </nav>
     </div>
   </slot>
 </sl-drawer>
@@ -20,16 +47,12 @@
 
 <script>
   const drawer = document.querySelector('.drawer-sidebar');
-  const sidebar = document.querySelector('.sidebar-items');
-  const sidebarContainer = document.querySelector('.sidebar');
-
   const openButton = document.querySelector('.toggle-sidebar');
 
   customElements.whenDefined('sl-drawer').then(() => {
     drawer.parentElement.removeChild(drawer);
     document.body.appendChild(drawer);
 
-    // Match media query for large screens (adjust breakpoint as needed)
     const prefersOpen = window.matchMedia('(min-width: 1200px)');
 
     openButton.addEventListener('click', () => {
@@ -42,15 +65,6 @@
     const toolbarSpacer = document.querySelector('.header-toolbar-spacer');
 
     const evaluate = (matches) => {
-      sidebar.parentNode.removeChild(sidebar);
-
-      // Only show if the screen is large
-      if (matches) {
-        sidebarContainer.appendChild(sidebar);
-      } else {
-        drawer.appendChild(sidebar);
-      }
-
       openButton.style.display = matches ? 'none' : 'block';
 
       if (productVersion && mobileProductHost && headerEl && toolbarSpacer) {
@@ -64,7 +78,6 @@
 
     evaluate(prefersOpen.matches);
 
-    // Optional: listen for screen size changes
     prefersOpen.addEventListener('change', event => {
       evaluate(event.matches);
     });

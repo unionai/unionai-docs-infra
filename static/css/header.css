@@ -335,37 +335,35 @@ header .toggle-sidebar {
 }
 
 /* Product + version controls live in the mobile drawer below 1200px (see sidebar.html) */
+.drawer-sidebar::part(header) {
+  padding-bottom: 0;
+}
+
+.drawer-sidebar::part(body) {
+  padding-top: 0.25rem;
+}
+
 .drawer-sidebar .drawer-product-version-host {
   width: 100%;
 }
 
 .drawer-sidebar .product-version-controls {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-direction: row;
+  align-items: center;
   gap: 0.75rem;
-  padding: 0 0.5rem 1rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0 0.5rem 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .drawer-sidebar .product-toggle {
-  width: 100%;
+  flex: 1;
   justify-content: center;
 }
 
 .drawer-sidebar .product-toggle button {
   padding: 5px 14px;
   font-size: 0.8rem;
-}
-
-.drawer-sidebar .version-dropdown {
-  width: 100%;
-}
-
-.drawer-sidebar .version-btn {
-  width: 100%;
-  justify-content: center;
 }
 
 .drawer-sidebar .version-menu {
