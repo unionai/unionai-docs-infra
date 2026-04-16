@@ -33,7 +33,6 @@
   --union-color-light: #ffe6b1;
   --union-color-dark: #c88c0c;
   --union-color-very-light: #fbeed1;
-  --scrollbar-width: 1rem;
   --main-content-padding: 2rem;
   --toc-bg: var(--bg-color);
   --docsearch-primary-color: #edab1c !important;
@@ -114,23 +113,20 @@ body {
   z-index: 100;
 }
 .container {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--toc-width);
   height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--secondary-topnav-height) - var(--banner-height));
-  overflow-y: auto;
+  overflow: hidden;
 }
 .main-content {
-  flex: 1;
-  padding: 2rem 0;
-  max-width: var(--content-width);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--content-width) + 2 * var(--main-content-padding));
+  padding: 2rem var(--main-content-padding);
   margin: 0 auto;
-  margin-left: calc(
-    var(--sidebar-width) +
-      (
-        100dvw - var(--sidebar-width) - var(--content-width) - var(--toc-width) -
-          var(--scrollbar-width)
-      ) / 2
-  );
-  margin-right: var(--toc-width);
-  transition: margin-left 0.3s ease, margin-right 0.3s ease;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .logo {
