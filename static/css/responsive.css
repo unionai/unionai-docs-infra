@@ -1,17 +1,15 @@
 @media (max-width: 1200px) {
-  .toc-container {
+  .container {
+    grid-template-columns: 1fr;
+    height: calc(100dvh - var(--header-height) - var(--banner-height));
+  }
+
+  .container .toc-container {
     display: none;
-    transition: display 0.3s ease;
   }
 
   .main-content {
     padding: 1rem;
-    margin: auto;
-    width: 100dvw;
-  }
-
-  .container {
-    min-height: calc(100dvh - var(--header-height));
   }
 
   .grid-container {
@@ -55,8 +53,12 @@
 
   .sidebar,
   header .separator,
-  header .signup,
-  header .search {
+  header .signup {
+    display: none;
+  }
+
+  #search-trigger .search-label,
+  #search-trigger .search-keys {
     display: none;
   }
 }

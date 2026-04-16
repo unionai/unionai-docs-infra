@@ -10,24 +10,21 @@
     {{ end }}
 {{ end }}
 {{ if $tocEnabled }}
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        tocbot.init({
-            tocSelector: ".toc",
-            contentSelector: ".main-content",
-            headingSelector: '{{ delimit $headingSelector ", " }}',
-            collapseDepth: 6, // Show all levels
-            scrollSmooth: true,
-            scrollSmoothDuration: 420,
-            // activeLinkClass: "is-active-link",
-            headingLabelCallback: (string) => string,
-            positionFixedSelector: ".toc",
-            positionFixedClass: "is-fixed",
-            fixedSidebarOffset: 0,
-        });
-    });
-</script>
 <div class="toc-container">
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            tocbot.init({
+                tocSelector: ".toc",
+                contentSelector: ".main-content",
+                headingSelector: '{{ delimit $headingSelector ", " }}',
+                collapseDepth: 6, // Show all levels
+                scrollSmooth: true,
+                scrollSmoothDuration: 420,
+                headingLabelCallback: (string) => string,
+                scrollContainer: ".main-content",
+            });
+        });
+    </script>
     <div class="toc-llm-link">
         <div class="toc-llm-header">LLM-optimized</div>
         <div class="toc-llm-list">

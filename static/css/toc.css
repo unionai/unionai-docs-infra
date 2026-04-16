@@ -1,9 +1,4 @@
 .container .toc-container {
-  position: fixed;
-  top: calc(var(--header-height) + var(--tabs-height) + var(--secondary-topnav-height) + 50px);
-  bottom: 0;
-  right: var(--scrollbar-width);
-  width: var(--toc-width);
   padding: var(--sidepanels-padding);
   font-weight: 100;
   font-size: var(--toc-font-size);
@@ -93,24 +88,11 @@
   text-decoration: underline;
 }
 
-@media (max-width: 1500px) {
-  .toc-container {
-    display: none;
-    transition: display 0.3s ease;
+@media (max-width: 1100px) {
+  .container {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   }
-  .main-content {
-    margin-left: calc(
-      var(--sidebar-width) + var(--main-content-padding) +
-        max(
-          0px,
-          (
-              100dvw - var(--sidebar-width) - var(--content-width) -
-                var(--scrollbar-width) - var(--main-content-padding)
-            ) / 2
-        )
-    );
-    margin-right: 0;
-    padding-right: var(--main-content-padding);
-    transition: margin-left 0.3s ease, margin-right 0.3s ease;
+  .container .toc-container {
+    display: none;
   }
 }
