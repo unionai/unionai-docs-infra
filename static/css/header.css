@@ -28,13 +28,6 @@ header .header-toolbar-spacer {
   min-width: 0;
 }
 
-header .separator {
-  width: 1px;
-  height: 28px;
-  background: linear-gradient(180deg, transparent, var(--separator), transparent);
-  margin: 0 0.75rem;
-}
-
 .logo-container {
   display: flex;
   align-items: center;
