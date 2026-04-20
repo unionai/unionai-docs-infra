@@ -27,8 +27,8 @@
     display: block;
   }
 
-  header .separator {
-    margin: 0 0.75rem;
+  header .logo-container .title {
+    display: none;
   }
 
   body > .tabs {
@@ -51,8 +51,7 @@
     display: block;
   }
 
-  .sidebar,
-  header .separator {
+  .sidebar {
     display: none;
   }
 

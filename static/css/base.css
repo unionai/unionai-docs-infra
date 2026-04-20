@@ -127,6 +127,12 @@ body {
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+[data-theme="dark"] .main-content {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 .logo {
