@@ -102,6 +102,11 @@ def main() -> None:
         else:
             packages.append(plugin["package"])
 
+    # Pin pyarrow<24: mlflow requires pyarrow<24 but the full plugin set
+    # pulls in pyarrow 24+, causing uv to silently downgrade mlflow to 1.27.0
+    # (which is incompatible with protobuf 6.x). See DOC-1234.
+    packages.append("pyarrow<24")
+
     # Handle local flyte-sdk override
     flyte_sdk_path = os.environ.get("FLYTE_SDK_PATH")
     if flyte_sdk_path:
