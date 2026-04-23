@@ -1,4 +1,5 @@
 {{- with .Inner -}}{{/* no action */}}{{- end -}}
-<div class="grid-container">
+{{- $cols := .Get "cols" -}}
+<div class="grid-container"{{ with $cols }} style="grid-template-columns: repeat({{ . }}, 1fr)"{{ end }}>
   {{- .Inner | safeHTML -}}
 </div>
