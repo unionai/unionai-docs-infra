@@ -100,10 +100,10 @@ Change how the development environment works by setting values in `hugo.local.to
 
 ### Changing variants
 
-Variants are flavors of the site (flyte, byoc, selfmanaged). During development, render any variant by setting it in `hugo.local.toml`:
+Variants are flavors of the site (flyte, union). During development, render any variant by setting it in `hugo.local.toml`:
 
 ```toml
-variant = "byoc"
+variant = "union"
 ```
 
 To show content from other variants alongside the active one:
@@ -170,7 +170,7 @@ This is the main production build command. It performs the following steps:
 
 1. Converts Jupyter notebooks from `unionai-examples` to markdown
 2. Runs `make update-redirects` to detect moved pages and update `redirects.csv`
-3. Builds all three Hugo variants (flyte, byoc, selfmanaged) into the `dist/` directory
+3. Builds both Hugo variants (flyte, union) into the `dist/` directory
 4. Generates LLM-optimized documentation (`llms-full.txt`) for each variant
 5. Regenerates API reference documentation from the latest SDK packages
 
@@ -235,7 +235,7 @@ Each row in `redirects.csv` has seven columns:
 
 ### Automatic redirect detection
 
-The `detect_moved_pages.py` script scans git history for file renames under `content/` and generates redirect entries for all four variants. Run it with:
+The `detect_moved_pages.py` script scans git history for file renames under `content/` and generates redirect entries for both variants. Run it with:
 
 ```
 make update-redirects
