@@ -1,7 +1,6 @@
 # Plugin API documentation generator
 #
-# Uses the shared .venv created by api_venv_setup.py (via Makefile.api.sdk setup-venv).
-# All plugin packages are pre-installed in the shared venv.
+# Uses an isolated per-plugin venv created on demand.
 #
 # Examples:
 #   make -f unionai-docs-infra/Makefile.api.plugins PLUGIN=flyteplugins.wandb TITLE="Weights & Biases" NAME=wandb
@@ -24,23 +23,26 @@ NO_FLATTEN_FLAG := $(if $(filter true,$(PLUGINS_NO_FLATTEN)),--no-flatten true,)
 OUTPUT_FOLDER=$(PLUGINS_OUTPUT_BASE)/${NAME}
 API_DATA=/tmp/${NAME}.api.yaml
 LANDING_PAGE ?= $(PLUGINS_DEFAULT_INCLUDE)
-VENV_DIR=.venv
+PLUGIN_VENV_DIR ?= /tmp/unionai-docs-plugin-${NAME}.venv
 SKIP_VENV_SETUP ?= false
 
 .PHONY: all
-all: check_vars parser generate
+all: check_vars setup-venv parser generate clean-venv
 
 .PHONY: check_vars
 check_vars:
 	@if [ -z "${PLUGIN}" ]; then echo "ERROR: PLUGIN is not set"; exit 1; fi
 	@if [ -z "${TITLE}" ]; then echo "ERROR: TITLE is not set"; exit 1; fi
 	@if [ -z "${NAME}" ]; then echo "ERROR: NAME is not set"; exit 1; fi
+
+.PHONY: setup-venv
+setup-venv: check_vars
 ifeq ($(SKIP_VENV_SETUP),false)
-	@if [ ! -f "$(VENV_DIR)/bin/python" ]; then \
-		echo "ERROR: shared venv not found at $(VENV_DIR)."; \
-		echo "Run 'make -f unionai-docs-infra/Makefile.api.sdk setup-venv' first."; \
-		exit 1; \
-	fi
+	@REPO_ROOT="$(REPO_ROOT)" FLYTE_SDK_PATH="$(FLYTE_SDK_PATH)" $(UV) unionai-docs-infra/tools/api_plugin_venv_setup.py \
+		--name "${NAME}" \
+		--venv-dir "$(PLUGIN_VENV_DIR)"
+else
+	@true
 endif
 
 .PHONY: clean_api_data
@@ -50,7 +52,7 @@ clean_api_data:
 .PHONY: parser
 parser: check_vars clean_api_data
 ifeq ($(SKIP_VENV_SETUP),false)
-	$(VENV_DIR)/bin/python unionai-docs-infra/tools/api_generator/parser --package ${PLUGIN} --output ${API_DATA} --all-only
+	$(PLUGIN_VENV_DIR)/bin/python unionai-docs-infra/tools/api_generator/parser --package ${PLUGIN} --output ${API_DATA} --all-only
 else
 	unionai-docs-infra/tools/api_generator/parser --package ${PLUGIN} --output ${API_DATA} --all-only
 endif
@@ -58,7 +60,7 @@ endif
 .PHONY: generate
 generate: check_vars clean_output_folder
 ifeq ($(SKIP_VENV_SETUP),false)
-	$(VENV_DIR)/bin/python unionai-docs-infra/tools/api_generator/generate \
+	$(PLUGIN_VENV_DIR)/bin/python unionai-docs-infra/tools/api_generator/generate \
 		--name ${NAME} \
 		--title "${TITLE}" \
 		--api "${API_DATA}" \
@@ -83,14 +85,22 @@ endif
 clean_output_folder:
 	rm -rf "${OUTPUT_FOLDER}"
 
+.PHONY: clean-venv
+clean-venv:
+ifeq ($(SKIP_VENV_SETUP),false)
+	rm -rf "$(PLUGIN_VENV_DIR)"
+else
+	@true
+endif
+
 .PHONY: clean
-clean: clean_output_folder clean_api_data
+clean: clean_output_folder clean_api_data clean-venv
 
 .PHONY: help
 help:
 	@echo "Integration API Documentation Generator"
 	@echo ""
-	@echo "Uses the shared .venv created by 'make -f Makefile.api.sdk setup-venv'."
+	@echo "Creates an isolated plugin venv under /tmp for each plugin build."
 	@echo ""
 	@echo "Usage:"
 	@echo "  make -f unionai-docs-infra/Makefile.api.plugins PLUGIN=<package> TITLE=\"<title>\" NAME=<folder>"
@@ -108,7 +118,9 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  all              - Parse and generate (default)"
+	@echo "  setup-venv       - Create an isolated plugin venv"
 	@echo "  parser           - Parse plugin package to extract API data"
 	@echo "  generate         - Generate documentation from API data"
 	@echo "  clean_output_folder - Remove generated output folder"
+	@echo "  clean-venv       - Remove the isolated plugin venv"
 	@echo "  clean            - Clean output folder and API data"
