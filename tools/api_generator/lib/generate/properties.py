@@ -2,6 +2,7 @@ import io
 import re
 from typing import List
 
+from lib.generate.methods import format_type
 from lib.ptypes import PropertyInfo
 
 
@@ -33,7 +34,7 @@ def generate_props(props: List[PropertyInfo], output: io.TextIOWrapper):
     output.write("|-|-|-|\n")
 
     for prop in props:
-        propType = f"`{prop['type']}`" if "type" in prop else ""
+        propType = format_type(None, prop.get("type") or "", escape_or=True)
         docs = prop["doc"] if "doc" in prop else ""
         # Clean up the doc string - replace newlines with spaces and escape markdown table characters and HTML
         if docs:

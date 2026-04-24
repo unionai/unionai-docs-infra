@@ -127,14 +127,22 @@ def parse_property(name: str, member: object) -> Optional[PropertyInfo]:
     if not isinstance(member, (property, cached_property)):
         return None
 
+    getter = member.fget if isinstance(member, property) else member.func
+
+    type_str: Optional[str] = None
+    if getter is not None:
+        try:
+            ann = inspect.signature(getter).return_annotation
+            if str(ann) != "<class 'inspect._empty'>":
+                type_str = _sanitize_type_str(str(ann))
+            else:
+                type_str = "None"
+        except (TypeError, ValueError):
+            type_str = None
+
     doc_info = parse_docstring(inspect.getdoc(member), source=member)
     docstr = doc_info["docstring"] if doc_info else None
-    property_info = PropertyInfo(
-        name=name,
-        doc=docstr,
-        type=None
-    )
-    return property_info
+    return PropertyInfo(name=name, doc=docstr, type=type_str)
 
 
 def parse_variable(name: str, member: object) -> Optional[VariableInfo]:
