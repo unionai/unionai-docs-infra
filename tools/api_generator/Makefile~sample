@@ -13,6 +13,5 @@ generate:
 		--title "YOU_API_TITLE API" \
 		--variants \
 			+flyte \
-			+byoc \
-			+selfmanaged \
+			+union \
 		--include ../../include/api.YOUR_API.md
