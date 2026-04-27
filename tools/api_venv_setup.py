@@ -5,14 +5,14 @@
 #     "tomli; python_version < '3.11'",
 # ]
 # ///
-"""Create a shared .venv with all packages needed for API doc generation.
+"""Create a shared .venv with packages needed for SDK and CLI doc generation.
 
-Reads api-packages.toml and installs SDK packages, CLI dependencies,
-and all plugin packages into a single venv. This venv is then used by
-api_sdk_generate.py, api_cli_generate.py, and Makefile.api.plugins.
+Reads api-packages.toml and installs SDK packages plus any extra CLI
+dependencies into a single venv. This venv is used by api_sdk_generate.py
+and api_cli_generate.py. Plugin API docs use isolated per-plugin venvs.
 
 Set FLYTE_SDK_PATH to a local flyte-sdk checkout to use it instead of PyPI.
-Both the SDK package and any plugins found under <FLYTE_SDK_PATH>/plugins/
+Any SDK package and CLI extra packages found under <FLYTE_SDK_PATH>/plugins/
 will be installed from local source.
 """
 
@@ -33,6 +33,9 @@ from _repo import get_repo_root
 REPO_ROOT = get_repo_root()
 CONFIG_FILE = REPO_ROOT / "api-packages.toml"
 VENV_DIR = REPO_ROOT / ".venv"
+CLI_EXTRA_PACKAGES = {
+    "flyte": ["flyteplugins-union"],
+}
 
 
 def load_config() -> dict:
@@ -79,6 +82,18 @@ def _substitute_local_flyte(packages: list, sdk_path: str) -> list:
     return result
 
 
+def _dedupe(packages: list[str]) -> list[str]:
+    """Preserve the first occurrence of each install spec."""
+    seen = set()
+    result = []
+    for pkg in packages:
+        if pkg in seen:
+            continue
+        seen.add(pkg)
+        result.append(pkg)
+    return result
+
+
 def main() -> None:
     config = load_config()
     packages = []
@@ -90,27 +105,20 @@ def main() -> None:
         install_spec = sdk.get("install", sdk["package"])
         packages.extend(shlex.split(install_spec))
 
-    # Plugin packages
-    for plugin in config.get("plugins", []):
-        if plugin.get("frozen"):
+    # Extra packages needed by Python CLI doc generation.
+    for cli in config.get("clis", []):
+        if cli.get("frozen"):
             continue
-        if plugin.get("install"):
-            packages.extend(shlex.split(plugin["install"]))
-        elif plugin.get("extras"):
-            extras = ",".join(plugin["extras"])
-            packages.append(f"{plugin['package']}[{extras}]")
-        else:
-            packages.append(plugin["package"])
-
-    # Pin pyarrow<24: mlflow requires pyarrow<24 but the full plugin set
-    # pulls in pyarrow 24+, causing uv to silently downgrade mlflow to 1.27.0
-    # (which is incompatible with protobuf 6.x). See DOC-1234.
-    packages.append("pyarrow<24")
+        if cli.get("type", "python") == "go":
+            continue
+        packages.extend(CLI_EXTRA_PACKAGES.get(cli["name"], []))
 
     # Handle local flyte-sdk override
     flyte_sdk_path = os.environ.get("FLYTE_SDK_PATH")
     if flyte_sdk_path:
         packages = _substitute_local_flyte(packages, flyte_sdk_path)
+
+    packages = _dedupe(packages)
 
     if not packages:
         print("No packages to install.")
@@ -122,7 +130,7 @@ def main() -> None:
     print("Creating shared venv...")
     subprocess.run(["uv", "venv", "--python", "3.12", str(VENV_DIR)], check=True)
 
-    # Install all packages
+    # Install SDK packages and CLI extras.
     print(f"Installing {len(packages)} packages: {' '.join(packages)}")
     subprocess.run([
         "uv", "pip", "install",

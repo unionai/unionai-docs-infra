@@ -3,8 +3,9 @@
 # Reads [[sdks]], [[clis]], and [[plugins]] from api-packages.toml.
 # Delegates actual generation to Python scripts.
 #
-# A shared .venv is created once by setup-venv with ALL packages
-# (SDK + plugins) so that CLI docs can discover plugin commands.
+# A shared .venv is created once by setup-venv with SDK packages and any
+# extra CLI dependencies needed to generate CLI docs.
+# Plugin API docs use isolated per-plugin venvs via Makefile.api.plugins.
 #
 # Examples:
 #   make -f unionai-docs-infra/Makefile.api.sdk                       # Full build with fresh venv
@@ -65,14 +66,15 @@ help:
 	@echo "Config-driven SDK and CLI API Doc Generator"
 	@echo ""
 	@echo "Reads [[sdks]] and [[clis]] from api-packages.toml."
-	@echo "Creates a shared venv with all packages (SDK + plugins)."
+	@echo "Creates a shared venv with SDK packages and CLI extras."
+	@echo "Plugin API docs use isolated per-plugin venvs."
 	@echo ""
 	@echo "Targets:"
 	@echo "  all       - Set up venv, generate SDK, CLI, and plugin docs, clean up (default)"
-	@echo "  setup-venv - Create shared venv with all packages"
+	@echo "  setup-venv - Create shared venv with SDK packages and CLI extras"
 	@echo "  sdks      - Generate SDK API docs (venv must exist)"
 	@echo "  clis      - Generate CLI docs (venv must exist)"
-	@echo "  plugins   - Generate all plugin API docs (venv must exist)"
+	@echo "  plugins   - Generate all plugin API docs in isolated per-plugin venvs"
 	@echo "  clean-venv - Remove the shared venv"
 	@echo "  clean     - Remove all generated SDK/CLI/plugin content"
 	@echo ""

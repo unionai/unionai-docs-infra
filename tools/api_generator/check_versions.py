@@ -193,9 +193,9 @@ def print_results(results: list[dict]) -> None:
 def regenerate(results: list[dict]) -> None:
     """Invoke existing Makefiles to regenerate outdated docs.
 
-    Sets up a shared venv once with all packages, then runs each generator.
+    Sets up the shared SDK/CLI venv once, then runs each generator.
     """
-    # Set up shared venv with all packages (SDK + plugins)
+    # Set up the shared venv used by SDK and CLI generation.
     print("\nSetting up shared venv...")
     subprocess.run(
         ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "setup-venv"],

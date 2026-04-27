@@ -25,7 +25,7 @@
                     <div style="flex: 1">{{- .Title -}}</div>
                   </div>
                 </a>
-                {{- if and .IsSection (gt (len .Pages) 0) -}}
+                {{- if .IsSection -}}
                 <ul class="section-pages{{ if not $isActive }} collapsed{{ end }}">
                   {{- range .Pages.ByWeight -}}
                     {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
@@ -127,6 +127,8 @@
         const parentLi = title.closest('li');
         const sectionPages = parentLi.querySelector('.section-pages');
         const chevron = title.querySelector('.chevron');
+
+        if (!sectionPages) return;
 
         // Set initial chevron state based on whether the section is collapsed
         if (sectionPages.classList.contains('collapsed') && chevron) {
