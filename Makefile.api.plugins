@@ -67,7 +67,7 @@ ifeq ($(SKIP_VENV_SETUP),false)
 		--include ${LANDING_PAGE} \
 		$(NO_FLATTEN_FLAG) \
 		--short-names \
-		--variants "+flyte +byoc +selfmanaged +union" \
+		--variants "+flyte +union" \
 		--output_dir "${OUTPUT_FOLDER}"
 else
 	unionai-docs-infra/tools/api_generator/generate \
@@ -77,7 +77,7 @@ else
 		--include ${LANDING_PAGE} \
 		$(NO_FLATTEN_FLAG) \
 		--short-names \
-		--variants "+flyte +byoc +selfmanaged +union" \
+		--variants "+flyte +union" \
 		--output_dir "${OUTPUT_FOLDER}"
 endif
 
