@@ -7,9 +7,13 @@
 # ///
 """Create a shared .venv with packages needed for SDK and CLI doc generation.
 
-Reads api-packages.toml and installs SDK packages plus any extra CLI
-dependencies into a single venv. This venv is used by api_sdk_generate.py
-and api_cli_generate.py. Plugin API docs use isolated per-plugin venvs.
+Reads api-packages.toml and installs SDK packages plus any extra CLI-only
+packages into a single venv (used by api_sdk_generate.py and api_cli_generate.py).
+Plugin API docs use isolated per-plugin venvs.
+
+SDK install specs are installed first at full dependency resolution. CLI-only
+extras (see CLI_EXTRA_PACKAGES) are installed afterward with ``--no-deps`` so
+their PyPI metadata cannot pin an older flyte than the SDK line.
 
 Set FLYTE_SDK_PATH to a local flyte-sdk checkout to use it instead of PyPI.
 Any SDK package and CLI extra packages found under <FLYTE_SDK_PATH>/plugins/
@@ -96,31 +100,37 @@ def _dedupe(packages: list[str]) -> list[str]:
 
 def main() -> None:
     config = load_config()
-    packages = []
+    sdk_packages: list[str] = []
+    cli_extra_packages: list[str] = []
 
-    # SDK packages
+    # SDK packages (resolved together so flyte matches the SDK docs we generate).
     for sdk in config.get("sdks", []):
         if sdk.get("frozen"):
             continue
         install_spec = sdk.get("install", sdk["package"])
-        packages.extend(shlex.split(install_spec))
+        sdk_packages.extend(shlex.split(install_spec))
 
-    # Extra packages needed by Python CLI doc generation.
+    # Extra packages needed by Python CLI doc generation (e.g. flyteplugins-union for
+    # `flyte gen docs --plugin-variants union`). Those plugins often declare an upper
+    # bound on flyte (e.g. flyte<2.2.0); installing them in the same `uv pip install`
+    # as flyte would downgrade flyte to satisfy the plugin. Install them afterward
+    # with --no-deps so the SDK venv keeps the latest flyte from PyPI.
     for cli in config.get("clis", []):
         if cli.get("frozen"):
             continue
         if cli.get("type", "python") == "go":
             continue
-        packages.extend(CLI_EXTRA_PACKAGES.get(cli["name"], []))
+        cli_extra_packages.extend(CLI_EXTRA_PACKAGES.get(cli["name"], []))
 
-    # Handle local flyte-sdk override
     flyte_sdk_path = os.environ.get("FLYTE_SDK_PATH")
     if flyte_sdk_path:
-        packages = _substitute_local_flyte(packages, flyte_sdk_path)
+        sdk_packages = _substitute_local_flyte(sdk_packages, flyte_sdk_path)
+        cli_extra_packages = _substitute_local_flyte(cli_extra_packages, flyte_sdk_path)
 
-    packages = _dedupe(packages)
+    sdk_packages = _dedupe(sdk_packages)
+    cli_extra_packages = _dedupe(cli_extra_packages)
 
-    if not packages:
+    if not sdk_packages and not cli_extra_packages:
         print("No packages to install.")
         return
 
@@ -130,13 +140,34 @@ def main() -> None:
     print("Creating shared venv...")
     subprocess.run(["uv", "venv", "--python", "3.12", str(VENV_DIR)], check=True)
 
-    # Install SDK packages and CLI extras.
-    print(f"Installing {len(packages)} packages: {' '.join(packages)}")
-    subprocess.run([
-        "uv", "pip", "install",
-        "--python", str(VENV_DIR / "bin" / "python"),
-        "--upgrade", *packages,
-    ], check=True)
+    py = str(VENV_DIR / "bin" / "python")
+
+    if sdk_packages:
+        print(f"Installing SDK packages: {' '.join(sdk_packages)}")
+        subprocess.run(
+            ["uv", "pip", "install", "--python", py, "--upgrade", *sdk_packages],
+            check=True,
+        )
+
+    if cli_extra_packages:
+        print(
+            "Installing CLI extra packages (no-deps; avoids plugin pins downgrading flyte): "
+            f"{' '.join(cli_extra_packages)}"
+        )
+        subprocess.run(
+            [
+                "uv",
+                "pip",
+                "install",
+                "--python",
+                py,
+                "--upgrade",
+                *cli_extra_packages,
+                "--no-deps",
+            ],
+            check=True,
+        )
+
     print("Shared venv setup complete.")
 
 
