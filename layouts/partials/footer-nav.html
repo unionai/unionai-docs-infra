@@ -1,51 +1,31 @@
-{{/* Get pages sorted by weight (ascending) */}}
-{{ $pages := .Parent.Pages.ByWeight }}
-{{ $currentIndex := -1 }}
+{{- /*
+Renders prev/next links by walking the variant's page tree in depth-first
+pre-order — i.e., the order a reader naturally encounters pages when reading
+front-to-back. Works for both leaf and section index pages.
 
-{{ $current := .File.Path }}
+prev = the previous page in pre-order (last leaf of preceding sibling subtree,
+       or the parent if this page is its parent's first visible child)
+next = the next page in pre-order (first child if any, otherwise the next
+       sibling of the nearest ancestor that has one)
+*/ -}}
+{{- $current := . -}}
+{{- $allPages := partialCached "preorder-flat.html" . -}}
 
-{{/* Find the current page's index in the sorted slice */}}
-{{ range $i, $p := $pages }}
-  {{ if eq $p.File.Path $current }}
-    {{ $currentIndex = $i }}
-    {{ break }}
-  {{ end }}
-{{ end }}
+{{- $idx := -1 -}}
+{{- range $i, $p := $allPages -}}
+  {{- if eq $p.RelPermalink $current.RelPermalink -}}
+    {{- $idx = $i -}}
+    {{- break -}}
+  {{- end -}}
+{{- end -}}
 
 <footer>
-    {{/* Output the Previous link if available */}}
-    {{ if gt $currentIndex 0 }}
-      {{ $prevIndex := sub $currentIndex 1 }}
-      {{ range $i := seq 0 $currentIndex }}
-        {{ $prev := index $pages $prevIndex }}
-        {{ $prevAccess := partial "page-allowed.html" $prev }}
-        {{ if $prevAccess.variant }}
-          <a href="{{ $prev.Permalink }}" class="prev">← {{ $prev.Title }}</a>
-          {{ break }}
-        {{ else }}
-          {{ $prevIndex = sub $prevIndex 1 }}
-          {{ if lt $prevIndex 0 }}
-            {{ break }}
-          {{ end }}
-        {{ end }}
-      {{ end }}
-    {{ end }}
-    
-    {{/* Output the Next link if available */}}
-    {{ if lt (add $currentIndex 1) (len $pages) }}
-      {{ $nextIndex := add $currentIndex 1 }}
-      {{ range $i := seq (add $currentIndex 1) (sub (len $pages) 1) }}
-        {{ $next := index $pages $nextIndex }}
-        {{ $nextAccess := partial "page-allowed.html" $next }}
-        {{ if $nextAccess.variant }}
-          <a href="{{ $next.Permalink }}" class="next">{{ $next.Title }} →</a>
-          {{ break }}
-        {{ else }}
-          {{ $nextIndex = add $nextIndex 1 }}
-          {{ if ge $nextIndex (len $pages) }}
-            {{ break }}
-          {{ end }}
-        {{ end }}
-      {{ end }}
-    {{ end }}
+    {{- if gt $idx 0 -}}
+      {{- $prev := index $allPages (sub $idx 1) -}}
+      <a href="{{ $prev.Permalink }}" class="prev">← {{ $prev.Title }}</a>
+    {{- end -}}
+    {{- if and (ge $idx 0) (lt (add $idx 1) (len $allPages)) -}}
+      {{- $next := index $allPages (add $idx 1) -}}
+      <a href="{{ $next.Permalink }}" class="next">{{ $next.Title }} →</a>
+    {{- end -}}
 </footer>

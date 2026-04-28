@@ -1,0 +1,15 @@
+{{- /*
+Returns the variant's full page list in depth-first pre-order, starting from
+the top-level sections. The home page itself and any top-level regular pages
+(e.g. 404) are excluded — this mirrors the sidebar, which only navigates
+through sections.
+
+Use with partialCached so the traversal runs once per build.
+*/ -}}
+{{- $result := slice -}}
+{{- range .Site.Sections.ByWeight -}}
+  {{- range (partial "preorder-pages.html" .) -}}
+    {{- $result = $result | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}
