@@ -8,3 +8,7 @@ __pycache__/
 .vscode
 .idea
 uv.lock
+
+# AI assistant
+.claude/
+.codex/
