@@ -1,0 +1,18 @@
+{{- /*
+Returns a flat slice of pages in depth-first pre-order, starting from . inclusive.
+
+Filters by variant visibility: pages not allowed in the active variant are
+skipped along with their entire subtree.
+*/ -}}
+{{- $root := . -}}
+{{- $result := slice -}}
+{{- $access := partial "page-allowed.html" $root -}}
+{{- if $access.variant -}}
+  {{- $result = $result | append $root -}}
+  {{- range $root.Pages.ByWeight -}}
+    {{- range (partial "preorder-pages.html" .) -}}
+      {{- $result = $result | append . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}
