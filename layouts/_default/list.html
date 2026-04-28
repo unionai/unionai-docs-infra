@@ -31,5 +31,8 @@
     </nav>
     {{ end }}
     {{ end }}
+    {{ if and .Parent .File }}
+    {{ partial "footer-nav.html" . }}
+    {{ end }}
 </article>
 {{ end }}
