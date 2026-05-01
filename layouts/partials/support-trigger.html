@@ -1,0 +1,11 @@
+{{- if eq site.Params.variant "union" -}}
+{{- $supportPage := site.GetPage "/support" -}}
+{{- with $supportPage -}}
+{{- $isActive := hasPrefix $.RelPermalink .RelPermalink -}}
+<a id="support-trigger" {{ if $isActive }}class="active"{{ end }} href="{{- .RelPermalink -}}" title="Get Union support">
+    <sl-icon name="life-preserver"></sl-icon>
+    <span class="support-label">Support</span>
+</a>
+{{- end -}}
+{{- end -}}
+
