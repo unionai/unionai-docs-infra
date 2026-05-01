@@ -12,6 +12,10 @@
   display: none;
 }
 
+body.no-sidebar .sidebar {
+  visibility: hidden;
+}
+
 .sidebar > nav > ul > li > .section-title,
 .sidebar > nav > ul > li > .section-pages {
   padding-left: 0.75rem;

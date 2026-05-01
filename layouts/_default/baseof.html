@@ -2,6 +2,7 @@
 {{- $variant := .Site.Params.variant -}}
 {{- $access := partial "page-allowed.html" . -}}
 {{- $hasSecondaryTopnav := partial "secondary-topnav-active.html" . -}}
+{{- $hasSidebarItems := partial "sidebar-has-items.html" . -}}
 {{- if $access.allowed -}}
 <!DOCTYPE html>
 <html lang="{{- .Site.Language.Lang -}}">
@@ -93,7 +94,7 @@
     <link rel="stylesheet" href="{{- "css/runllm.css" | relURL -}}?v={{- $v -}}" />
     {{- end -}}
   </head>
-  <body class="variant-{{ .Site.Params.variant }}{{- if $hasSecondaryTopnav }} has-secondary-topnav{{- end -}}">
+  <body class="variant-{{ .Site.Params.variant }}{{- if $hasSecondaryTopnav }} has-secondary-topnav{{- end -}}{{- if not $hasSidebarItems }} no-sidebar{{- end -}}">
     <!-- Google Tag Manager (noscript) -->
     <noscript>
       <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MB6L88S" height="0" width="0" style="display:none;visibility:hidden"></iframe>
