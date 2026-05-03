@@ -106,7 +106,7 @@
     {{- partial "secondary-topnav.html" . -}}
     <div class="container">
       <div class="sidebar">{{- partial "sidebar.html" . -}}</div>
-      <div class="main-content">
+      <main class="main-content">
         {{- if $access.development -}}
         {{- $classes := slice "not-in-prod" "page-warn" "not-allowed" }}
         <div class='{{- delimit $classes " " -}}'>
@@ -159,7 +159,7 @@
         </div>
         {{- partial "breadcrumb.html" . -}}
         {{- block "main" . -}}{{- end -}}
-      </div>
+      </main>
       {{- partial "toc.html" . -}}
     </div>
     {{- partial "runllm.html" . -}}
