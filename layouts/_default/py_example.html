@@ -7,7 +7,7 @@
 
   {{- partial "resource-map.html" (dict "page" . "bom" .Params.resources) -}}
 
-  <div class="markdown-content">
+  <article class="markdown-content">
     {{ $content := readFile .Params.example_file }}
     {{ if not $content }}
       {{- if hasPrefix .Params.example_file "/unionai-examples/" -}}
@@ -88,7 +88,7 @@
       </div>
       {{ $markdown }}
     {{ end }}
-  </div>
+  </article>
 
   {{ partial "footer-nav.html" . }}
 {{ end }}
