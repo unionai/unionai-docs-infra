@@ -69,10 +69,17 @@ const AUTO_DISMISS_MS = 12000;
 // the trailing glyph.
 function setPathWithSmartEllipsis(el, fullText) {
     const SLACK_PX = 4;
+    const MIN_USABLE_WIDTH = 32; // px
     const E = '…';
-    const fits = () => el.scrollWidth <= el.clientWidth - SLACK_PX;
+    // If clientWidth is implausibly small (e.g. layout hasn't settled, the
+    // close-button custom element hasn't rendered yet), bail out and leave the
+    // full text — the parent's `overflow: hidden` will clip the tail rather
+    // than letting the algorithm collapse to just "…".
+    const fits = () => el.clientWidth >= MIN_USABLE_WIDTH
+        && el.scrollWidth <= el.clientWidth - SLACK_PX;
 
     el.textContent = fullText;
+    if (el.clientWidth < MIN_USABLE_WIDTH) return;
     if (fits()) return;
 
     const segments = fullText.split('/').filter(Boolean);
@@ -182,20 +189,24 @@ window.addEventListener('DOMContentLoaded', () => {
     if (isVariantSwitch) clearVariantSwitchFromStorage();
 
     // Path line: hidden when we have no original URL; otherwise plain monospace
-    // text, middle-truncated with an ellipsis if it would overflow.
+    // text, smart-truncated if it would overflow.
     const pathEl = notice.querySelector('.four-notice-path');
     if (pathEl) {
         if (pathName) {
             pathEl.hidden = false;
-            // Need the element laid out before measuring for truncation.
-            notice.hidden = false;
-            setPathWithSmartEllipsis(pathEl, pathName);
+            pathEl.textContent = pathName;
         } else {
             pathEl.hidden = true;
-            notice.hidden = false;
         }
-    } else {
-        notice.hidden = false;
+    }
+    // Make the toast laid out (the slide-in is gated by .is-visible, set in
+    // showNotice() below, so it's still off-screen at this point).
+    notice.hidden = false;
+    // Defer truncation to the next frame so layout has settled — important for
+    // the close-button custom element (sl-icon) which can size oddly during
+    // initial render.
+    if (pathEl && pathName) {
+        requestAnimationFrame(() => setPathWithSmartEllipsis(pathEl, pathName));
     }
 
     // Wire up the close button.
