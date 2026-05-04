@@ -44,27 +44,27 @@
     display: block;
 }
 
-/* Toast-style 404 walk-up notice card.
-   Slides up from the bottom-right after a walk-up redirect, then auto-dismisses
-   (or can be manually closed). Hidden by default; shown by 404.js. */
+/* Brand-colored toast for the 404 walk-up. Slides up from below the viewport
+   into the bottom-right corner, auto-dismisses, can be closed manually. The
+   background uses the variant's brand color (gold for union, purple for flyte)
+   via --union-color. Hidden by default; shown by 404.js. */
 .four-notice {
     position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
+    bottom: 1rem;
+    right: 1rem;
     z-index: 10000;
-    max-width: 26rem;
-    padding: 1rem 2.5rem 1rem 1rem;
+    max-width: 22rem;
+    padding: 0.75rem 0.875rem;
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;
     column-gap: 0.75rem;
-    align-items: start;
-    background: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-left: 4px solid var(--union-color);
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
-    font-size: 0.9rem;
+    align-items: center;
+    background: var(--union-color);
+    color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+    font-size: 0.875rem;
+    font-weight: 500;
     line-height: 1.4;
     transform: translateY(calc(100% + 2rem));
     opacity: 0;
@@ -80,15 +80,22 @@
     opacity: 1;
 }
 
-.four-notice-icon {
-    color: var(--union-color);
-    font-size: 1.25rem;
+.four-notice-badge {
+    background: rgba(0, 0, 0, 0.22);
+    color: #fff;
+    padding: 0.375rem 0.55rem;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
-    padding-top: 0.1rem;
+    align-self: center;
 }
 
 .four-notice-body p {
     margin: 0;
+    color: #fff;
 }
 
 .four-notice-body p + p {
@@ -96,34 +103,32 @@
 }
 
 .four-notice-body a {
-    color: var(--union-color);
+    color: #fff;
     text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
     word-break: break-all;
 }
 
 .four-notice-close {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
     background: transparent;
-    border: none;
-    color: var(--text-color);
-    opacity: 0.6;
+    border: 0;
+    color: rgba(255, 255, 255, 0.85);
     cursor: pointer;
     padding: 0.25rem;
     line-height: 1;
-    font-size: 0.85rem;
     border-radius: 4px;
-    transition: opacity 0.15s, background 0.15s;
+    transition: color 0.15s, background 0.15s;
+    align-self: start;
 }
 
 .four-notice-close:hover {
-    opacity: 1;
-    background: var(--border-color);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.22);
 }
 
 .four-notice-close:focus-visible {
-    outline: 2px solid var(--union-color);
+    outline: 2px solid #fff;
     outline-offset: 1px;
 }
 
