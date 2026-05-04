@@ -53,8 +53,8 @@
     bottom: 1rem;
     right: 1rem;
     z-index: 10000;
-    /* Definite width (not max-width) so the body grid column has a stable
-       size for path-truncation measurement. Caps to viewport on narrow screens. */
+    /* Fixed width so the toast looks consistent regardless of message length;
+       caps to viewport on narrow screens. */
     width: min(22rem, calc(100vw - 2rem));
     padding: 0.75rem 0.875rem;
     display: grid;

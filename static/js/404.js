@@ -52,35 +52,25 @@ function clearVariantSwitchFromStorage() {
 
 const AUTO_DISMISS_MS = 12000;
 
-// Set the path element's text, abbreviating it with ellipses if it would
-// overflow on a single line. Tries progressively more aggressive truncations
-// and keeps the longest that fits:
-//
-//   Phase 1 — drop middle path segments (slash-delimited), always preserving
-//             the last segment.    e.g. /docs/v2/…/some-page-name
-//   Phase 2 — shrink the last segment by hyphen-delimited chunks, always
-//             preserving the last chunk.   e.g. /…/some-very-…-name
-//   Phase 3 — character-level middle truncation as a final fallback (covers
-//             single-segment paths and pathological no-separator cases).
-//
-// Requires the element to be laid out (not [hidden]) and to have a definite
-// width so clientWidth is stable across measurements. SLACK_PX guards against
-// sub-pixel rounding that would otherwise let `overflow: hidden` silently clip
-// the trailing glyph.
-function setPathWithSmartEllipsis(el, fullText) {
-    const SLACK_PX = 4;
-    const MIN_USABLE_WIDTH = 32; // px
-    const E = '…';
-    // If clientWidth is implausibly small (e.g. layout hasn't settled, the
-    // close-button custom element hasn't rendered yet), bail out and leave the
-    // full text — the parent's `overflow: hidden` will clip the tail rather
-    // than letting the algorithm collapse to just "…".
-    const fits = () => el.clientWidth >= MIN_USABLE_WIDTH
-        && el.scrollWidth <= el.clientWidth - SLACK_PX;
+// Character budget for the path line in the toast. Tuned to the body grid
+// column width (toast width minus badge, close button, gaps, and padding) for
+// a monospace font at 0.78rem. Two breakpoints to match the CSS:
+//   - desktop (>=600px viewport): toast is fixed at 22rem
+//   - small (<600px): toast spans the viewport with 1rem margins
+const PATH_MAX_CHARS = window.innerWidth < 600 ? 20 : 28;
 
-    el.textContent = fullText;
-    if (el.clientWidth < MIN_USABLE_WIDTH) return;
-    if (fits()) return;
+// Abbreviate a path with ellipses to fit within `maxChars`, preferring natural
+// separators. Tries each strategy in order; first candidate that fits wins:
+//
+//   Phase 1 — drop middle path segments (slash-delimited).  /docs/v2/…/page-name
+//   Phase 2 — shrink the last segment by hyphen chunks.    /…/some-very-…-name
+//   Phase 3 — character-level middle ellipsis fallback.
+//
+// In all phases, the last segment (or last chunk) is preserved intact so the
+// most specific piece of the path remains readable.
+function abbreviatePath(fullText, maxChars) {
+    const E = '…';
+    if (fullText.length <= maxChars) return fullText;
 
     const segments = fullText.split('/').filter(Boolean);
     const last = segments[segments.length - 1] || '';
@@ -91,13 +81,12 @@ function setPathWithSmartEllipsis(el, fullText) {
             const prefix = keepLeading === 0
                 ? `/${E}/`
                 : `/${segments.slice(0, keepLeading).join('/')}/${E}/`;
-            el.textContent = prefix + last;
-            if (fits()) return;
+            const candidate = prefix + last;
+            if (candidate.length <= maxChars) return candidate;
         }
     }
 
-    // Phase 2: shrink the last segment by hyphen chunks. Use `/…/` as the
-    // leading prefix when phase 1 had segments to drop, otherwise just `/`.
+    // Phase 2: shrink the last segment by hyphen chunks.
     const tailPrefix = segments.length >= 3 ? `/${E}/` : '/';
     const chunks = last.split('-');
     if (chunks.length >= 3) {
@@ -106,32 +95,21 @@ function setPathWithSmartEllipsis(el, fullText) {
             const truncatedLast = keepLeading === 0
                 ? `${E}-${lastChunk}`
                 : `${chunks.slice(0, keepLeading).join('-')}-${E}-${lastChunk}`;
-            el.textContent = tailPrefix + truncatedLast;
-            if (fits()) return;
+            const candidate = tailPrefix + truncatedLast;
+            if (candidate.length <= maxChars) return candidate;
         }
     }
 
-    // Phase 3: character-level binary search on the full path.
-    let lo = 1, hi = fullText.length;
-    let best = E;
-    while (lo <= hi) {
-        const total = (lo + hi) >> 1;
-        const head = total >> 1;
-        const tail = total - head;
-        el.textContent = fullText.slice(0, head) + E + fullText.slice(fullText.length - tail);
-        if (fits()) {
-            best = el.textContent;
-            lo = total + 1;
-        } else {
-            hi = total - 1;
-        }
-    }
-    el.textContent = best;
+    // Phase 3: character-level middle ellipsis on the full path.
+    if (maxChars <= 1) return E;
+    const visible = maxChars - 1;
+    const head = visible >> 1;
+    const tail = visible - head;
+    return fullText.slice(0, head) + E + fullText.slice(fullText.length - tail);
 }
 
 function showNotice(notice) {
-    // Caller is responsible for unhiding (notice.hidden = false) before this
-    // so any measurements (e.g. middle-truncating the path) can happen first.
+    notice.hidden = false;
     // Force a reflow so the transition runs from the initial transform/opacity.
     // eslint-disable-next-line no-unused-expressions
     notice.offsetHeight;
@@ -189,24 +167,15 @@ window.addEventListener('DOMContentLoaded', () => {
     if (isVariantSwitch) clearVariantSwitchFromStorage();
 
     // Path line: hidden when we have no original URL; otherwise plain monospace
-    // text, smart-truncated if it would overflow.
+    // text, abbreviated to PATH_MAX_CHARS via natural separators.
     const pathEl = notice.querySelector('.four-notice-path');
     if (pathEl) {
         if (pathName) {
             pathEl.hidden = false;
-            pathEl.textContent = pathName;
+            pathEl.textContent = abbreviatePath(pathName, PATH_MAX_CHARS);
         } else {
             pathEl.hidden = true;
         }
-    }
-    // Make the toast laid out (the slide-in is gated by .is-visible, set in
-    // showNotice() below, so it's still off-screen at this point).
-    notice.hidden = false;
-    // Defer truncation to the next frame so layout has settled — important for
-    // the close-button custom element (sl-icon) which can size oddly during
-    // initial render.
-    if (pathEl && pathName) {
-        requestAnimationFrame(() => setPathWithSmartEllipsis(pathEl, pathName));
     }
 
     // Wire up the close button.
