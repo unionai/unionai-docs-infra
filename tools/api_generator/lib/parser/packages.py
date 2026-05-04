@@ -1,6 +1,7 @@
 import inspect
 import pkgutil
 import importlib
+import sys
 from sys import stderr
 from types import ModuleType
 from typing import Any, List, Optional, Tuple
@@ -90,6 +91,23 @@ def get_all_only(package_name: str) -> List[Tuple[PackageInfo, ModuleType]]:
     return [(pkgInfo, pkg)]
 
 
+def _walk_onerror(name: str) -> None:
+    """Called by pkgutil.walk_packages when a submodule fails to import.
+
+    Without this callback, walk_packages silently swallows ImportErrors,
+    so modules with unimportable top-level statements (e.g. `import PIL`
+    when pillow isn't installed) never appear in the output and never
+    get logged as skipped. This callback records them.
+    """
+    exc_type, exc, _ = sys.exc_info()
+    error_msg = f"{exc_type.__name__}: {exc}" if exc_type else "Unknown error"
+    print(
+        f"\033[93m[WARNING]:\033[0m Skipped module '{name}' during walk: {error_msg}",
+        file=stderr,
+    )
+    _skipped_modules.append(SkippedModule(name, error_msg))
+
+
 def get_subpackages(package_name: str) -> List[Tuple[PackageInfo, ModuleType]]:
     """
     Recursively enumerate all subpackages of a given Python package.
@@ -112,7 +130,7 @@ def get_subpackages(package_name: str) -> List[Tuple[PackageInfo, ModuleType]]:
 
         # Walk through all modules in the package
         for loader, name, is_pkg in pkgutil.walk_packages(
-            pkg.__path__, pkgInfo["name"] + "."
+            pkg.__path__, pkgInfo["name"] + ".", onerror=_walk_onerror
         ):
             if any(p.startswith("_") for p in name.split(".")):
                 continue
