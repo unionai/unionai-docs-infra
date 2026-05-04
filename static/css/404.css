@@ -49,11 +49,9 @@
    (or can be manually closed). Hidden by default; shown by 404.js. */
 .four-notice {
     position: fixed;
-    /* Sit above the runllm "Ask AI" trigger (which is at bottom: 64px;
-       right: 64px; ~58px tall) so the notice doesn't cover it. */
-    bottom: 9rem;
+    bottom: 1.5rem;
     right: 1.5rem;
-    z-index: 10000; /* above the runllm trigger (z-index: 9999) */
+    z-index: 10000;
     max-width: 26rem;
     padding: 1rem 2.5rem 1rem 1rem;
     display: grid;
