@@ -54,10 +54,15 @@ const AUTO_DISMISS_MS = 12000;
 
 // Set the path element's text, middle-truncating with an ellipsis if it would
 // overflow on a single line. Requires the element to be laid out (not [hidden])
-// so clientWidth/scrollWidth are meaningful.
+// so clientWidth/scrollWidth are meaningful. The SLACK_PX margin guards against
+// sub-pixel rounding that otherwise lets `overflow: hidden` silently clip the
+// last glyph instead of triggering truncation.
 function setPathWithMiddleEllipsis(el, fullText) {
+    const SLACK_PX = 4;
+    const fits = () => el.scrollWidth <= el.clientWidth - SLACK_PX;
+
     el.textContent = fullText;
-    if (el.scrollWidth <= el.clientWidth) return;
+    if (fits()) return;
 
     let lo = 1;
     let hi = fullText.length;
@@ -66,10 +71,9 @@ function setPathWithMiddleEllipsis(el, fullText) {
         const total = (lo + hi) >> 1;
         const head = total >> 1;
         const tail = total - head;
-        const candidate = fullText.slice(0, head) + '…' + fullText.slice(fullText.length - tail);
-        el.textContent = candidate;
-        if (el.scrollWidth <= el.clientWidth) {
-            best = candidate;
+        el.textContent = fullText.slice(0, head) + '…' + fullText.slice(fullText.length - tail);
+        if (fits()) {
+            best = el.textContent;
             lo = total + 1;
         } else {
             hi = total - 1;
