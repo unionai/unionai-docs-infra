@@ -52,26 +52,66 @@ function clearVariantSwitchFromStorage() {
 
 const AUTO_DISMISS_MS = 12000;
 
-// Set the path element's text, middle-truncating with an ellipsis if it would
-// overflow on a single line. Requires the element to be laid out (not [hidden])
-// so clientWidth/scrollWidth are meaningful. The SLACK_PX margin guards against
-// sub-pixel rounding that otherwise lets `overflow: hidden` silently clip the
-// last glyph instead of triggering truncation.
-function setPathWithMiddleEllipsis(el, fullText) {
+// Set the path element's text, abbreviating it with ellipses if it would
+// overflow on a single line. Tries progressively more aggressive truncations
+// and keeps the longest that fits:
+//
+//   Phase 1 — drop middle path segments (slash-delimited), always preserving
+//             the last segment.    e.g. /docs/v2/…/some-page-name
+//   Phase 2 — shrink the last segment by hyphen-delimited chunks, always
+//             preserving the last chunk.   e.g. /…/some-very-…-name
+//   Phase 3 — character-level middle truncation as a final fallback (covers
+//             single-segment paths and pathological no-separator cases).
+//
+// Requires the element to be laid out (not [hidden]) and to have a definite
+// width so clientWidth is stable across measurements. SLACK_PX guards against
+// sub-pixel rounding that would otherwise let `overflow: hidden` silently clip
+// the trailing glyph.
+function setPathWithSmartEllipsis(el, fullText) {
     const SLACK_PX = 4;
+    const E = '…';
     const fits = () => el.scrollWidth <= el.clientWidth - SLACK_PX;
 
     el.textContent = fullText;
     if (fits()) return;
 
-    let lo = 1;
-    let hi = fullText.length;
-    let best = '…';
+    const segments = fullText.split('/').filter(Boolean);
+    const last = segments[segments.length - 1] || '';
+
+    // Phase 1: drop middle path segments.
+    if (segments.length >= 3) {
+        for (let keepLeading = segments.length - 2; keepLeading >= 0; keepLeading--) {
+            const prefix = keepLeading === 0
+                ? `/${E}/`
+                : `/${segments.slice(0, keepLeading).join('/')}/${E}/`;
+            el.textContent = prefix + last;
+            if (fits()) return;
+        }
+    }
+
+    // Phase 2: shrink the last segment by hyphen chunks. Use `/…/` as the
+    // leading prefix when phase 1 had segments to drop, otherwise just `/`.
+    const tailPrefix = segments.length >= 3 ? `/${E}/` : '/';
+    const chunks = last.split('-');
+    if (chunks.length >= 3) {
+        const lastChunk = chunks[chunks.length - 1];
+        for (let keepLeading = chunks.length - 2; keepLeading >= 0; keepLeading--) {
+            const truncatedLast = keepLeading === 0
+                ? `${E}-${lastChunk}`
+                : `${chunks.slice(0, keepLeading).join('-')}-${E}-${lastChunk}`;
+            el.textContent = tailPrefix + truncatedLast;
+            if (fits()) return;
+        }
+    }
+
+    // Phase 3: character-level binary search on the full path.
+    let lo = 1, hi = fullText.length;
+    let best = E;
     while (lo <= hi) {
         const total = (lo + hi) >> 1;
         const head = total >> 1;
         const tail = total - head;
-        el.textContent = fullText.slice(0, head) + '…' + fullText.slice(fullText.length - tail);
+        el.textContent = fullText.slice(0, head) + E + fullText.slice(fullText.length - tail);
         if (fits()) {
             best = el.textContent;
             lo = total + 1;
@@ -149,7 +189,7 @@ window.addEventListener('DOMContentLoaded', () => {
             pathEl.hidden = false;
             // Need the element laid out before measuring for truncation.
             notice.hidden = false;
-            setPathWithMiddleEllipsis(pathEl, pathName);
+            setPathWithSmartEllipsis(pathEl, pathName);
         } else {
             pathEl.hidden = true;
             notice.hidden = false;
