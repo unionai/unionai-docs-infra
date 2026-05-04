@@ -52,8 +52,35 @@ function clearVariantSwitchFromStorage() {
 
 const AUTO_DISMISS_MS = 12000;
 
+// Set the path element's text, middle-truncating with an ellipsis if it would
+// overflow on a single line. Requires the element to be laid out (not [hidden])
+// so clientWidth/scrollWidth are meaningful.
+function setPathWithMiddleEllipsis(el, fullText) {
+    el.textContent = fullText;
+    if (el.scrollWidth <= el.clientWidth) return;
+
+    let lo = 1;
+    let hi = fullText.length;
+    let best = '…';
+    while (lo <= hi) {
+        const total = (lo + hi) >> 1;
+        const head = total >> 1;
+        const tail = total - head;
+        const candidate = fullText.slice(0, head) + '…' + fullText.slice(fullText.length - tail);
+        el.textContent = candidate;
+        if (el.scrollWidth <= el.clientWidth) {
+            best = candidate;
+            lo = total + 1;
+        } else {
+            hi = total - 1;
+        }
+    }
+    el.textContent = best;
+}
+
 function showNotice(notice) {
-    notice.hidden = false;
+    // Caller is responsible for unhiding (notice.hidden = false) before this
+    // so any measurements (e.g. middle-truncating the path) can happen first.
     // Force a reflow so the transition runs from the initial transform/opacity.
     // eslint-disable-next-line no-unused-expressions
     notice.offsetHeight;
@@ -88,40 +115,43 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (!originalUrl && !isVariantSwitch) return;
 
+    // Resolve the missing pathname for display (strip protocol/host/query/fragment).
+    let pathName = '';
     if (originalUrl) {
-        let parsedOriginal = null;
         try {
-            parsedOriginal = new URL(originalUrl, window.location.origin);
-        } catch (e) { /* invalid */ }
-        if (parsedOriginal && ['http:', 'https:'].includes(parsedOriginal.protocol)) {
-            // Strip query string and fragment for display — internal walk-up
-            // params (?404=, ?source=, etc.) are noise to the user.
-            const cleanUrl = parsedOriginal.origin + parsedOriginal.pathname;
-            notice.querySelectorAll('.four-page').forEach((el) => {
-                el.replaceChildren();
-                const link = document.createElement('a');
-                link.href = cleanUrl;
-                link.textContent = cleanUrl;
-                el.appendChild(link);
-            });
-        }
+            const parsed = new URL(originalUrl, window.location.origin);
+            if (['http:', 'https:'].includes(parsed.protocol)) {
+                pathName = parsed.pathname;
+            }
+        } catch (e) { /* invalid; pathName stays empty */ }
     }
 
-    if (isVariantSwitch) {
-        const fromName = variantDisplayName(fromVariant);
-        const toName = variantDisplayName(toVariant);
-        notice.querySelectorAll('.four-from-variant').forEach((el) => {
-            el.textContent = fromName;
-        });
-        notice.querySelectorAll('.four-to-variant, .four-to-variant-2, .four-to-variant-3').forEach((el) => {
-            el.textContent = toName;
-        });
-        const variantBanner = notice.querySelector('.four-notice-variant-switch');
-        const defaultBanner = notice.querySelector('.four-notice-default');
-        if (variantBanner) variantBanner.hidden = false;
-        if (defaultBanner) defaultBanner.hidden = true;
+    // Title: "Page not found" by default; "Page not in <Variant>" on a
+    // cross-variant switch (works for either direction).
+    const titleEl = notice.querySelector('.four-notice-title');
+    if (titleEl) {
+        titleEl.textContent = isVariantSwitch
+            ? `Page not in ${variantDisplayName(toVariant)}`
+            : 'Page not found';
+    }
 
-        clearVariantSwitchFromStorage();
+    if (isVariantSwitch) clearVariantSwitchFromStorage();
+
+    // Path line: hidden when we have no original URL; otherwise plain monospace
+    // text, middle-truncated with an ellipsis if it would overflow.
+    const pathEl = notice.querySelector('.four-notice-path');
+    if (pathEl) {
+        if (pathName) {
+            pathEl.hidden = false;
+            // Need the element laid out before measuring for truncation.
+            notice.hidden = false;
+            setPathWithMiddleEllipsis(pathEl, pathName);
+        } else {
+            pathEl.hidden = true;
+            notice.hidden = false;
+        }
+    } else {
+        notice.hidden = false;
     }
 
     // Wire up the close button.
