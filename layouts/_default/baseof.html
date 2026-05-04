@@ -141,26 +141,26 @@
           </sl-alert>
         </div>
         {{- end -}}
-        <div class="four-notice" hidden role="status" aria-live="polite">
-          <button type="button" class="four-notice-close" aria-label="Dismiss">
-            <sl-icon name="x-lg"></sl-icon>
-          </button>
-          <div class="four-notice-icon" aria-hidden="true">
-            <sl-icon name="info-circle"></sl-icon>
-          </div>
-          <div class="four-notice-body">
-            <p class="four-notice-default">
-              The page you navigated to (<span class="four-page"></span>) does not exist, so we brought you to the closest page to it.
-            </p>
-            <p class="four-notice-variant-switch" hidden>
-              You have switched from the <span class="four-from-variant"></span> to the <span class="four-to-variant"></span> variant of this site. There is no <span class="four-to-variant-2"></span> equivalent of <span class="four-page"></span>. We have taken you to the closest page in the <span class="four-to-variant-3"></span> variant.
-            </p>
-          </div>
-        </div>
         {{- partial "breadcrumb.html" . -}}
         {{- block "main" . -}}{{- end -}}
       </main>
       {{- partial "toc.html" . -}}
+    </div>
+    <div class="four-notice" hidden role="status" aria-live="polite">
+      <button type="button" class="four-notice-close" aria-label="Dismiss">
+        <sl-icon name="x-lg"></sl-icon>
+      </button>
+      <div class="four-notice-icon" aria-hidden="true">
+        <sl-icon name="info-circle"></sl-icon>
+      </div>
+      <div class="four-notice-body">
+        <p class="four-notice-default">
+          The page you navigated to (<span class="four-page"></span>) does not exist, so we brought you to the closest page to it.
+        </p>
+        <p class="four-notice-variant-switch" hidden>
+          You have switched from the <span class="four-from-variant"></span> to the <span class="four-to-variant"></span> variant of this site. There is no <span class="four-to-variant-2"></span> equivalent of <span class="four-page"></span>. We have taken you to the closest page in the <span class="four-to-variant-3"></span> variant.
+        </p>
+      </div>
     </div>
     {{- partial "runllm.html" . -}}
   </body>
