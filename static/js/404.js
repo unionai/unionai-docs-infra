@@ -52,6 +52,62 @@ function clearVariantSwitchFromStorage() {
 
 const AUTO_DISMISS_MS = 12000;
 
+// Character budget for the path line in the toast. Tuned to the body grid
+// column width (toast width minus badge, close button, gaps, and padding) for
+// a monospace font at 0.78rem. Two breakpoints to match the CSS:
+//   - desktop (>=600px viewport): toast is fixed at 22rem
+//   - small (<600px): toast spans the viewport with 1rem margins
+const PATH_MAX_CHARS = window.innerWidth < 600 ? 20 : 28;
+
+// Abbreviate a path with ellipses to fit within `maxChars`, preferring natural
+// separators. Tries each strategy in order; first candidate that fits wins:
+//
+//   Phase 1 — drop middle path segments (slash-delimited).  /docs/v2/…/page-name
+//   Phase 2 — shrink the last segment by hyphen chunks.    /…/some-very-…-name
+//   Phase 3 — character-level middle ellipsis fallback.
+//
+// In all phases, the last segment (or last chunk) is preserved intact so the
+// most specific piece of the path remains readable.
+function abbreviatePath(fullText, maxChars) {
+    const E = '…';
+    if (fullText.length <= maxChars) return fullText;
+
+    const segments = fullText.split('/').filter(Boolean);
+    const last = segments[segments.length - 1] || '';
+
+    // Phase 1: drop middle path segments.
+    if (segments.length >= 3) {
+        for (let keepLeading = segments.length - 2; keepLeading >= 0; keepLeading--) {
+            const prefix = keepLeading === 0
+                ? `/${E}/`
+                : `/${segments.slice(0, keepLeading).join('/')}/${E}/`;
+            const candidate = prefix + last;
+            if (candidate.length <= maxChars) return candidate;
+        }
+    }
+
+    // Phase 2: shrink the last segment by hyphen chunks.
+    const tailPrefix = segments.length >= 3 ? `/${E}/` : '/';
+    const chunks = last.split('-');
+    if (chunks.length >= 3) {
+        const lastChunk = chunks[chunks.length - 1];
+        for (let keepLeading = chunks.length - 2; keepLeading >= 0; keepLeading--) {
+            const truncatedLast = keepLeading === 0
+                ? `${E}-${lastChunk}`
+                : `${chunks.slice(0, keepLeading).join('-')}-${E}-${lastChunk}`;
+            const candidate = tailPrefix + truncatedLast;
+            if (candidate.length <= maxChars) return candidate;
+        }
+    }
+
+    // Phase 3: character-level middle ellipsis on the full path.
+    if (maxChars <= 1) return E;
+    const visible = maxChars - 1;
+    const head = visible >> 1;
+    const tail = visible - head;
+    return fullText.slice(0, head) + E + fullText.slice(fullText.length - tail);
+}
+
 function showNotice(notice) {
     notice.hidden = false;
     // Force a reflow so the transition runs from the initial transform/opacity.
@@ -88,40 +144,38 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (!originalUrl && !isVariantSwitch) return;
 
+    // Resolve the missing pathname for display (strip protocol/host/query/fragment).
+    let pathName = '';
     if (originalUrl) {
-        let parsedOriginal = null;
         try {
-            parsedOriginal = new URL(originalUrl, window.location.origin);
-        } catch (e) { /* invalid */ }
-        if (parsedOriginal && ['http:', 'https:'].includes(parsedOriginal.protocol)) {
-            // Strip query string and fragment for display — internal walk-up
-            // params (?404=, ?source=, etc.) are noise to the user.
-            const cleanUrl = parsedOriginal.origin + parsedOriginal.pathname;
-            notice.querySelectorAll('.four-page').forEach((el) => {
-                el.replaceChildren();
-                const link = document.createElement('a');
-                link.href = cleanUrl;
-                link.textContent = cleanUrl;
-                el.appendChild(link);
-            });
-        }
+            const parsed = new URL(originalUrl, window.location.origin);
+            if (['http:', 'https:'].includes(parsed.protocol)) {
+                pathName = parsed.pathname;
+            }
+        } catch (e) { /* invalid; pathName stays empty */ }
     }
 
-    if (isVariantSwitch) {
-        const fromName = variantDisplayName(fromVariant);
-        const toName = variantDisplayName(toVariant);
-        notice.querySelectorAll('.four-from-variant').forEach((el) => {
-            el.textContent = fromName;
-        });
-        notice.querySelectorAll('.four-to-variant, .four-to-variant-2, .four-to-variant-3').forEach((el) => {
-            el.textContent = toName;
-        });
-        const variantBanner = notice.querySelector('.four-notice-variant-switch');
-        const defaultBanner = notice.querySelector('.four-notice-default');
-        if (variantBanner) variantBanner.hidden = false;
-        if (defaultBanner) defaultBanner.hidden = true;
+    // Title: "Page not found" by default; "Page not in <Variant>" on a
+    // cross-variant switch (works for either direction).
+    const titleEl = notice.querySelector('.four-notice-title');
+    if (titleEl) {
+        titleEl.textContent = isVariantSwitch
+            ? `Page not in ${variantDisplayName(toVariant)}`
+            : 'Page not found';
+    }
 
-        clearVariantSwitchFromStorage();
+    if (isVariantSwitch) clearVariantSwitchFromStorage();
+
+    // Path line: hidden when we have no original URL; otherwise plain monospace
+    // text, abbreviated to PATH_MAX_CHARS via natural separators.
+    const pathEl = notice.querySelector('.four-notice-path');
+    if (pathEl) {
+        if (pathName) {
+            pathEl.hidden = false;
+            pathEl.textContent = abbreviatePath(pathName, PATH_MAX_CHARS);
+        } else {
+            pathEl.hidden = true;
+        }
     }
 
     // Wire up the close button.
