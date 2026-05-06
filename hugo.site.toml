@@ -53,8 +53,6 @@ custom_js = [
 
 [params.variant_weights]
 flyte = 2
-byoc = 3
-selfmanaged = 4
 union = 1
 
 
@@ -74,116 +72,78 @@ union = 1
 
 [params.key.default_project]
 flyte = "flytesnacks"
-byoc = "flytesnacks"
-selfmanaged = "flytesnacks"
 union = "flytesnacks"
 
 [params.key.product_full_name]
 flyte = "Flyte OSS"
-byoc = "Union.ai BYOC"
-selfmanaged = "Union.ai Self-managed"
 union = "Union.ai"
 
 [params.key.product_name]
 flyte = "Flyte"
-byoc = "Union.ai"
-selfmanaged = "Union.ai"
 union = "Union.ai"
 
 [params.key.product]
 flyte = "flyte"
-byoc = "union"
-selfmanaged = "union"
 union = "union"
 
 [params.key.kit_name]
 flyte = "Flytekit"
-byoc = "Union"
-selfmanaged = "Union"
 union = "Union"
 
 [params.key.kit]
 flyte = "flytekit"
-byoc = "union"
-selfmanaged = "union"
 union = "union"
 
 [params.key.kit_as]
 flyte = "fl"
-byoc = "union"
-selfmanaged = "union"
 union = "union"
 
 [params.key.kit_import]
 flyte = "flytekit as fl"
-byoc = "union"
-selfmanaged = "union"
 union = "union"
 
 [params.key.kit_remote]
 flyte = "FlyteRemote"
-byoc = "UnionRemote"
-selfmanaged = "UnionRemote"
 union = "UnionRemote"
 
 [params.key.cli_name]
 flyte = "Pyflyte"
-byoc = "Union"
-selfmanaged = "Union"
 union = "Union"
 
 [params.key.cli]
 flyte = "pyflyte"
-byoc = "union"
-selfmanaged = "union"
 union = "union"
 
 [params.key.ctl_name]
 flyte = "Flytectl"
-byoc = "Uctl"
-selfmanaged = "Uctl"
 union = "Uctl"
 
 [params.key.ctl]
 flyte = "flytectl"
-byoc = "uctl"
-selfmanaged = "uctl"
 union = "uctl"
 
 [params.key.config_env]
 flyte = "FLYTECTL_CONFIG"
-byoc = "UNION_CONFIG"
-selfmanaged = "UNION_CONFIG"
 union = "UNION_CONFIG"
 
 [params.key.env_prefix]
 flyte = "FLYTE"
-byoc = "UNION"
-selfmanaged = "UNION"
 union = "UNION"
 
 [params.key.docs_home]
 flyte = "https://www.union.ai/docs/flyte"
-byoc = "https://www.union.ai/docs/byoc"
-selfmanaged = "https://www.union.ai/docs/selfmanaged"
 union = "https://www.union.ai/docs/union"
 
 [params.key.map_func]
 flyte = "map_task"
-byoc = "map"
-selfmanaged = "map"
 union = "map"
 
 [params.key.logo]
 flyte = "icon-logo-flyte.svg"
-byoc = "icon-logo.svg"
-selfmanaged = "icon-logo.svg"
 union = "icon-logo.svg"
 
 [params.key.favicon]
 flyte = "icon-logo-flyte.svg"
-byoc = "favicon.ico"
-selfmanaged = "favicon.ico"
 union = "favicon.ico"
 
 # Please DO NOT add new keys without documenting them the contributing guide in the same PR.
