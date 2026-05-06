@@ -12,7 +12,7 @@ themesDir = "unionai-docs-infra/themes"
 staticDir = ["unionai-docs-infra/static", "linkmap"]
 
 timeout = "5m"
-languageCode = 'en-us'
+defaultContentLanguage = 'en-us'
 disableKinds = ["RSS"]
 enableRobotsTXT = true
 enableEmoji = true

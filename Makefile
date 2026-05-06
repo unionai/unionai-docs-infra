@@ -4,7 +4,7 @@
 # VERSION, VARIANTS, DEFAULT_VARIANT, REPO_ROOT, PORT are exported by the top-level Makefile.
 
 PREFIX := $(if $(VERSION),docs/$(VERSION),docs)
-DEFAULT_VARIANT ?= byoc
+DEFAULT_VARIANT ?= union
 PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
