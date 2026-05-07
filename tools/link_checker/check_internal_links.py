@@ -14,7 +14,7 @@ import re
 import sys
 from pathlib import Path
 
-VARIANTS = ["flyte", "union"]
+VARIANTS = ["flyte", "byoc", "selfmanaged", "union"]
 CONTENT_DIR = Path("content")
 
 
@@ -141,6 +141,23 @@ def extract_headings_from_file(file_path: Path) -> set[str]:
     except Exception:
         return set()
     return extract_headings(content)
+
+
+def strip_inactive_variant_blocks(content: str, current_variant: str) -> str:
+    """Remove {{< variant X >}}...{{< /variant >}} blocks where X != current_variant."""
+
+    def replacer(m: re.Match) -> str:
+        names = m.group(1).split()
+        if current_variant in names:
+            return m.group(0)
+        return "\n" * m.group(0).count("\n")
+
+    return re.sub(
+        r"\{\{<\s*variant\s+([^>]+?)>\}\}.*?\{\{<\s*/variant\s*>\}\}",
+        replacer,
+        content,
+        flags=re.DOTALL,
+    )
 
 
 def extract_links(content: str) -> list[tuple[int, str, str]]:
@@ -445,6 +462,7 @@ def check_variant(variant: str, content_dir: Path, variant_pages: dict[str, set[
         except Exception:
             continue
 
+        content = strip_inactive_variant_blocks(content, variant)
         links = extract_links(content)
 
         for line_num, link_text, link_url in links:
