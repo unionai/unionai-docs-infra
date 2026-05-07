@@ -65,7 +65,7 @@ class ShortcodeProcessor:
 
             # Transform the nested structure to a flat mapping per variant
             mappings = {}
-            variants = ['flyte', 'byoc', 'selfmanaged', 'union']
+            variants = ['flyte', 'union']
 
             for variant in variants:
                 mappings[variant] = {}
