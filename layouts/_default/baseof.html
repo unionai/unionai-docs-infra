@@ -158,6 +158,9 @@
       </button>
     </div>
     {{- partial "runllm.html" . -}}
+    {{ if not hugo.IsProduction }}
+    <script src="https://hypothes.is/embed.js" async></script>
+    {{ end }}
   </body>
 </html>
 {{- end -}}
