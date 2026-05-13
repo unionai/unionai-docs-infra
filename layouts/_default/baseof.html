@@ -7,14 +7,6 @@
 <!DOCTYPE html>
 <html lang="{{- .Site.Language.Lang -}}">
   <head>
-    {{- /* Build provenance — populated by GHA via build_info.yaml at repo root. */ -}}
-    {{- /* Read directly via readFile to bypass Hugo's mid-evolution data namespace */ -}}
-    {{- /* (.Site.Data and site.Data are deprecated in 0.156+; hugo.Data behavior was */ -}}
-    {{- /* inconsistent for us). Silently no-ops on local builds without the file. */ -}}
-    {{- if os.FileExists "build_info.yaml" }}
-    {{- $info := readFile "build_info.yaml" | transform.Unmarshal }}
-    <!-- Built by {{ $info.builder }} at {{ $info.built_at }} | {{ $info.event }} on {{ $info.ref }} (commit {{ $info.commit }}) | run: {{ $info.run_url }} -->
-    {{- end }}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{- .Title -}}&nbsp;|&nbsp;{{- .Site.Title -}}</title>
