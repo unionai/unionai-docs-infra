@@ -7,6 +7,11 @@
 <!DOCTYPE html>
 <html lang="{{- .Site.Language.Lang -}}">
   <head>
+    {{- /* Build provenance — populated by GHA via data/build_info.yaml. */ -}}
+    {{- /* Silently no-ops on local builds where the data file is absent. */ -}}
+    {{- with .Site.Data.build_info }}
+    <!-- Built by {{ .builder }} at {{ .built_at }} | {{ .event }} on {{ .ref }} (commit {{ .commit }}) | run: {{ .run_url }} -->
+    {{- end }}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{- .Title -}}&nbsp;|&nbsp;{{- .Site.Title -}}</title>
