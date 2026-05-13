@@ -58,13 +58,19 @@ There are **two CloudFront distributions**:
 | Project | Subdomain | Custom Domains | Production Branch |
 |---------|-----------|----------------|-------------------|
 | **docs** | `docs-dog.pages.dev` | `docs.union.ai`, `web-docs.union.ai` | `main` |
-| **docs-builder** | `docs-builder.pages.dev` | *(none)* | `main` |
+| **docs-builder** | `docs-builder.pages.dev` | *(none)* | `main` (orphan, see below) |
 
 The **docs** project serves both v2 docs (via `web-docs.union.ai`) and the legacy `docs.union.ai` domain. Each deployment also gets a unique preview URL (e.g., `621e958d.docs-dog.pages.dev`).
 
-The **docs-builder** project is used for preview/staging deployments (e.g., `nelson-selfhosted.docs-builder.pages.dev`).
+> **Build source:** as of 2026-05-13, the `docs` project's builds are produced by **GitHub Actions** (`.github/workflows/build-and-deploy.yml` on `unionai/unionai-docs`, both `main` and `v1` branches) and pushed via `wrangler pages deploy` (Direct Upload mode). CF Pages' native build runner is disabled (`source.config.deployments_enabled: false`). The project's stored `build_config` (`make dist` → `dist/`) and `HUGO_VERSION` env vars are no longer read. Deployment `source` field shows `ad_hoc` (wrangler) rather than `github:push` (CF native).
+>
+> Verify what's live with: `curl https://www.union.ai/docs/build-info.json` (main) or `curl https://www.union.ai/docs/v1/build-info.json` (v1) — returns `"builder": "github-actions"` plus the GHA run URL of the live deployment.
 
-The v1 docs are served from `v1.docs-dog.pages.dev` — this is a deployment alias within the same **docs** Pages project, not a separate project.
+The v1 docs are served from `v1.docs-dog.pages.dev` — this is a deployment alias within the same **docs** Pages project, not a separate project. Built and deployed by the same GHA workflow on the `v1` branch with `--branch=v1`.
+
+The **docs-builder** project was previously used for preview/staging Git-connected builds. After the 2026-05 GHA-build migration it has no role; it remains in the dashboard as an orphan with auto-deploys disabled (1,714 historical deployments make bulk-delete via API expensive vs. its zero-cost inert state).
+
+The Admin@flyte.org account has **no Cloudflare Pages projects**.
 
 The Admin@flyte.org account has **no Cloudflare Pages projects**.
 
@@ -221,8 +227,8 @@ The v1 docs origin is the same in both distributions — there is no separate st
 
 After CloudFront routes the request, it reaches one of three backends (production origins shown):
 
-- **web-docs.union.ai** (Cloudflare Pages) — Serves the v2 documentation. This is a Hugo-generated static site deployed via Cloudflare Pages. Staging equivalent: `staging.docs-dog.pages.dev`.
-- **v1.docs-dog.pages.dev** (Cloudflare Pages) — Serves the v1 documentation. Also a Hugo-generated static site on Cloudflare Pages. Shared between production and staging.
+- **web-docs.union.ai** (Cloudflare Pages) — Serves the v2 documentation. Hugo-generated static site built by GitHub Actions (`build-and-deploy.yml` on `unionai-docs` `main`) and pushed to CF Pages via Direct Upload. Staging equivalent: `staging.docs-dog.pages.dev`.
+- **v1.docs-dog.pages.dev** (Cloudflare Pages) — Serves the v1 documentation. Same workflow on the `v1` branch, deployed with `--branch=v1`. Branch alias within the `docs` Pages project, shared between production and staging.
 - **web.union.ai** (Webflow) — Serves the Union.ai corporate website (marketing pages, blog, pricing, etc.). Staging equivalent: `union-staging.webflow.io`.
 
 ### Phase 5: docs.flyte.org / docs-legacy.flyte.org Redirect Chain (Cloudflare — flyte.org zone)
