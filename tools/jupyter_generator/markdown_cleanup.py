@@ -21,6 +21,8 @@ def process_file(file_path):
         version = match.group(1)
         variant = match.group(2)
         path = match.group(3)
+        if variant in ("byoc", "selfmanaged"):
+            variant = "union"
         return f'{{{{< docs_home {variant} {version} >}}}}/{path}'
 
     content = docs_url_pattern.sub(replace_docs_url, content)

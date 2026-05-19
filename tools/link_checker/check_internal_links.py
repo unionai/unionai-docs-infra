@@ -160,11 +160,12 @@ def strip_inactive_variant_blocks(content: str, current_variant: str) -> str:
     )
 
 
-def extract_links(content: str) -> list[tuple[int, str, str]]:
+def extract_links(content: str, variant: str | None = None) -> list[tuple[int, str, str]]:
     """Extract markdown links from content.
 
     Returns list of (line_number, link_text, link_url).
-    Skips links inside Hugo shortcodes and code blocks.
+    Strips content inside `{{< variant ... >}}...{{< /variant >}}` blocks that
+    do not include the given `variant`, code blocks, and inline code.
     """
     links = []
 
@@ -175,6 +176,20 @@ def extract_links(content: str) -> list[tuple[int, str, str]]:
     if fm_match:
         fm_lines = content[:fm_match.end()].count("\n")
         body = content[fm_match.end():]
+
+    # Drop links inside {{< variant ... >}} blocks that don't apply to this
+    # variant. Replace each excluded block with newlines so line numbers in
+    # reported errors stay accurate.
+    if variant is not None:
+        def _filter_variant_block(m: re.Match) -> str:
+            args = m.group(1).split()
+            if variant in args:
+                return m.group(0)
+            return "\n" * m.group(0).count("\n")
+        body = re.sub(
+            r"\{\{<\s*variant\s+([^>]+?)\s*>\}\}(.*?)\{\{<\s*/variant\s*>\}\}",
+            _filter_variant_block, body, flags=re.DOTALL,
+        )
 
     # Remove fenced code blocks to avoid false positives
     body_no_code = re.sub(r"```.*?```", lambda m: "\n" * m.group(0).count("\n"), body, flags=re.DOTALL)
@@ -463,7 +478,7 @@ def check_variant(variant: str, content_dir: Path, variant_pages: dict[str, set[
             continue
 
         content = strip_inactive_variant_blocks(content, variant)
-        links = extract_links(content)
+        links = extract_links(content, variant=variant)
 
         for line_num, link_text, link_url in links:
             link_type = classify_link(link_url)

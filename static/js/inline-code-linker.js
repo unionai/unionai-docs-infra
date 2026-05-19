@@ -1,6 +1,13 @@
 /**
  * Automatic linking for inline code elements.
  * Loads the linkmap JSON and adds links to matching inline code.
+ *
+ * Inline-code sigils (entire backticked text must match the pattern):
+ *   `{{X}}`      — opt-out: render X with no link, even if X is in the linkmap.
+ *   `[[X]]`      — force-link by last-segment lookup; renders as X.
+ *   `[[X|Y]]`    — link to X (matched as a linkmap key or by last segment),
+ *                  render as Y. Useful for fully-qualified target / short display:
+ *                  e.g. `[[flyte.Trigger|Trigger]]`.
  */
 
 (function() {
@@ -62,13 +69,36 @@
       const codeElements = document.querySelectorAll('code:not(pre code)');
 
       codeElements.forEach(codeEl => {
+        // Don't wrap code that's already inside a link — produces nested anchors.
+        if (codeEl.closest('a')) return;
+
         const text = codeEl.textContent.trim();
 
-        // Check for magic marker syntax [[...]]
+        // Opt-out sigil: `{{X}}` renders X without linking.
+        const optOutMatch = text.match(/^\{\{(.+)\}\}$/);
+        if (optOutMatch) {
+          codeEl.textContent = optOutMatch[1];
+          return;
+        }
+
+        // Check for magic marker syntax [[...]] or [[target|display]]
         const magicMatch = text.match(/^\[\[(.+?)\]\]$/);
         if (magicMatch) {
-          const innerText = magicMatch[1];
-          const displayText = innerText; // What we'll show (without brackets)
+          const raw = magicMatch[1];
+          const pipeIdx = raw.indexOf('|');
+          const innerText = pipeIdx >= 0 ? raw.slice(0, pipeIdx) : raw;
+          const displayText = pipeIdx >= 0 ? raw.slice(pipeIdx + 1) : raw;
+
+          // Direct linkmap lookup first — handles `[[flyte.Trigger|Trigger]]`
+          // and any case where the target is already a full linkmap key.
+          if (linkmap.identifiers && linkmap.identifiers[innerText]) {
+            wrapWithLink(codeEl, linkmap.identifiers[innerText], displayText);
+            return;
+          }
+          if (linkmap.methods && linkmap.methods[innerText]) {
+            wrapWithLink(codeEl, linkmap.methods[innerText], displayText);
+            return;
+          }
 
           // Strip trailing () for matching
           let textForMatching = innerText.endsWith('()') ? innerText.slice(0, -2) : innerText;

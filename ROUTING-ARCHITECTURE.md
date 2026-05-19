@@ -1,6 +1,6 @@
 # Union.ai Web Routing Architecture
 
-This document describes the complete request routing system that serves `union.ai`, `www.union.ai`, `docs.flyte.org`, and related domains. The system spans three services: Cloudflare (DNS + rules + static hosting), AWS CloudFront (path-based reverse proxy), and Webflow (corporate site).
+This document describes the complete request routing system that serves `union.ai`, `www.union.ai`, `docs.flyte.org`, `docs-legacy.flyte.org`, and related domains. The system spans three services: Cloudflare (DNS + rules + static hosting), AWS CloudFront (path-based reverse proxy), and Webflow (corporate site).
 
 ## Overview
 
@@ -12,7 +12,7 @@ The public-facing domain is `union.ai` (and `www.union.ai`). All web traffic ent
 | v1 docs (`/docs/v1/`) | v1.docs-dog.pages.dev | Cloudflare Pages |
 | Corporate site (everything else) | web.union.ai | Webflow |
 
-The legacy domain `docs.flyte.org` is handled entirely within Cloudflare (no CloudFront involvement) and redirects all traffic to `www.union.ai/docs/`.
+The legacy domains `docs.flyte.org` and `docs-legacy.flyte.org` are both handled entirely within Cloudflare (no CloudFront involvement) and redirect all traffic to `www.union.ai/docs/v2/flyte/...` via a shared dual-host rule chain plus the union.ai bulk-redirect list.
 
 Two Cloudflare accounts are involved:
 
@@ -35,13 +35,14 @@ All DNS is managed in Cloudflare. The key CNAME records (from the exported DNS d
 | `web-docs.union.ai` | `docs-dog.pages.dev` | Yes | v2 docs → Cloudflare Pages |
 | `docs.union.ai` | `docs-dog.pages.dev` | Yes | Legacy docs subdomain → Cloudflare Pages |
 | `docs.flyte.org` | `readthedocs.io` | Yes | Legacy Flyte docs (proxied; Cloudflare rules intercept before it reaches ReadTheDocs) |
+| `docs-legacy.flyte.org` | `readthedocs.io` | Yes | Legacy Flyte v1.x Sphinx docs (proxied; same rule chain as `docs.flyte.org`) |
 | `signup.union.ai` | `cname.vercel-dns.com` | Yes | Signup → Vercel |
 | `sandbox.union.ai` | `union.ai` | Yes | Redirects to signup (via page rule) |
 | `flyte.org` | `cdn.webflow.com` | No | Flyte corporate site → Webflow |
 | `slack.flyte.org` | `8.8.8.8` (dummy A record) | Yes | Proxied dummy; Cloudflare rules redirect to Slack invite |
 | `blog.flyte.org` | `8.8.8.8` (dummy A record) | Yes | Proxied dummy; page rule redirects to flyte.org/blog |
 
-**Important**: `docs.flyte.org` still has a CNAME pointing to `readthedocs.io`, but because the record is **proxied** (orange cloud), Cloudflare intercepts the request and applies its redirect rules before it ever reaches ReadTheDocs. The CNAME target is effectively unused.
+**Important**: Both `docs.flyte.org` and `docs-legacy.flyte.org` still have CNAMEs pointing to `readthedocs.io`, but because the records are **proxied** (orange cloud), Cloudflare intercepts requests and applies its redirect rules before they ever reach ReadTheDocs. The CNAME target is effectively unused. The two hostnames share the same rule chain (described in Phase 5 below) and route to the same `_r_/flyte` bus.
 
 Similarly, `slack.flyte.org`, `blog.flyte.org`, `status.flyte.org`, and `demo.flyte.org` use dummy A records (`8.8.8.8`) with proxying enabled — the actual responses come from Cloudflare redirect rules, not from the dummy IP.
 
@@ -57,13 +58,19 @@ There are **two CloudFront distributions**:
 | Project | Subdomain | Custom Domains | Production Branch |
 |---------|-----------|----------------|-------------------|
 | **docs** | `docs-dog.pages.dev` | `docs.union.ai`, `web-docs.union.ai` | `main` |
-| **docs-builder** | `docs-builder.pages.dev` | *(none)* | `main` |
+| **docs-builder** | `docs-builder.pages.dev` | *(none)* | `main` (orphan, see below) |
 
 The **docs** project serves both v2 docs (via `web-docs.union.ai`) and the legacy `docs.union.ai` domain. Each deployment also gets a unique preview URL (e.g., `621e958d.docs-dog.pages.dev`).
 
-The **docs-builder** project is used for preview/staging deployments (e.g., `nelson-selfhosted.docs-builder.pages.dev`).
+> **Build source:** as of 2026-05-13, the `docs` project's builds are produced by **GitHub Actions** (`.github/workflows/build-and-deploy.yml` on `unionai/unionai-docs`, both `main` and `v1` branches) and pushed via `wrangler pages deploy` (Direct Upload mode). CF Pages' native build runner is disabled (`source.config.deployments_enabled: false`). The project's stored `build_config` (`make dist` → `dist/`) and `HUGO_VERSION` env vars are no longer read. Deployment `source` field shows `ad_hoc` (wrangler) rather than `github:push` (CF native).
+>
+> Verify what's live with: `curl https://www.union.ai/docs/build-info.json` (main) or `curl https://www.union.ai/docs/v1/build-info.json` (v1) — returns `"builder": "github-actions"` plus the GHA run URL of the live deployment.
 
-The v1 docs are served from `v1.docs-dog.pages.dev` — this is a deployment alias within the same **docs** Pages project, not a separate project.
+The v1 docs are served from `v1.docs-dog.pages.dev` — this is a deployment alias within the same **docs** Pages project, not a separate project. Built and deployed by the same GHA workflow on the `v1` branch with `--branch=v1`.
+
+The **docs-builder** project was previously used for preview/staging Git-connected builds. After the 2026-05 GHA-build migration it has no role; it remains in the dashboard as an orphan with auto-deploys disabled (1,714 historical deployments make bulk-delete via API expensive vs. its zero-cost inert state).
+
+The Admin@flyte.org account has **no Cloudflare Pages projects**.
 
 The Admin@flyte.org account has **no Cloudflare Pages projects**.
 
@@ -103,23 +110,23 @@ Processed in order:
 | `sandbox.union.ai/*` | `https://signup.union.ai` | 302 |
 | `docs.union.ai/HhI8nGjMQ1x5SrxSip29/*` | `https://docs.union.ai/*` | 302 |
 
-#### Bulk Redirects (2,363 entries)
+#### Bulk Redirects (7,776 entries)
 
-A single bulk redirect list named "redirects" containing 2,363 entries, broken down by source domain:
+A single bulk redirect list named "redirects" containing 7,776 entries, broken down by source prefix:
 
-- **2,057 entries** from `www.union.ai` — These handle the migration from the original unversioned URL structure to the versioned structure. For example:
-  - `www.union.ai/docs/byoc/user-guide/administration` → `https://www.union.ai/docs/v1/byoc/user-guide/administration`
-  - `www.union.ai/docs/serverless/tutorials/...` → `https://www.union.ai/docs/v1/serverless/tutorials/...`
-  - Cross-variant redirects (e.g., serverless page → byoc equivalent)
+- **~6,256 entries** from `www.union.ai/*` and `docs.union.ai/*` (legacy categories):
+  - `www.union.ai/docs/byoc/*` style mappings (unversioned → versioned)
+  - `docs.union.ai/*` mappings to `www.union.ai/docs/...`
 
-- **306 entries** from `docs.union.ai` — These handle the migration from the legacy `docs.union.ai` subdomain to `www.union.ai/docs/`. For example:
-  - `docs.union.ai/` → `https://www.union.ai/docs`
-  - `docs.union.ai/administration` → `https://www.union.ai/docs/byoc/user-guide/administration`
-  - `docs.union.ai/building-workflows/launch-plans` → `https://www.union.ai/docs/byoc/user-guide/core-concepts/launch-plans`
+- **~1,520 entries** under `www.union.ai/_r_/flyte/*` — the landing zone for the `docs.flyte.org` / `docs-legacy.flyte.org` catch-all (see Phase 5). Sources are of the form:
+  - `www.union.ai/_r_/flyte/en/latest/<canonical-path>` (main flyte project)
+  - `www.union.ai/_r_/flyte/projects/<subproject>/en/latest/<canonical-path>` (subprojects: flytectl, cookbook, flytekit, flyteidl)
+  
+  Each entry targets a specific `https://www.union.ai/docs/v2/flyte/<v2-path>` destination. Most entries use `subpath_matching=TRUE` to absorb trailing-slash and minor URL-form variants.
 
 All bulk redirects use 302 (temporary) status codes with query string preservation.
 
-**Note**: These bulk redirects also serve as the landing zone for the `docs.flyte.org` catch-all (see Phase 5 below). The flyte.org catch-all rewrites `docs.flyte.org/*` to `www.union.ai/_r_/flyte/*`, which then matches entries in this bulk redirect list.
+**Note**: The `_r_/flyte/*` portion of this list is the landing zone for the `docs.flyte.org` / `docs-legacy.flyte.org` catch-all (see Phase 5). After the flyte.org-zone normalization rules rewrite a request to `www.union.ai/_r_/flyte/<canonical-path>`, this list maps it to the canonical v2 destination. Sourced from `unionai-docs-infra/redirects.csv` and deployed by `tools/redirect_generator/deploy_redirects.py` via the `unionai-docs/.github/workflows/deploy-redirects.yml` CI workflow (auto-runs when the infra submodule pointer changes on `main` or `v1` branches).
 
 ### Phase 3: AWS CloudFront (Path-Based Reverse Proxy)
 
@@ -220,32 +227,34 @@ The v1 docs origin is the same in both distributions — there is no separate st
 
 After CloudFront routes the request, it reaches one of three backends (production origins shown):
 
-- **web-docs.union.ai** (Cloudflare Pages) — Serves the v2 documentation. This is a Hugo-generated static site deployed via Cloudflare Pages. Staging equivalent: `staging.docs-dog.pages.dev`.
-- **v1.docs-dog.pages.dev** (Cloudflare Pages) — Serves the v1 documentation. Also a Hugo-generated static site on Cloudflare Pages. Shared between production and staging.
+- **web-docs.union.ai** (Cloudflare Pages) — Serves the v2 documentation. Hugo-generated static site built by GitHub Actions (`build-and-deploy.yml` on `unionai-docs` `main`) and pushed to CF Pages via Direct Upload. Staging equivalent: `staging.docs-dog.pages.dev`.
+- **v1.docs-dog.pages.dev** (Cloudflare Pages) — Serves the v1 documentation. Same workflow on the `v1` branch, deployed with `--branch=v1`. Branch alias within the `docs` Pages project, shared between production and staging.
 - **web.union.ai** (Webflow) — Serves the Union.ai corporate website (marketing pages, blog, pricing, etc.). Staging equivalent: `union-staging.webflow.io`.
 
-### Phase 5: docs.flyte.org Redirect Chain (Cloudflare — flyte.org zone)
+### Phase 5: docs.flyte.org / docs-legacy.flyte.org Redirect Chain (Cloudflare — flyte.org zone)
 
-The legacy `docs.flyte.org` domain is handled entirely within Cloudflare in the Admin@flyte.org account. No CloudFront is involved.
+Both `docs.flyte.org` and `docs-legacy.flyte.org` are handled entirely within Cloudflare in the Admin@flyte.org account. No CloudFront is involved. They share a single set of dual-host rules and feed into the union.ai bulk-redirect list via the `_r_/flyte` prefix convention.
 
 #### Redirect Rules (Dynamic Redirects, processed in order)
 
-| # | Match | Target | Code | Purpose |
-|---|-------|--------|------|---------|
-| 1 | `slack.flyte.org/` | Slack invite link | 302 | Community Slack shortcut |
-| 2 | `docs.flyte.org/*/api/flytekit/*` | `union.ai/docs/flyte/api-reference/flytekit-sdk` | 302 | Flytekit API docs |
-| 3 | `docs.flyte.org/projects/flytekit/*` | `union.ai/docs/flyte/api-reference/flytekit-sdk` | 302 | Alt flytekit path |
-| 4 | `docs.flyte.org/projects/cookbook/*` | `union.ai/docs/flyte/user-guide` | 302 | Old cookbook → user guide |
-| 5 | `docs.flyte.org/*/flytectl/*` | `union.ai/docs/flyte/api-reference/flytectl-cli` | 302 | flytectl docs |
-| 6 | `docs.flyte.org/en/*/_tags/*` | `union.ai/docs/flyte/tags` | 302 | Tag pages |
-| 7 | `docs.flyte.org/en/v*/*` | `docs.flyte.org/en/latest/*` | 302 | Strip version → latest |
-| 8 | `docs.flyte.org/*/index.html` | Strip `index.html` | 302 | Clean URLs |
-| 9 | `docs.flyte.org/*.html` | Strip `.html` extension | 302 | Clean URLs |
-| 10 | `docs.flyte.org` (catch-all) | `www.union.ai/_r_/flyte{path}` | 302 | Send to bulk redirects |
+All rules below filter on `http.host in {"docs.flyte.org" "docs-legacy.flyte.org"}` unless noted otherwise. Each is 302 with query-string preservation.
 
-**The catch-all mechanism (rule 10)**: After the specific redirect rules have had a chance to match, any remaining `docs.flyte.org` request is rewritten to `www.union.ai/_r_/flyte{path}`. The `_r_/flyte` prefix is a routing convention — these URLs match entries in the Union account's bulk redirect list, which maps them to the correct `www.union.ai/docs/v1/flyte/*` destination.
+| # | Match (path) | Action | Purpose |
+|---|--------------|--------|---------|
+| 1 | `slack.flyte.org/` (different host) | 302 → Slack invite link | Community Slack shortcut |
+| 2 | `/en/v*/*` | rewrite to `/en/latest/${2}` (same host) | Collapse main-project version → latest |
+| 3 | `/projects/*/en/v*/*` | rewrite to `/projects/${1}/en/latest/${3}` (same host) | Collapse subproject version → latest |
+| 4 | `*/index.html` | strip `/index.html` (same host) | Normalize section-index URLs |
+| 5 | `*.html` | strip `.html` (same host) | Normalize extension |
+| 6 | (catch-all on host) | rewrite to `https://www.union.ai/_r_/flyte{path}` | Send normalized path to bulk redirects |
 
-Rules 7-9 normalize the URL (strip version prefixes, `.html` extensions, `index.html`) before the catch-all fires, so that the bulk redirect lookup has a clean path to match against.
+Rules 2–5 normalize the URL (collapse versions, strip extensions) so the catch-all forwards a clean canonical path to the bulk-redirect lookup. Each rule uses Cloudflare's `wildcard_replace` (the `regex_replace` function is a Pro+ feature; the flyte.org zone is on Free).
+
+**The catch-all mechanism (rule 6)**: After the normalization rules have had a chance to fire, any remaining request to either hostname is rewritten to `https://www.union.ai/_r_/flyte{path}`. The `_r_/flyte` prefix is a routing convention — these URLs match entries in the Union account's bulk redirect list, which maps them to specific `https://www.union.ai/docs/v2/flyte/<v2-path>` destinations.
+
+**Why dual-host as a single rule set**: `docs.flyte.org` is the legacy public-facing Flyte docs hostname (Google-indexed since 2020). `docs-legacy.flyte.org` is the same RTD project's secondary custom domain (added later, also Google-indexed). Both served the same Sphinx content. After the v2 migration, both are now intercepted by the same Cloudflare rule chain and redirected to v2. A single shared rule set keeps the configuration in sync — flipping one hostname's behavior automatically flips the other.
+
+**Historical**: prior to the consolidation, the flyte.org zone had ten rules including five specific URL-pattern rules (`*/api/flytekit/*`, `projects/flytekit/*`, `projects/cookbook/*`, `*/flytectl/*`, `en/*/_tags/*`) that collapsed many specific Flyte URLs into a handful of coarse v1 destinations. Those five rules were deleted as part of the v2 migration; the bulk-redirect list now provides per-page v2 mappings for those same URLs, preserving SEO precision.
 
 #### Legacy Page Rules (flyte.org)
 
@@ -331,24 +340,44 @@ Browser
   → Webflow: serves pricing page
 ```
 
-### Request: `https://docs.flyte.org/en/latest/user_guide/basics/tasks.html`
+### Request: `https://docs.flyte.org/en/v1.13.0/user_guide/basics/launch_plans.html`
 
 ```
 Browser
-  → Cloudflare edge (docs.flyte.org, flyte.org zone, proxied — no CloudFront involved)
-    → Redirect rule 9: strip .html → 302 to docs.flyte.org/en/latest/user_guide/basics/tasks
+  → Cloudflare edge (flyte.org zone, proxied — no CloudFront involved)
+    → Rule 5 (strip .html): → 302 to docs.flyte.org/en/v1.13.0/user_guide/basics/launch_plans/
   → Browser follows redirect
-  → Cloudflare edge (docs.flyte.org, flyte.org zone, proxied)
-    → Redirect rule 10 (catch-all): → 302 to www.union.ai/_r_/flyte/en/latest/user_guide/basics/tasks
+  → Cloudflare edge (flyte.org zone, proxied)
+    → Rule 2 (collapse main version): → 302 to docs.flyte.org/en/latest/user_guide/basics/launch_plans/
+  → Browser follows redirect
+  → Cloudflare edge (flyte.org zone, proxied)
+    → Rule 6 (catch-all): → 302 to www.union.ai/_r_/flyte/en/latest/user_guide/basics/launch_plans/
   → Browser follows redirect
   → Cloudflare edge (www.union.ai zone, proxied)
-    → Bulk redirect: www.union.ai/_r_/flyte/en/latest/... → 302 to www.union.ai/docs/v1/flyte/...
+    → Bulk redirect matches _r_/flyte/en/latest/user_guide/basics/launch_plans → 302 to www.union.ai/docs/v2/flyte/user-guide/core-concepts/runs-and-actions/
   → Browser follows redirect
   → Cloudflare edge (www.union.ai zone, proxied)
-    → Redirect rules: no match (has version prefix)
+    → Redirect rules: no match (has v2 prefix)
     → Pass through to CloudFront
-  → CloudFront: /docs/v1/* → v1.docs-dog.pages.dev
-  → Cloudflare Pages: serves v1 Flyte docs
+  → CloudFront: /docs/v2/* → web-docs.union.ai
+  → Cloudflare Pages: serves v2 Flyte docs
+```
+
+### Request: `https://docs-legacy.flyte.org/en/latest/user_guide/customizing_dependencies/imagespec.html`
+
+Identical to the previous example with `docs-legacy.flyte.org` as the source hostname. The same dual-host rule chain fires:
+
+```
+Browser
+  → Cloudflare edge (flyte.org zone, proxied)
+    → Rule 5 (strip .html): → 302 to docs-legacy.flyte.org/en/latest/user_guide/customizing_dependencies/imagespec/
+  → Browser follows redirect
+  → Cloudflare edge (flyte.org zone, proxied)
+    → Rule 6 (catch-all): → 302 to www.union.ai/_r_/flyte/en/latest/user_guide/customizing_dependencies/imagespec/
+  → Browser follows redirect
+  → Cloudflare edge (www.union.ai zone, proxied)
+    → Bulk redirect matches _r_/flyte/en/latest/user_guide/customizing_dependencies/imagespec → 302 to www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte/image/
+  → Browser follows redirect → CloudFront → web-docs.union.ai → serves v2 page
 ```
 
 ### Request: `https://docs.union.ai/building-workflows/launch-plans`
@@ -381,7 +410,7 @@ The CloudFront configuration is managed via Terraform. Manual changes to the Clo
 
 ### Bulk Redirect Limits
 
-The bulk redirect list contains 2,363 entries (fetched via paginated API, 500 items per page). Cloudflare's limit for bulk redirect lists is 20,000 entries on the Enterprise plan.
+The bulk redirect list contains 7,776 entries (fetched via paginated API, 500 items per page). Cloudflare's limit for bulk redirect lists is 20,000 entries on the Enterprise plan, so there's substantial headroom.
 
 ### Redirect Status Codes
 

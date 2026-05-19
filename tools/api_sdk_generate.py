@@ -69,6 +69,7 @@ def run_generator(python: Path, sdk: dict, api_data: str) -> None:
         "--api", api_data,
         "--include", sdk["include"],
         "--output_dir", output_folder,
+        "--short-names",
     ]
 
     if sdk.get("weight"):
