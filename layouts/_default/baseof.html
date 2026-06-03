@@ -93,6 +93,7 @@
     {{- if not .Site.Params.show_deprecation_message -}}
     <link rel="stylesheet" href="{{- "css/runllm.css" | relURL -}}?v={{- $v -}}" />
     {{- end -}}
+    {{- partial "reo.html" . -}}
   </head>
   <body class="variant-{{ .Site.Params.variant }}{{- if $hasSecondaryTopnav }} has-secondary-topnav{{- end -}}{{- if not $hasSidebarItems }} no-sidebar{{- end -}}">
     <!-- Google Tag Manager (noscript) -->
