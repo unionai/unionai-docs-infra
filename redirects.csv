@@ -305,6 +305,12 @@ docs.union.ai/web-console/task-list,https://www.union.ai/docs/v2/union/user-guid
 docs.union.ai/web-console/task-view,https://www.union.ai/docs/v2/union/user-guide/core-concepts/tasks,302,TRUE,FALSE,TRUE,TRUE
 docs.union.ai/web-console/usage-view,https://www.union.ai/docs/v2/union/user-guide/task-configuration/resources,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/_r_/flyte,https://www.union.ai/docs/v2/flyte/,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v1/byoc,https://www.union.ai/docs/v1/union,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v1/selfmanaged,https://www.union.ai/docs/v1/union,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v1/serverless,https://www.union.ai/docs/v1/union,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v2/byoc,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v2/serverless,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/_r_/flyte/,https://www.union.ai/docs/v2/flyte/,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf,https://www.union.ai/_static/downloads/flyte-v0.1.0.pdf,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/,https://www.union.ai/_static/downloads/flyte-v0.1.0.pdf,302,TRUE,TRUE,TRUE,TRUE
@@ -3405,7 +3411,6 @@ www.union.ai/docs/v1/selfmanaged/user-guide/programming/failure-node,https://www
 www.union.ai/docs/v1/selfmanaged/user-guide/programming/intratask_checkpoints,https://www.union.ai/docs/v1/union/user-guide/programming/intratask_checkpoints,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/selfmanaged/user-guide/programming/nested-parallelism,https://www.union.ai/docs/v1/union/user-guide/programming/nested-parallelism,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/selfmanaged/user-guide/programming/waiting_for_external_inputs,https://www.union.ai/docs/v1/union/user-guide/programming/waiting_for_external_inputs,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v1/serverless,https://www.union.ai/docs/v1/byoc,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/404,https://www.union.ai/docs/v1/union/404,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/api-reference,https://www.union.ai/docs/v1/union/api-reference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/api-reference/flyte-context,https://www.union.ai/docs/v1/union/api-reference/flyte-context,302,TRUE,FALSE,TRUE,TRUE
@@ -4153,7 +4158,6 @@ www.union.ai/docs/v1/serverless/user-guide/programming/failure-node,https://www.
 www.union.ai/docs/v1/serverless/user-guide/programming/intratask_checkpoints,https://www.union.ai/docs/v1/union/user-guide/programming/intratask_checkpoints,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/user-guide/programming/nested-parallelism,https://www.union.ai/docs/v1/union/user-guide/programming/nested-parallelism,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v1/serverless/user-guide/programming/waiting_for_external_inputs,https://www.union.ai/docs/v1/union/user-guide/programming/waiting_for_external_inputs,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/api-reference,https://www.union.ai/docs/v2/union/api-reference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/api-reference/,https://www.union.ai/docs/v2/union/api-reference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/api-reference/flyte-cli,https://www.union.ai/docs/v2/union/api-reference/flyte-cli,302,TRUE,FALSE,TRUE,TRUE
@@ -5724,7 +5728,6 @@ www.union.ai/docs/v2/flyte/user-guide/serve-and-deploy-apps/model-training-and-s
 www.union.ai/docs/v2/flyte/user-guide/task-programming/reference-tasks,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/remote-tasks,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/user-guide/tasks-and-environments,https://www.union.ai/docs/v2/flyte/user-guide/task-configuration,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/user-guide/traces,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/traces,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged,https://www.union.ai/docs/v2/union/user-guide,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/api-reference,https://www.union.ai/docs/v2/union/api-reference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/api-reference/,https://www.union.ai/docs/v2/union/api-reference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/api-reference/flyte-cli,https://www.union.ai/docs/v2/union/api-reference/flyte-cli,302,TRUE,FALSE,TRUE,TRUE
@@ -7165,7 +7168,6 @@ www.union.ai/docs/v2/selfmanaged/user-guide/traces,https://www.union.ai/docs/v2/
 www.union.ai/docs/v2/selfmanaged/user-guide/traces/,https://www.union.ai/docs/v2/union/user-guide/task-programming/traces,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/user-management,https://www.union.ai/docs/v2/union/user-guide/user-management,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/user-management/,https://www.union.ai/docs/v2/union/user-guide/user-management,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/serverless,https://www.union.ai/docs/v2/union,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/404,https://www.union.ai/docs/v2/union/404,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/api-reference,https://www.union.ai/docs/v2/union/api-reference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/api-reference/flyte-cli,https://www.union.ai/docs/v2/union/api-reference/flyte-cli,302,TRUE,FALSE,TRUE,TRUE
