@@ -305,6 +305,7 @@ docs.union.ai/web-console/task-list,https://www.union.ai/docs/v2/union/user-guid
 docs.union.ai/web-console/task-view,https://www.union.ai/docs/v2/union/user-guide/core-concepts/tasks,302,TRUE,FALSE,TRUE,TRUE
 docs.union.ai/web-console/usage-view,https://www.union.ai/docs/v2/union/user-guide/task-configuration/resources,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/_r_/flyte,https://www.union.ai/docs/v2/flyte/,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/union,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/_r_/flyte/,https://www.union.ai/docs/v2/flyte/,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf,https://www.union.ai/_static/downloads/flyte-v0.1.0.pdf,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/,https://www.union.ai/_static/downloads/flyte-v0.1.0.pdf,302,TRUE,TRUE,TRUE,TRUE
