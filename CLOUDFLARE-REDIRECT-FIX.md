@@ -1,88 +1,74 @@
-# Hand-off: fix the `www.union.ai/docs/` redirect (query strings + path suffixes)
+# `www.union.ai/docs/` redirect fixes — as-built record
 
-**Audience:** whoever owns the Cloudflare dashboard for the `union.ai` zone (Union Systems Inc. account).
-**Status:** rule specs below are ready to apply. The companion `redirects.csv` change in this PR fixes a related production bug (see Rule C).
-**Context:** see [`ROUTING-ARCHITECTURE.md`](./ROUTING-ARCHITECTURE.md) Phase 2 ("Redirect Rules"). These are Cloudflare **Dynamic Redirect** rules, configured in the dashboard — not in this repo.
+**Status:** all items below are **deployed/applied in production** unless marked otherwise.
+**Context:** see [`ROUTING-ARCHITECTURE.md`](./ROUTING-ARCHITECTURE.md) Phase 2. The Cloudflare rules live in the `union.ai` zone (Union Systems Inc. account) under **Rules → Redirect Rules → Single Redirects** (the API `http_request_dynamic_redirect` phase). The bulk-redirect list is `redirects.csv` in this repo, deployed by `deploy-redirects.yml`.
 
-## The bug
+> **Execution order gotcha:** Cloudflare evaluates **Single (dynamic) Redirects before Bulk Redirects** — verified live. So a dynamic rule that matches a path *shadows* any bulk-list entry for the same path. This is why the dynamic fallback rules below supersede several bulk entries.
 
-The docs-root redirect chain is:
+## The original bug (fixed)
 
+Redirect Rule #3 matched the **full request URI** (`http.request.uri`), exactly `/docs/`. Any query string or path suffix missed it, fell through to the Pages origin, and got a **soft-404 stub (HTTP 200)**.
+
+**Fix A — applied.** Rule #3 now matches on **path**:
+- Match: `http.host eq "www.union.ai" and http.request.uri.path eq "/docs/"`
+- Static redirect → `https://www.union.ai/docs/v2/`, 302, **preserve query string ON**
+
+`/docs/?utm_source=x` → `/docs/v2/?utm_source=x` ✓ (query preserved end-to-end).
+
+## Fallback rules F1/F2/F3 — applied
+
+Each level falls back to its `union` user guide, **excluding the real variants** (verified: v1 and v2 each have only `flyte` + `union` as live content; `byoc`/`serverless`/`selfmanaged` are stubs). All three: **Static redirect, 302, preserve query string ON**, placed **after** rules #4–7.
+
+**F1** → `https://www.union.ai/docs/v1/union/user-guide/`
 ```
-/docs        →308→ /docs/                    (trailing-slash normalize)
-/docs/       →302→ /docs/v2/                 (Redirect Rule #3)   ← BROKEN
-/docs/v2/    →302→ /docs/v2/union/           (default-variant rule)
-/docs/v2/union/ → … → user-guide            (Hugo landing)
+(http.host eq "www.union.ai" and (http.request.uri.path eq "/docs/v1" or starts_with(http.request.uri.path, "/docs/v1/"))
+ and not (http.request.uri.path eq "/docs/v1/flyte" or starts_with(http.request.uri.path, "/docs/v1/flyte/"))
+ and not (http.request.uri.path eq "/docs/v1/union" or starts_with(http.request.uri.path, "/docs/v1/union/")))
 ```
 
-**Redirect Rule #3 matches on the full request URI (`http.request.uri`), exactly `/docs/`.** Anything that isn't *exactly* `/docs/` misses the rule, falls through to CloudFront's `/docs/*` behavior → v2 Cloudflare Pages origin, which serves its **root `index.html` landing stub (≈791 bytes) with HTTP 200** — a soft-404. Two symptoms:
+**F2** → `https://www.union.ai/docs/v2/union/user-guide/`
+```
+(http.host eq "www.union.ai" and (http.request.uri.path eq "/docs/v2" or starts_with(http.request.uri.path, "/docs/v2/"))
+ and not (http.request.uri.path eq "/docs/v2/flyte" or starts_with(http.request.uri.path, "/docs/v2/flyte/"))
+ and not (http.request.uri.path eq "/docs/v2/union" or starts_with(http.request.uri.path, "/docs/v2/union/")))
+```
 
-| Request | Today | Why |
-|---|---|---|
-| `/docs/` | 302 → `/docs/v2/` ✓ | exact URI match |
-| `/docs/?utm_source=x` | **200, soft-404 stub** ✗ | query string makes the URI ≠ `/docs/`, so the rule misses |
-| `/docs/getting-started` | **200, soft-404 stub** ✗ | path suffix makes the URI ≠ `/docs/`, and no catch-all exists |
+**F3** (must be after #4–7) → `https://www.union.ai/docs/v2/union/user-guide/`
+```
+(http.host eq "www.union.ai" and (http.request.uri.path eq "/docs" or starts_with(http.request.uri.path, "/docs/"))
+ and not (http.request.uri.path eq "/docs/v1" or starts_with(http.request.uri.path, "/docs/v1/"))
+ and not (http.request.uri.path eq "/docs/v2" or starts_with(http.request.uri.path, "/docs/v2/")))
+```
 
-The sibling `/docs/v2/ → /docs/v2/union/` rule is written correctly (matches on `.path`, preserves the query string) and works — it's the model to copy. Real content pages serve fine *with* query strings (verified: `…/user-guide/?utm_source=google` → 200), so the bug is isolated to the redirect rule, not page serving.
+Net behavior:
+- `/docs/<foo≠v1,v2>` and `/docs`, `/docs/` → `…/docs/v2/union/user-guide/`
+- `/docs/v2/<foo≠flyte,union>` and `/docs/v2/`, `/docs/v2` → `…/docs/v2/union/user-guide/`
+- `/docs/v1/<foo≠flyte,union>` and `/docs/v1/`, `/docs/v1` → `…/docs/v1/union/user-guide/`
+- Real content (`/docs/{v1,v2}/{flyte,union}/…`) is excluded → served normally
+- Unversioned `/docs/flyte/*` still → `/docs/v1/flyte/*` (rule #6, real content) because F3 sits after #4–7
 
-## The fixes (3 Cloudflare Dynamic Redirect rules)
+## Existing rules #4–7 (unchanged)
 
-All rules: **302**, **"Preserve query string" = ON**.
+`/docs/{byoc,serverless,flyte,selfmanaged}/*` → `/docs/v1/{…}/*`. Only `flyte` there is real content; the other three land on v1 stubs. Left as-is (not in scope for this work). To route `byoc/serverless/selfmanaged` to a user guide instead, disable #4/#5/#7 and let F3 catch them.
 
-### A — Fix Rule #3 (the query-string bug)
+## Bulk-redirect (`redirects.csv`) changes — deployed
 
-Change the match from a full-URI exact match to a **path** match:
+- **Version-prefix fix** (#120): legacy `docs.union.ai/*` targets repointed from unversioned `/docs/union/…` → `/docs/v2/union/…`.
+- **Remap dead targets** (#121): ~440 stale targets repointed to curl-verified live v2 pages (the v2 IA reorganized). 12 residual generated/ambiguous targets left as honest 404s — see #121.
+- **C** (`/docs/union/* → /docs/v2/union/*`, bulk subpath) was shipped (#122) then **superseded by F3** and **removed** — F3 sends `/docs/union/*` straight to the user guide (always a live page; C's per-path targets often 404'd).
+- **Removed** the now-dead `/docs/v2`, `/docs/v2/` → `/docs/v2/union/` bulk rows (superseded by F2).
 
-- **Match:** `http.host eq "www.union.ai" and http.request.uri.path eq "/docs/"`
-- **Target (dynamic / static):** `https://www.union.ai/docs/v2/`
-- **Preserve query string:** ON
+## Parked
 
-After this, `/docs/?utm_source=…` redirects correctly with the query preserved.
+**Hard-404 for genuinely-missing `/docs/<foo>`** (originally "Rule B", reconsidered as a Pages-level fix): the build only emits `404.html` under `dist/docs/<version>/<variant>/`, so paths above the variant level fall back to the index stub (200) instead of a real 404. A fix would add a root `dist/404.html` (or flip the Pages project's not-found handling) — but the build is shared with PR previews, which have no CF redirect layer and rely on the stub as their entry point. The F1/F2/F3 fallbacks now redirect those paths to a user guide instead, so this is parked.
 
-### B — Add a catch-all for unknown `/docs/<foo>`
-
-Sends any unversioned, unrecognized `/docs/*` path to the docs home (same destination the root resolves to). Exclusions keep it from swallowing real content or the prefixes handled by other rules.
-
-- **Match:**
-  ```
-  http.host eq "www.union.ai"
-    and starts_with(http.request.uri.path, "/docs/")
-    and not starts_with(http.request.uri.path, "/docs/v1/")
-    and not starts_with(http.request.uri.path, "/docs/v2/")
-    and not starts_with(http.request.uri.path, "/docs/byoc/")
-    and not starts_with(http.request.uri.path, "/docs/serverless/")
-    and not starts_with(http.request.uri.path, "/docs/flyte/")
-    and not starts_with(http.request.uri.path, "/docs/selfmanaged/")
-    and not starts_with(http.request.uri.path, "/docs/union/")
-    and not starts_with(http.request.uri.path, "/_static/")
-  ```
-- **Target:** `https://www.union.ai/docs/v2/union/`
-- **Preserve query string:** ON
-- **Ordering:** place after the specific `/docs/{variant}/*` rules (#4–7). The exclusions make it order-independent anyway.
-
-> **Trade-off:** redirecting unknown paths to the home is strictly better than today's soft-404-with-200, but the *most correct* behavior for genuinely-dead URLs is a real **hard 404** (serve Hugo's `404.html` with a 404 status at the Pages layer). Recommend shipping B now and treating hard-404 as a follow-up.
-
-### C — Add the missing unversioned `union` → v2 rule
-
-The existing rules #4–7 map unversioned `byoc`/`serverless`/`flyte`/`selfmanaged` → **v1**. There is **no rule for unversioned `union`** (a v2-only variant), so `www.union.ai/docs/union/*` soft-404s. ~371 legacy `docs.union.ai/*` bulk-redirect targets land there and are **dead in production today** (e.g. `docs.union.ai/building-workflows/launch-plans` → `/docs/union/user-guide/core-concepts/launch-plans` → 200 stub).
-
-- **Match (wildcard):** source `https://www.union.ai/docs/union/*`
-- **Target (wildcard):** `https://www.union.ai/docs/v2/union/${1}`
-- **Preserve query string:** ON
-
-> The `redirects.csv` change in this PR rewrites those ~371 targets to `/docs/v2/union/…` directly (no extra hop), so the CSV no longer *depends* on Rule C. Rule C is still worth adding to catch out-of-CSV / hand-typed / externally-linked `/docs/union/…` URLs.
-
-## Recommended order
-
-1. **A** — the actual query-string fix; one-line expression change, lowest risk.
-2. **C** + this PR's `redirects.csv` change — repairs ~371 dead legacy redirects.
-3. **B** — closes the general `/docs/<foo>` soft-404 gap.
-
-## Verification (after applying)
+## Verification
 
 ```bash
-curl -sSI "https://www.union.ai/docs/?utm_source=x"        # expect 302 → /docs/v2/?utm_source=x   (A)
-curl -sSI "https://www.union.ai/docs/getting-started"      # expect 302 → /docs/v2/union/           (B)
-curl -sSIL "https://www.union.ai/docs/union/user-guide"    # expect → /docs/v2/union/user-guide 200 (C)
-curl -sSIL "https://docs.union.ai/building-workflows/launch-plans"  # expect a real page, not the 791-byte stub
+curl -sSIL "https://www.union.ai/docs/?utm_source=x"        # → /docs/v2/union/user-guide/?utm_source=x   (A + F2)
+curl -sSI  "https://www.union.ai/docs/bogusxyz"             # 302 → /docs/v2/union/user-guide/             (F3)
+curl -sSI  "https://www.union.ai/docs/v2/byoc"              # 302 → /docs/v2/union/user-guide/             (F2)
+curl -sSI  "https://www.union.ai/docs/v1/bogus"             # 302 → /docs/v1/union/user-guide/             (F1)
+curl -sSI  "https://www.union.ai/docs/v2/flyte/"            # 200 (excluded — real content, not redirected)
+curl -sSI  "https://www.union.ai/docs/flyte/foo"            # 302 → /docs/v1/flyte/foo (rule #6, still real)
 ```
