@@ -17,20 +17,28 @@ Redirect Rule #3 matched the **full request URI** (`http.request.uri`), exactly 
 
 ## Fallback rules F1/F2/F3 — applied
 
-Each level falls back to its `union` user guide, **excluding the real variants** (verified: v1 and v2 each have only `flyte` + `union` as live content; `byoc`/`serverless`/`selfmanaged` are stubs). All three: **Static redirect, 302, preserve query string ON**, placed **after** rules #4–7.
+Each level falls back to its `union` user guide. **F1/F2 exclude the real variants AND the legacy `byoc`/`serverless`/`selfmanaged` prefixes** — the latter are excluded so their ~5,500 specific per-page bulk mappings (`/docs/vN/byoc/X` → `/docs/vN/union/X`) take effect instead of being shadowed by the fallback (dynamic redirects run before bulk). Genuinely-unknown paths still hit the fallback. All three: **Static redirect, 302, preserve query string ON**, placed **after** rules #4–7.
+
+> v1/v2 each have only `flyte` + `union` as *live* variants; `byoc`/`serverless`/`selfmanaged` are not real variants, but they have comprehensive bulk redirects pointing at the corresponding `union` pages. Note `/docs/v1/union/` is a **reduced** variant — it's missing whole sections the old structure had (`flytectl-cli`, `flytekit-sdk` extras, all `plugins/*`, `architecture/*`, most `integrations/*`, `tutorials/*`); the bulk entries that pointed at those dead `/docs/v1/union/*` pages were repointed to the v1 user guide (see redirects.csv section).
 
 **F1** → `https://www.union.ai/docs/v1/union/user-guide/`
 ```
 (http.host eq "www.union.ai" and (http.request.uri.path eq "/docs/v1" or starts_with(http.request.uri.path, "/docs/v1/"))
  and not (http.request.uri.path eq "/docs/v1/flyte" or starts_with(http.request.uri.path, "/docs/v1/flyte/"))
- and not (http.request.uri.path eq "/docs/v1/union" or starts_with(http.request.uri.path, "/docs/v1/union/")))
+ and not (http.request.uri.path eq "/docs/v1/union" or starts_with(http.request.uri.path, "/docs/v1/union/"))
+ and not (http.request.uri.path eq "/docs/v1/byoc" or starts_with(http.request.uri.path, "/docs/v1/byoc/"))
+ and not (http.request.uri.path eq "/docs/v1/selfmanaged" or starts_with(http.request.uri.path, "/docs/v1/selfmanaged/"))
+ and not (http.request.uri.path eq "/docs/v1/serverless" or starts_with(http.request.uri.path, "/docs/v1/serverless/")))
 ```
 
 **F2** → `https://www.union.ai/docs/v2/union/user-guide/`
 ```
 (http.host eq "www.union.ai" and (http.request.uri.path eq "/docs/v2" or starts_with(http.request.uri.path, "/docs/v2/"))
  and not (http.request.uri.path eq "/docs/v2/flyte" or starts_with(http.request.uri.path, "/docs/v2/flyte/"))
- and not (http.request.uri.path eq "/docs/v2/union" or starts_with(http.request.uri.path, "/docs/v2/union/")))
+ and not (http.request.uri.path eq "/docs/v2/union" or starts_with(http.request.uri.path, "/docs/v2/union/"))
+ and not (http.request.uri.path eq "/docs/v2/byoc" or starts_with(http.request.uri.path, "/docs/v2/byoc/"))
+ and not (http.request.uri.path eq "/docs/v2/selfmanaged" or starts_with(http.request.uri.path, "/docs/v2/selfmanaged/"))
+ and not (http.request.uri.path eq "/docs/v2/serverless" or starts_with(http.request.uri.path, "/docs/v2/serverless/")))
 ```
 
 **F3** (must be after #4–7) → `https://www.union.ai/docs/v2/union/user-guide/`
@@ -57,6 +65,7 @@ Net behavior:
 - **Remap dead targets** (#121): ~440 stale targets repointed to curl-verified live v2 pages (the v2 IA reorganized). 12 residual generated/ambiguous targets left as honest 404s — see #121.
 - **C** (`/docs/union/* → /docs/v2/union/*`, bulk subpath) was shipped (#122) then **superseded by F3** and **removed** — F3 sends `/docs/union/*` straight to the user guide (always a live page; C's per-path targets often 404'd).
 - **Removed** the now-dead `/docs/v2`, `/docs/v2/` → `/docs/v2/union/` bulk rows (superseded by F2).
+- **Repointed dead targets → user guide:** when `byoc/serverless/selfmanaged` were excluded from F1/F2 (so their specific bulk mappings fire), 131 bulk entries still pointed at `/docs/v{1,2}/union/*` pages that 404 (12 in v2; 119 in v1 — the reduced-variant gap). Those were repointed to the matching version's `…/union/user-guide/` so nothing 404s. Net: every `/docs/v{1,2}/{byoc,serverless,selfmanaged}/*` URL now lands either on its specific `union` page or on the user guide.
 
 ## Parked
 
