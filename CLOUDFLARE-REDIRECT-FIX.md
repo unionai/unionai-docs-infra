@@ -68,6 +68,30 @@ Net behavior:
 - **Repointed dead targets → user guide:** when `byoc/serverless/selfmanaged` were excluded from F1/F2 (so their specific bulk mappings fire), 131 bulk entries still pointed at `/docs/v{1,2}/union/*` pages that 404 (12 in v2; 119 in v1 — the reduced-variant gap). Those were repointed to the matching version's `…/union/user-guide/`.
 - **Subpath prefix-swap for the variant roots:** added 6 `subpath_matching` + `preserve_path_suffix` entries — `www.union.ai/docs/v{1,2}/{byoc,selfmanaged,serverless}` → `https://www.union.ai/docs/v{1,2}/union` — replacing the old no-slash-only bare entries. Cloudflare bulk redirects match longest-source-first, so the ~5,500 specific deep entries still win; this broad entry catches the bare root (`/docs/v2/byoc/` → `/docs/v2/union/`) and any *uncovered* deep path (`/docs/v2/byoc/<x>` → `/docs/v2/union/<x>`). Since `union` is a real variant, an uncovered path then hits the per-variant nearest-page 404 — closing the soft-stub gap. Net: every `/docs/v{1,2}/{byoc,serverless,selfmanaged}/*` URL lands on its specific page, the union equivalent, or the nearest-page 404 — never the static stub.
 
+## Trailing-slash + unknown-slug normalization on `docs.union.ai` (DOC-1218)
+
+**Status: pending** — draft PR on `docsy/docsunionai-slash-redirect-infra`; deploys when the `unionai-docs` submodule pointer is bumped (`deploy-redirects.yml`). Tracks [DOC-1218](https://linear.app/unionai/issue/DOC-1218).
+
+### The bug
+The 306 legacy `docs.union.ai/*` bulk rows used `subpath_matching=FALSE` (exact match). A request with a **trailing slash** (`docs.union.ai/administration/`) or an **unknown slug** (`docs.union.ai/bogusxyz123`) missed every exact source, fell through to the v2 Pages origin, and got the **793-byte index stub at HTTP 200** — the same soft-404 family as [the original bug](#the-original-bug-fixed) above. (Query strings already survived — `preserve_query=TRUE`; the discriminator was the trailing slash.)
+
+### The fix (CSV-only)
+- **Flipped `subpath_matching` FALSE→TRUE on all 306 `docs.union.ai` rows** (`preserve_path_suffix` was already TRUE). A trailing slash now matches the row as a subpath and the `/` suffix is appended → the canonical page: `docs.union.ai/administration/` → `…/user-guide/user-management/`.
+- **Retargeted the bare-root `docs.union.ai` row** to `https://www.union.ai/docs/v2/union/user-guide/` with `preserve_path_suffix=FALSE`. By Cloudflare longest-source-first matching it is the lowest-priority fallback (every specific row wins), so it only catches **unknown** slugs → user guide — and `preserve_path_suffix=FALSE` drops the garbage suffix so they land on the guide itself, not `…/user-guide/<garbage>` (404).
+
+Same pattern already proven by the variant-root rows (`www.union.ai/docs/v{1,2}/{byoc,…}`, subpath + preserve_path_suffix) — 1,526 `subpath=TRUE` rows run in prod. Verified live: `/docs/v2/byoc/` → `/docs/v2/union/` and `/docs/v2/byoc/deep/madeup/?utm=x` → `/docs/v2/union/deep/madeup/?utm=x`.
+
+### Caveat (accepted)
+A **made-up deep subpath under a known prefix** (e.g. `docs.union.ai/administration/xyz`) now 302→404 (`…/user-guide/user-management/xyz`) instead of 200-stub — lateral, and only for invented URLs. Acceptable for a sunset host.
+
+### Verification (after deploy)
+```bash
+curl -sSI "https://docs.union.ai/administration"          # 302 → …/user-guide/user-management        (exact, unchanged)
+curl -sSI "https://docs.union.ai/administration/"         # 302 → …/user-guide/user-management/        (trailing slash — FIXED)
+curl -sSI "https://docs.union.ai/getting-started/?utm=x"  # 302 → …/user-guide/?utm=x                  (slash + query preserved)
+curl -sSI "https://docs.union.ai/bogusxyz123"             # 302 → …/docs/v2/union/user-guide/          (unknown slug — FIXED, was 200 stub)
+```
+
 ## Parked
 
 **Hard-404 for genuinely-missing `/docs/<foo>`** (originally "Rule B", reconsidered as a Pages-level fix): the build only emits `404.html` under `dist/docs/<version>/<variant>/`, so paths above the variant level fall back to the index stub (200) instead of a real 404. A fix would add a root `dist/404.html` (or flip the Pages project's not-found handling) — but the build is shared with PR previews, which have no CF redirect layer and rely on the stub as their entry point. The F1/F2/F3 fallbacks now redirect those paths to a user guide instead, so this is parked.
