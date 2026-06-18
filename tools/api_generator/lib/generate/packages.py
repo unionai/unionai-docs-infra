@@ -52,8 +52,12 @@ def generate_package_index(
                 # Skip packages with no classes, methods, or variables
                 continue
             doc = pkg["doc"] if "doc" in pkg else ""
+            # Explicit `/_index`: each package is a section dir; the link-checker
+            # requires the explicit index form for section links. (The bare form is
+            # grandfathered in already-generated pages; new/regenerated content uses
+            # this form.)
             index.write(
-                f"| [`{pkg['name']}`]({pkg['name']}) | {docstring_summary(doc)} |\n"
+                f"| [`{pkg['name']}`]({pkg['name']}/_index) | {docstring_summary(doc)} |\n"
             )
 
 
