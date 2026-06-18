@@ -94,11 +94,21 @@ def check_all(config: dict) -> list[str]:
         if plugin.get("frozen", False):
             continue
         name = plugin["name"]
-        plugin_dir = REPO_ROOT / output_base / name
+        # A promoted plugin may override its location via `output_folder` (a
+        # repo-relative path), the same field honored by Makefile.api.plugins on
+        # regen. Without this the validator assumes the default `output_base/name`
+        # layout and reports a spurious "directory missing".
+        output_folder = plugin.get("output_folder")
+        if output_folder:
+            plugin_dir = REPO_ROOT / output_folder
+            plugin_rel = output_folder
+        else:
+            plugin_dir = REPO_ROOT / output_base / name
+            plugin_rel = f"{output_base}/{name}"
         if not plugin_dir.is_dir():
-            errors.append(f"Plugin '{name}': directory missing: {output_base}/{name}/")
+            errors.append(f"Plugin '{name}': directory missing: {plugin_rel}/")
         elif not has_md_files(plugin_dir):
-            errors.append(f"Plugin '{name}': no .md files in {output_base}/{name}/")
+            errors.append(f"Plugin '{name}': no .md files in {plugin_rel}/")
 
         if check_plugin_linkmaps:
             # Linkmap JSON
