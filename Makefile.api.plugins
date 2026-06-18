@@ -20,11 +20,15 @@ PLUGINS_DEFAULT_INCLUDE := $(shell $(UV) unionai-docs-infra/tools/api_config.py 
 PLUGINS_NO_FLATTEN := $(shell $(UV) unionai-docs-infra/tools/api_config.py plugins_config no_flatten)
 NO_FLATTEN_FLAG := $(if $(filter true,$(PLUGINS_NO_FLATTEN)),--no-flatten true,)
 
+# OUTPUT_FOLDER and WEIGHT may be overridden on the command line (a promoted plugin,
+# e.g. union-plugin, sets both from its api-packages.toml entry).
 OUTPUT_FOLDER=$(PLUGINS_OUTPUT_BASE)/${NAME}
 API_DATA=/tmp/${NAME}.api.yaml
 LANDING_PAGE ?= $(PLUGINS_DEFAULT_INCLUDE)
 PLUGIN_VENV_DIR ?= /tmp/unionai-docs-plugin-${NAME}.venv
 SKIP_VENV_SETUP ?= false
+WEIGHT ?=
+WEIGHT_FLAG := $(if $(WEIGHT),--weight $(WEIGHT),)
 
 .PHONY: all
 all: check_vars setup-venv parser generate clean-venv
@@ -66,6 +70,7 @@ ifeq ($(SKIP_VENV_SETUP),false)
 		--api "${API_DATA}" \
 		--include ${LANDING_PAGE} \
 		$(NO_FLATTEN_FLAG) \
+		$(WEIGHT_FLAG) \
 		--short-names \
 		--variants "+flyte +union" \
 		--output_dir "${OUTPUT_FOLDER}"
@@ -76,6 +81,7 @@ else
 		--api "${API_DATA}" \
 		--include ${LANDING_PAGE} \
 		$(NO_FLATTEN_FLAG) \
+		$(WEIGHT_FLAG) \
 		--short-names \
 		--variants "+flyte +union" \
 		--output_dir "${OUTPUT_FOLDER}"
