@@ -2,6 +2,7 @@ import os
 from typing import Dict, List
 
 from lib.generate.classes import generate_class_index, generate_classes
+from lib.generate.docstring import docstring_summary
 from lib.generate.hugo import FrontMatterExtra, set_variants, set_version, write_front_matter
 from lib.generate.packages import (
     generate_package_folders,
@@ -13,6 +14,64 @@ from lib.ptypes import ParsedInfo
 PackageTree = Dict[str, List[str]]
 
 
+def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str]):
+    """Emit a "Directory" on the landing page listing the section's packages and
+    classes, linking to the generated `packages/` and `classes/` child index pages.
+
+    Without this, a landing page (the section's top-level `_index.md`) shows only the
+    title plus whatever prose the `--include` template carries. Plugin integrations use
+    a shared, empty include (`include/api.plugin.md`), so every plugin landing page
+    rendered as an empty body. This gives each landing page a real index of its
+    contents — the same Packages/Classes summary the child index pages already show.
+    """
+    packages = source.get("packages", [])
+    classes = source.get("classes", {})
+
+    # Packages that have any documented content (classes, methods, or variables).
+    listed_packages = [
+        pkg
+        for pkg in packages
+        if (
+            len(classes.get(pkg["name"], {})) > 0
+            or len(pkg.get("methods", [])) > 0
+            or len(pkg.get("variables", [])) > 0
+        )
+    ]
+
+    # All non-ignored classes across packages, with their owning package.
+    class_rows = []
+    for pkg_name, pkg_classes in classes.items():
+        for cls in pkg_classes:
+            if cls in ignore_types:
+                continue
+            class_rows.append((cls, pkg_classes[cls]))
+
+    if not listed_packages and not class_rows:
+        return
+
+    output.write("## Directory\n\n")
+
+    if class_rows:
+        output.write("### Classes\n\n")
+        output.write("| Class | Description |\n")
+        output.write("|-|-|\n")
+        for cls, cls_info in sorted(class_rows, key=lambda r: r[0]):
+            output.write(
+                f"| [`{cls}`](classes) | {docstring_summary(cls_info.get('doc', ''))} |\n"
+            )
+        output.write("\n")
+
+    if listed_packages:
+        output.write("### Packages\n\n")
+        output.write("| Package | Description |\n")
+        output.write("|-|-|\n")
+        for pkg in listed_packages:
+            output.write(
+                f"| [`{pkg['name']}`](packages/{pkg['name']}) | {docstring_summary(pkg.get('doc', ''))} |\n"
+            )
+        output.write("\n")
+
+
 def generate_home(
     title: str,
     source: ParsedInfo,
@@ -22,6 +81,7 @@ def generate_home(
     output_folder: str,
     weight: int,
     expanded: bool,
+    ignore_types: List[str],
 ):
     with open(os.path.join(output_folder, "_index.md"), "w") as output:
         write_front_matter(title, output, {
@@ -34,6 +94,8 @@ def generate_home(
             with open(inc, "r") as f:
                 output.write(f.read())
                 output.write("\n\n")
+
+        generate_home_directory(source, output, ignore_types)
 
 def generate_site(
     title: str,
@@ -67,6 +129,7 @@ def generate_site(
         pkg_root=pkg_root,
         weight=weight,
         expanded=expanded,
+        ignore_types=ignore_types,
     )
 
     subpages_frontmatter_extra: FrontMatterExtra = {

@@ -120,7 +120,10 @@ def check_all(config: dict) -> list[dict]:
     for plugin in config.get("plugins", []):
         if plugin.get("frozen", False):
             continue
-        version_file = REPO_ROOT / output_base / plugin["name"] / "_index.md"
+        # A plugin may override its output location to be promoted out of the shared
+        # plugins output_base (e.g. union-plugin → a top-level api-reference section).
+        output_folder = plugin.get("output_folder") or f"{output_base}/{plugin['name']}"
+        version_file = REPO_ROOT / output_folder / "_index.md"
         committed = extract_frontmatter_version(version_file)
         latest = get_pypi_latest(plugin["package"])
         results.append({
@@ -131,10 +134,12 @@ def check_all(config: dict) -> list[dict]:
             "title": plugin["title"],
             "install": plugin.get("install"),
             "extras": plugin.get("extras", []),
+            "output_folder": output_folder,
+            "weight": plugin.get("weight"),
             "committed": committed,
             "latest": latest,
             "outdated": _is_outdated(committed, latest),
-            "version_file": f"{output_base}/{plugin['name']}/_index.md",
+            "version_file": f"{output_folder}/_index.md",
         })
 
     # CLIs
@@ -235,6 +240,11 @@ def regenerate(results: list[dict]) -> None:
                 "make", "-f", "unionai-docs-infra/Makefile.api.plugins",
                 f"PLUGIN={r['plugin']}", f"TITLE={r['title']}", f"NAME={r['name']}",
             ]
+            # Promoted plugins override their output folder (and optionally nav weight).
+            if r.get("output_folder"):
+                cmd.append(f"OUTPUT_FOLDER={r['output_folder']}")
+            if r.get("weight") is not None:
+                cmd.append(f"WEIGHT={r['weight']}")
             subprocess.run(cmd, cwd=REPO_ROOT, check=True)
 
     # Clean up shared venv
