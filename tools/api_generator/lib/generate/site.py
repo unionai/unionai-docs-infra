@@ -56,8 +56,14 @@ def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str])
         output.write("| Class | Description |\n")
         output.write("|-|-|\n")
         for cls, cls_info in sorted(class_rows, key=lambda r: r[0]):
+            # Link to the class's own generated page under packages/<pkg>/<leaf>
+            # (mirrors generate_class_filename). A bare `classes` target is both the
+            # wrong page (the index, not the class) and a section link the link-checker
+            # rejects unless it ends in `/_index`.
+            pkg_name = ".".join(cls.split(".")[:-1])
+            leaf = cls.split(".")[-1].lower()
             output.write(
-                f"| [`{cls}`](classes) | {docstring_summary(cls_info.get('doc', ''))} |\n"
+                f"| [`{cls}`](packages/{pkg_name}/{leaf}) | {docstring_summary(cls_info.get('doc', ''))} |\n"
             )
         output.write("\n")
 
@@ -66,8 +72,10 @@ def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str])
         output.write("| Package | Description |\n")
         output.write("|-|-|\n")
         for pkg in listed_packages:
+            # Explicit `/_index` — packages/<name> is a section dir; the link-checker
+            # requires the explicit index form for section links.
             output.write(
-                f"| [`{pkg['name']}`](packages/{pkg['name']}) | {docstring_summary(pkg.get('doc', ''))} |\n"
+                f"| [`{pkg['name']}`](packages/{pkg['name']}/_index) | {docstring_summary(pkg.get('doc', ''))} |\n"
             )
         output.write("\n")
 
