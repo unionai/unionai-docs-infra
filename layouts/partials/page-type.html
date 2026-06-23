@@ -1,0 +1,22 @@
+{{- /*
+  page-type.html — single source of truth for "is this a generated API-reference page
+  or a hand-written concept/guide page?"  Used by SEO templating (title, meta description,
+  sitemap priority) so that generated reference pages don't cannibalize concept pages in
+  external search (DOC-1234).
+
+  Detection is URL-path-first (the published RelPermalink contains `/api-reference/` for
+  every generated page, across both the `union` and `flyte` variants), corroborated by the
+  generated-page layouts (`py_api` / `py_example` / `plugin`) for pages that might sit under
+  a different path. Returns the string "reference" or "concept".
+
+  Usage:  {{- $pageType := partial "page-type.html" . -}}
+*/ -}}
+{{- $isReference := false -}}
+{{- if or (in .RelPermalink "/api-reference/") (in .RelPermalink "/packages/") -}}
+  {{- $isReference = true -}}
+{{- end -}}
+{{- $layout := .Layout | default "" -}}
+{{- if or (eq $layout "py_api") (eq $layout "py_example") (eq $layout "plugin") -}}
+  {{- $isReference = true -}}
+{{- end -}}
+{{- if $isReference -}}reference{{- else -}}concept{{- end -}}

@@ -9,7 +9,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{- /* Per-page-type <title> so generated API reference doesn't collide with concept
+           pages in external search (DOC-1234). Reference pages get an explicit
+           "API reference" qualifier; concept/guide pages keep the plain
+           "<Title> | <Site>" form. Page type via partials/page-type.html. */ -}}
+    {{- $pageType := partial "page-type.html" . -}}
+    {{- if eq $pageType "reference" -}}
+    <title>{{- .Title -}}&nbsp;&mdash;&nbsp;API reference&nbsp;|&nbsp;{{- .Site.Title -}}</title>
+    {{- else -}}
     <title>{{- .Title -}}&nbsp;|&nbsp;{{- .Site.Title -}}</title>
+    {{- end -}}
     <link rel="icon" href="{{- printf "images/%s" (index .Site.Params.Key.favicon .Site.Params.variant) | relURL -}}?v={{- $v -}}"/>
 
     {{- /* SEO Meta Tags */ -}}

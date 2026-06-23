@@ -14,7 +14,11 @@
     <lastmod>{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}</lastmod>
     {{- end -}}
     <changefreq>{{ if .Params.changefreq }}{{ .Params.changefreq }}{{ else }}monthly{{ end }}</changefreq>
-    <priority>{{ if .Params.priority }}{{ .Params.priority }}{{ else }}{{ if eq .Kind "home" }}1.0{{ else if eq .Kind "section" }}0.8{{ else }}0.6{{ end }}{{ end }}</priority>
+    {{- /* Lower sitemap priority on generated API-reference pages so Google favors the
+           hand-written concept/guide pages for the same intro terms (DOC-1234). An explicit
+           front-matter `priority` still wins. Page type via partials/page-type.html. */ -}}
+    {{- $pageType := partial "page-type.html" . -}}
+    <priority>{{ if .Params.priority }}{{ .Params.priority }}{{ else if eq $pageType "reference" }}0.3{{ else }}{{ if eq .Kind "home" }}1.0{{ else if eq .Kind "section" }}0.8{{ else }}0.6{{ end }}{{ end }}</priority>
   </url>
   {{- end -}}
 </urlset>
