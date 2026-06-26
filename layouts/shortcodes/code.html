@@ -108,13 +108,38 @@
 {{- end -}}
 
 {{/* Prepare content with line numbers and highlighting */}}
-{{- $content := "" -}}
-{{- range $index, $line := $filteredLines -}}
+{{- /* DOC-1096 part 2: drop ALL docs-fragment marker comment lines (the substring */ -}}
+{{- /* match catches every fragment's start/end marker, not just the referenced one). */ -}}
+{{- $kept := slice -}}
+{{- range $line := $filteredLines -}}
   {{- if and (in $line "docs-fragment") (not $showFragments) -}}
-    {{- continue -}}
+    {{- /* skip marker line */ -}}
+  {{- else -}}
+    {{- $kept = $kept | append $line -}}
   {{- end -}}
-  {{- $content = print $content $line "\n" -}}
 {{- end -}}
+{{- /* DOC-1096 part 1: stripping marker lines leaves blank lines that render as */ -}}
+{{- /* full-height gaps (`.chroma .line { display:flex }`). Trim leading blank lines */ -}}
+{{- /* and collapse runs of blank lines down to a single blank line. */ -}}
+{{- $normalized := slice -}}
+{{- $prevBlank := true -}}
+{{- range $line := $kept -}}
+  {{- $isBlank := eq (trim $line " \t\r") "" -}}
+  {{- if $isBlank -}}
+    {{- if not $prevBlank -}}
+      {{- $normalized = $normalized | append $line -}}
+    {{- end -}}
+    {{- $prevBlank = true -}}
+  {{- else -}}
+    {{- $normalized = $normalized | append $line -}}
+    {{- $prevBlank = false -}}
+  {{- end -}}
+{{- end -}}
+{{- /* Trim a trailing blank line left by the collapse pass. */ -}}
+{{- if and (gt (len $normalized) 0) (eq (trim (index $normalized (sub (len $normalized) 1)) " \t\r") "") -}}
+  {{- $normalized = first (sub (len $normalized) 1) $normalized -}}
+{{- end -}}
+{{- $content := print (delimit $normalized "\n") "\n" -}}
 
 {{/* Generate the same HTML structure as render-codeblock.html, but with external file content */}}
 {{- $suffix := "" -}}
@@ -156,9 +181,18 @@
                 </svg>
             </a>
             {{- end -}}
-            <div class="copy">
-                <sl-copy-button from="{{- $uniqueID -}}"></sl-copy-button>
+            <div class="copy copy-fragment">
+                <sl-copy-button from="{{- $uniqueID -}}" copy-label="Copy displayed code"></sl-copy-button>
             </div>
+            {{- /* DOC-1095: when only a fragment/line-range is shown, offer a second */ -}}
+            {{- /* button that copies the entire runnable source file. */ -}}
+            {{- if or $fragment (and $lineStart $lineEnd) -}}
+            <div class="copy copy-all">
+                <sl-copy-button value="{{ $file }}" copy-label="Copy entire file">
+                    <sl-icon slot="copy-icon" name="files"></sl-icon>
+                </sl-copy-button>
+            </div>
+            {{- end -}}
         </div>
     </div>
     <div id="{{- $uniqueID -}}" class="code" data-1p-ignore="true" data-bwignore="true" data-lastpass-ignore="true" autocomplete="off" contenteditable="false">

@@ -37,6 +37,17 @@
     color: var(--pre-color);
 }
 
+/* DOC-1095: the "copy entire file" button sits beside the fragment copy
+   button in the header actions. Render it as a secondary affordance. */
+.codeblock-header .copy-all {
+    opacity: 0.75;
+    transition: opacity 0.2s;
+}
+
+.codeblock-header .copy-all:hover {
+    opacity: 1;
+}
+
 .codeblock-filename {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-weight: 500;
