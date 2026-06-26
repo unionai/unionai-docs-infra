@@ -217,6 +217,8 @@ docs.union.ai/serverless/data-input-output/flytedirectory,https://www.union.ai/d
 docs.union.ai/serverless/data-input-output/flytefile,https://www.union.ai/docs/v2/union/user-guide/task-programming/files-and-directories,302,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/serverless/data-plane-setup,https://www.union.ai/docs/v2/union/deployment,302,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/serverless/development-cycle,https://www.union.ai/docs/v2/union/user-guide/overview,302,TRUE,TRUE,TRUE,TRUE
+docs.union.ai/serverless/development-cycle/accessing-aws-s3,https://www.union.ai/docs/v2/union/user-guide/task-deployment/interacting-with-runs/#s3-storage-access,302,TRUE,TRUE,TRUE,TRUE
+docs.union.ai/serverless/development-cycle/accessing-aws-s3/,https://www.union.ai/docs/v2/union/user-guide/task-deployment/interacting-with-runs/#s3-storage-access,302,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/serverless/development-cycle/interactive-tasks,https://www.union.ai/docs/v2/union/user-guide/task-programming/remote-tasks,302,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/serverless/development-cycle/managing-apps,https://www.union.ai/docs/v2/union/user-guide/user-management,302,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/serverless/development-cycle/registering-workflows,https://www.union.ai/docs/v2/union/user-guide/quickstart,302,TRUE,TRUE,TRUE,TRUE
