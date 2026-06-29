@@ -358,23 +358,11 @@ class TestURLFormat:
             f"{len(bad)} source URLs contain query strings:\n"
             + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
 
-    def test_no_trailing_slashes_in_sources(self):
-        """Source URLs should not have trailing slashes.
-
-        No-slash is the canonical source form. A few entries need both
-        forms because incoming traffic arrives with trailing slashes
-        from an out-of-repo redirect (docs.flyte.org -> _r_/flyte/).
-        """
-        TRAILING_SLASH_ALLOWED = {
-            "www.union.ai/_r_/flyte/",
-            "www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/",
-        }
-        rows = load_rows()
-        bad = [(i, row[0]) for i, row in enumerate(rows, 1)
-               if row[0].endswith("/") and row[0] not in TRAILING_SLASH_ALLOWED]
-        assert not bad, (
-            f"{len(bad)} source URLs have trailing slashes:\n"
-            + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
+    # Removed test_no_trailing_slashes_in_sources (DOC-1233): it asserted the
+    # CSV has no trailing-slash sources, a premise this feature deliberately
+    # reverses — the site serves canonical trailing-slash URLs, so the generator
+    # now intentionally emits a trailing-slash source for every exact-match
+    # rename (covered by TestRedirectGenerator.test_trailing_slash_emits_both_forms).
 
 
 class TestRedirectInvariants:
