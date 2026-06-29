@@ -985,6 +985,45 @@ class TestRedirectGenerator:
         assert moves == []
         assert remaining == renames
 
+    # -- Part 3: chain collapse runs unconditionally --------------------------
+
+    def test_collapse_chains_resolves_multihop(self):
+        """collapse_chains rewrites a multi-hop chain (A -> B -> C) so every
+        source points at the terminal destination.
+
+        This is the behavior main() now runs on EVERY real invocation, not only
+        when new rename entries are added (DOC-1190) — a chain introduced by a
+        manual edit or a non-rename page move would otherwise never collapse. It
+        also exercises the both-slash source matching the HITL -> External
+        conditions move relied on (the inbound dest carries a trailing slash).
+        """
+        import os
+        import tempfile
+        rows = [
+            # legacy inbound -> mid (dest carries a trailing slash)
+            "www.union.ai/x/legacy,https://www.union.ai/x/mid/,302,TRUE,FALSE,TRUE,TRUE",
+            # mid, both slash forms -> final
+            "www.union.ai/x/mid,https://www.union.ai/x/final,302,TRUE,FALSE,TRUE,TRUE",
+            "www.union.ai/x/mid/,https://www.union.ai/x/final,302,TRUE,FALSE,TRUE,TRUE",
+        ]
+        fd, path = tempfile.mkstemp(suffix=".csv")
+        try:
+            with os.fdopen(fd, "w", newline="") as f:
+                f.write("\n".join(rows) + "\n")
+            updated = dmp.collapse_chains(Path(path))
+            assert updated == 1, f"expected the legacy row to be rewritten, got {updated}"
+            out = {r[0]: r[1] for r in csv.reader(open(path)) if len(r) >= 2}
+            final = "https://www.union.ai/x/final"
+            assert out["www.union.ai/x/legacy"] == final, out
+            assert out["www.union.ai/x/mid"] == final
+            assert out["www.union.ai/x/mid/"] == final
+            # No destination (stripped of scheme) is also a source -> no chains left.
+            srcs = set(out)
+            remaining = [d for d in out.values() if d.removeprefix("https://") in srcs]
+            assert not remaining, f"chains remain: {remaining}"
+        finally:
+            os.unlink(path)
+
 
 # ---------------------------------------------------------------------------
 # Test runner
