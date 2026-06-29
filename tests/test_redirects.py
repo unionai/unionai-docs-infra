@@ -32,6 +32,11 @@ from urllib.error import HTTPError, URLError
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 from _repo import INFRA_ROOT
 
+# Import the redirect *generator* (pure logic) for unit tests of the
+# trailing-slash + subtree-collapse behavior (DOC-1233).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools" / "redirect_generator"))
+import detect_moved_pages as dmp  # noqa: E402
+
 REDIRECTS_FILE = INFRA_ROOT / "redirects.csv"
 
 # Valid variants that should appear in destinations (serverless is discontinued)
@@ -353,23 +358,11 @@ class TestURLFormat:
             f"{len(bad)} source URLs contain query strings:\n"
             + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
 
-    def test_no_trailing_slashes_in_sources(self):
-        """Source URLs should not have trailing slashes.
-
-        No-slash is the canonical source form. A few entries need both
-        forms because incoming traffic arrives with trailing slashes
-        from an out-of-repo redirect (docs.flyte.org -> _r_/flyte/).
-        """
-        TRAILING_SLASH_ALLOWED = {
-            "www.union.ai/_r_/flyte/",
-            "www.union.ai/_r_/flyte/_/downloads/en/v0.1.0/pdf/",
-        }
-        rows = load_rows()
-        bad = [(i, row[0]) for i, row in enumerate(rows, 1)
-               if row[0].endswith("/") and row[0] not in TRAILING_SLASH_ALLOWED]
-        assert not bad, (
-            f"{len(bad)} source URLs have trailing slashes:\n"
-            + "\n".join(f"  line {n}: {s}" for n, s in bad[:10]))
+    # Removed test_no_trailing_slashes_in_sources (DOC-1233): it asserted the
+    # CSV has no trailing-slash sources, a premise this feature deliberately
+    # reverses — the site serves canonical trailing-slash URLs, so the generator
+    # now intentionally emits a trailing-slash source for every exact-match
+    # rename (covered by TestRedirectGenerator.test_trailing_slash_emits_both_forms).
 
 
 class TestRedirectInvariants:
@@ -837,6 +830,162 @@ class TestLiveRedirects:
             "(redirects may not be deployed yet)")
 
 
+class TestRedirectGenerator:
+    """Unit tests for detect_moved_pages.py logic (DOC-1233).
+
+    These exercise the pure generator functions with small in-memory rename
+    lists / fake path sets — no real git repo needed.
+    """
+
+    VERSION = "v2"
+    VARIANTS = ["union"]
+
+    # -- Part 1: trailing-slash fix -------------------------------------------
+
+    def test_trailing_slash_emits_both_forms(self):
+        """An exact-match rename emits BOTH the no-slash and slash source."""
+        renames = [("content/a/old.md", "content/a/new.md")]
+        entries = dmp.generate_redirect_entries(renames, {}, self.VERSION, self.VARIANTS)
+        sources = {e.split(",")[0] for e in entries}
+        base = "www.union.ai/docs/v2/union/a/old"
+        target = "https://www.union.ai/docs/v2/union/a/new"
+        assert sources == {base, base + "/"}, sources
+        # Same target, same exact-match flags; target has no trailing slash.
+        for e in entries:
+            assert e.split(",", 2)[1] == target
+            assert e.endswith(dmp.CSV_FLAGS)
+
+    def test_dedup_both_forms_present_emits_nothing(self):
+        """If BOTH slash forms already exist, nothing new is emitted."""
+        renames = [("content/a/old.md", "content/a/new.md")]
+        base = "www.union.ai/docs/v2/union/a/old"
+        target = "https://www.union.ai/docs/v2/union/a/new"
+        existing = {base: target, base + "/": target}
+        entries = dmp.generate_redirect_entries(renames, existing, self.VERSION, self.VARIANTS)
+        assert entries == []
+
+    def test_dedup_one_form_present_emits_the_other(self):
+        """If only the no-slash form exists, the slash form is still emitted."""
+        renames = [("content/a/old.md", "content/a/new.md")]
+        base = "www.union.ai/docs/v2/union/a/old"
+        target = "https://www.union.ai/docs/v2/union/a/new"
+        existing = {base: target}  # slash form missing
+        entries = dmp.generate_redirect_entries(renames, existing, self.VERSION, self.VARIANTS)
+        sources = {e.split(",")[0] for e in entries}
+        assert sources == {base + "/"}, sources
+
+    # -- Part 2: guarded subtree collapse -------------------------------------
+
+    def _clean_move(self):
+        """A clean 3-page subtree move: content/sec/old/** -> content/sec/new/**."""
+        renames = [
+            ("content/sec/old/a.md", "content/sec/new/a.md"),
+            ("content/sec/old/b.md", "content/sec/new/b.md"),
+            ("content/sec/old/sub/c.md", "content/sec/new/sub/c.md"),
+        ]
+        published = {o for o, _ in renames}
+        return renames, set(), published
+
+    def test_collapse_positive(self):
+        """A clean subtree move collapses to ONE subpath rule; per-page rows suppressed."""
+        renames, existing_paths, published = self._clean_move()
+        moves, remaining = dmp.detect_subtree_moves(renames, existing_paths, published)
+        assert moves == [("content/sec/old", "content/sec/new")], moves
+        assert remaining == [], remaining
+
+        # Exactly one collapse entry per variant, with the subpath flags.
+        collapse = dmp.generate_collapse_entries(moves, {}, self.VERSION, self.VARIANTS)
+        assert collapse == [
+            "www.union.ai/docs/v2/union/sec/old,"
+            "https://www.union.ai/docs/v2/union/sec/new,"
+            + dmp.COLLAPSE_FLAGS
+        ], collapse
+        # Per-page path sees nothing (all renames consumed by the collapse).
+        per_page = dmp.generate_redirect_entries(remaining, {}, self.VERSION, self.VARIANTS)
+        assert per_page == []
+
+    def test_collapse_dedup_existing_suppresses_rule(self):
+        """A collapse rule already present is not re-emitted."""
+        renames, existing_paths, published = self._clean_move()
+        moves, _ = dmp.detect_subtree_moves(renames, existing_paths, published)
+        existing = {
+            "www.union.ai/docs/v2/union/sec/old":
+                "https://www.union.ai/docs/v2/union/sec/new"
+        }
+        assert dmp.generate_collapse_entries(moves, existing, self.VERSION, self.VARIANTS) == []
+
+    def test_negative_survivor_blocks_collapse(self):
+        """A live page still under old_prefix MUST NOT collapse → per-page fallback."""
+        renames, _, published = self._clean_move()
+        # A different page still served under sec/old/ in the current content tree.
+        existing_paths = {"sec/old/leftover.md"}
+        moves, remaining = dmp.detect_subtree_moves(renames, existing_paths, published)
+        assert moves == []
+        assert sorted(remaining) == sorted(renames)
+        # Falls back to per-page exact rows, both slash forms (3 renames x 2).
+        per_page = dmp.generate_redirect_entries(remaining, {}, self.VERSION, self.VARIANTS)
+        assert len(per_page) == 6
+        assert all(e.endswith(dmp.CSV_FLAGS) for e in per_page)
+
+    def test_negative_index_survivor_blocks_collapse(self):
+        """The section's own _index still served under old_prefix also blocks collapse."""
+        renames, _, published = self._clean_move()
+        existing_paths = {"sec/old/_index.md"}
+        moves, remaining = dmp.detect_subtree_moves(renames, existing_paths, published)
+        assert moves == []
+        assert sorted(remaining) == sorted(renames)
+
+    def test_negative_fanout_blocks_collapse(self):
+        """Pages under old_prefix mapping to two new prefixes MUST NOT collapse."""
+        renames = [
+            ("content/sec/old/a.md", "content/sec/new/a.md"),
+            ("content/sec/old/b.md", "content/sec/new/b.md"),
+            ("content/sec/old/c.md", "content/sec/other/c.md"),  # fan-out
+        ]
+        published = {o for o, _ in renames}
+        moves, remaining = dmp.detect_subtree_moves(renames, set(), published)
+        assert moves == []
+        assert sorted(remaining) == sorted(renames)
+
+    def test_negative_incomplete_blocks_collapse(self):
+        """A published page under old_prefix absent from the rename set blocks collapse."""
+        renames = [
+            ("content/sec/old/a.md", "content/sec/new/a.md"),
+            ("content/sec/old/b.md", "content/sec/new/b.md"),
+        ]
+        # c.md was published under old_prefix but is not in the rename set
+        # (e.g. deleted without redirect) → incomplete.
+        published = {
+            "content/sec/old/a.md",
+            "content/sec/old/b.md",
+            "content/sec/old/c.md",
+        }
+        moves, remaining = dmp.detect_subtree_moves(renames, set(), published)
+        assert moves == []
+        assert sorted(remaining) == sorted(renames)
+
+    def test_basename_change_not_relocatable(self):
+        """A rename that changes the basename is left to per-page (not a relocation)."""
+        # Two basename-changing renames under the same dir: even as a pair they
+        # have empty trailing run, so they never cluster into a subtree move.
+        renames = [
+            ("content/sec/old-a.md", "content/sec/new-a.md"),
+            ("content/sec/old-b.md", "content/sec/new-b.md"),
+        ]
+        published = {o for o, _ in renames}
+        moves, remaining = dmp.detect_subtree_moves(renames, set(), published)
+        assert moves == []
+        assert sorted(remaining) == sorted(renames)
+
+    def test_single_page_move_not_collapsed(self):
+        """A lone relocated page (size 1) stays per-page (collapsing one is pointless)."""
+        renames = [("content/sec/old/a.md", "content/sec/new/a.md")]
+        published = {"content/sec/old/a.md"}
+        moves, remaining = dmp.detect_subtree_moves(renames, set(), published)
+        assert moves == []
+        assert remaining == renames
+
+
 # ---------------------------------------------------------------------------
 # Test runner
 # ---------------------------------------------------------------------------
@@ -855,6 +1004,7 @@ def run_tests(include_live: bool = False, live_only: bool = False):
         TestNonServerlessRedirects,
         TestEdgeCases,
         TestCoverage,
+        TestRedirectGenerator,
     ]
     live_classes = [
         TestLiveRedirects,
