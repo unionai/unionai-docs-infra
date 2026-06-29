@@ -118,91 +118,106 @@
   </ul>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Persist the user's manual collapse/expand choices across navigations.
-      // The server re-renders each section's `collapsed` class from the active
-      // path on every page load, which would otherwise re-expand sections the
-      // user had collapsed (DOC-942). We store explicit per-section state in
-      // localStorage (keyed by the section's stable href / RelPermalink) and
-      // re-apply it on load, overriding the path-based default.
+    // Persist the user's collapse/expand choices across navigations (DOC-942).
+    // The server re-renders each section's `collapsed` class from the active
+    // path on every load, which would otherwise re-expand sections the user
+    // collapsed. We store per-section state in localStorage (keyed by the
+    // section's stable href / RelPermalink) and re-apply it on load.
+    //
+    // Robustness:
+    //  - The sidebar is rendered TWICE (desktop `.site-nav` + the mobile
+    //    `.drawer-sidebar`), so every section has two `.section-title`s sharing
+    //    one href. We apply each change to BOTH copies so they never disagree.
+    //  - On every toggle we snapshot the FULL set of sections (not just the one
+    //    clicked), so a section that was open only because it's on the active
+    //    path is persisted too and doesn't silently collapse when you navigate.
+    //  - The section containing the current page is always kept open.
+    //  - The chevron's `rotated` class is driven from the collapsed state (set,
+    //    never blind-flipped), so the arrow can't drift out of sync.
+    (function () {
       const STORAGE_KEY = 'sidebarCollapsedSections';
 
-      function loadCollapsedState() {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-        } catch (e) {
-          return {};
-        }
+      function load() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch (e) { return {}; }
+      }
+      function save(state) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+        catch (e) { /* private mode / quota — ignore */ }
       }
 
-      function saveCollapsedState(state) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (e) {
-          // Ignore storage failures (private mode, quota, etc.).
-        }
+      function sectionOf(title) {
+        const li = title.closest('li');
+        return {
+          id: title.getAttribute('href'),
+          pages: li ? li.querySelector(':scope > .section-pages') : null,
+          chevron: title.querySelector('.chevron')
+        };
       }
 
-      const collapsedState = loadCollapsedState();
-
-      // Get all section titles
-      const sectionTitles = document.querySelectorAll('.section-title');
-
-      // Add click event listener to each section title
-      sectionTitles.forEach(title => {
-        const parentLi = title.closest('li');
-        const sectionPages = parentLi.querySelector('.section-pages');
-        const chevron = title.querySelector('.chevron');
-
-        if (!sectionPages) return;
-
-        // Stable id for this section: its href (RelPermalink).
-        const sectionId = title.getAttribute('href');
-        // Never force-collapse a section that contains the current page —
-        // hiding the active item would be worse than re-expanding.
-        const containsActive = sectionPages.querySelector('.active') !== null;
-
-        // Re-apply saved state, overriding the server's path-based default.
-        if (
-          sectionId &&
-          Object.prototype.hasOwnProperty.call(collapsedState, sectionId) &&
-          !containsActive
-        ) {
-          const shouldCollapse = collapsedState[sectionId];
-          sectionPages.classList.toggle('collapsed', shouldCollapse);
-          if (chevron) {
-            chevron.classList.toggle('rotated', shouldCollapse);
-          }
-        } else if (sectionPages.classList.contains('collapsed') && chevron) {
-          // Set initial chevron state based on whether the section is collapsed
-          chevron.classList.add('rotated');
-        }
-
-        // Add click event to toggle visibility
-        title.addEventListener('click', function(e) {
-          // Check if the click was on the chevron
-          if (e.target.classList.contains('chevron') || e.target.closest('.chevron')) {
-            // Prevent default link behavior only when clicking on chevron
-            e.preventDefault();
-
-            // Toggle collapsed class
-            const nowCollapsed = sectionPages.classList.toggle('collapsed');
-
-            // Toggle chevron rotation if it exists
-            if (chevron) {
-              chevron.classList.toggle('rotated');
-            }
-
-            // Persist the user's explicit choice for this section.
-            if (sectionId) {
-              collapsedState[sectionId] = nowCollapsed;
-              saveCollapsedState(collapsedState);
-            }
-          }
-          // If click was not on chevron, default link behavior will navigate to the page
+      // Apply a collapsed bool to every copy (desktop + drawer) of a section.
+      function setCollapsed(id, collapsed) {
+        document.querySelectorAll('.section-title').forEach(function (t) {
+          if (t.getAttribute('href') !== id) return;
+          const s = sectionOf(t);
+          if (s.pages) s.pages.classList.toggle('collapsed', collapsed);
+          if (s.chevron) s.chevron.classList.toggle('rotated', collapsed);
         });
-      });
-    });
+      }
+
+      // Record the current collapsed state of every section.
+      function snapshot() {
+        const state = {};
+        document.querySelectorAll('.section-title').forEach(function (t) {
+          const s = sectionOf(t);
+          if (s.id && s.pages) state[s.id] = s.pages.classList.contains('collapsed');
+        });
+        save(state);
+      }
+
+      function init() {
+        const state = load();
+        const titles = Array.prototype.slice.call(document.querySelectorAll('.section-title'));
+
+        // 1. Restore saved state; always keep the active section open.
+        titles.forEach(function (title) {
+          const s = sectionOf(title);
+          if (!s.pages || !s.id) return;
+          const containsActive = s.pages.querySelector('.active') !== null;
+          let collapsed;
+          if (containsActive) {
+            collapsed = false;                                          // never hide the active item
+          } else if (Object.prototype.hasOwnProperty.call(state, s.id)) {
+            collapsed = state[s.id];                                    // user's remembered choice
+          } else {
+            collapsed = s.pages.classList.contains('collapsed');       // server default
+          }
+          s.pages.classList.toggle('collapsed', collapsed);
+          if (s.chevron) s.chevron.classList.toggle('rotated', collapsed);
+        });
+        snapshot();                                                    // persist the resolved picture (incl. active-open)
+
+        // 2. Toggle on chevron click, then persist the full snapshot.
+        titles.forEach(function (title) {
+          title.addEventListener('click', function (e) {
+            if (!(e.target.classList.contains('chevron') || e.target.closest('.chevron'))) {
+              return;                                                  // not the chevron — let the link navigate
+            }
+            e.preventDefault();
+            const s = sectionOf(title);
+            if (!s.pages || !s.id) return;
+            setCollapsed(s.id, !s.pages.classList.contains('collapsed'));
+            snapshot();
+          });
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
   </script>
 </nav>
 {{- end -}}
