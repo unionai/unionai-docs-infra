@@ -495,87 +495,90 @@ def main():
     renames = detect_renames(repo_path)
     print(f"  Found {len(renames)} renamed files")
 
-    if not renames:
-        print("No renames found")
-        return 0
+    # Build new redirect entries from the detected renames. Any of the filters
+    # below may legitimately leave zero new entries (e.g. every rename already
+    # has a redirect) — that is fine. On a real run we still fall through to the
+    # chain-collapse pass, which must run on EVERY invocation, not only when new
+    # entries happen to be appended: a chain can be introduced by a manual CSV
+    # edit or a delete+add page move that git does not score as a rename, and
+    # such chains would otherwise never be collapsed (DOC-1190).
+    new_entries = []
+    if renames:
+        # Filter to only renames where the source was previously published
+        published_files = get_published_files(repo_path)
+        unpublished_renames = [(o, n) for o, n in renames if o not in published_files]
+        renames = [(o, n) for o, n in renames if o in published_files]
+        if unpublished_renames:
+            print(f"  Skipping {len(unpublished_renames)} renames of files never published on {resolve_production_ref(repo_path)}")
 
-    # Filter to only renames where the source was previously published
-    published_files = get_published_files(repo_path)
-    unpublished_renames = [(o, n) for o, n in renames if o not in published_files]
-    renames = [(o, n) for o, n in renames if o in published_files]
-    if unpublished_renames:
-        print(f"  Skipping {len(unpublished_renames)} renames of files never published on {resolve_production_ref(repo_path)}")
+        # Skip renames where the source URL is still served (e.g. foo.md -> foo/_index.md).
+        # Use case-insensitive matching since Hugo lowercases all URLs.
+        content_dir = repo_path / 'content'
+        existing_paths = {
+            p.relative_to(content_dir).as_posix().lower()
+            for p in content_dir.rglob('*.md')
+        }
+        preserved = []
+        for old_path, new_path in renames:
+            rel = old_path.removeprefix('content/').lower()
+            stem = rel.removesuffix('.md')
+            if rel in existing_paths or f"{stem}/_index.md" in existing_paths:
+                preserved.append((old_path, new_path))
+        if preserved:
+            print(f"  Skipping {len(preserved)} renames where source URL is still served")
+            renames = [(o, n) for o, n in renames if (o, n) not in preserved]
 
-    if not renames:
-        print("No renames of published files found")
-        return 0
+        if renames:
+            print(f"Loading existing redirects from {args.output}...")
+            existing = load_existing_redirects(output_path)
+            print(f"  Found {len(existing)} existing redirects")
 
-    # Skip renames where the source URL is still served (e.g. foo.md -> foo/_index.md).
-    # Use case-insensitive matching since Hugo lowercases all URLs.
-    content_dir = repo_path / 'content'
-    existing_paths = {
-        p.relative_to(content_dir).as_posix().lower()
-        for p in content_dir.rglob('*.md')
-    }
-    preserved = []
-    for old_path, new_path in renames:
-        rel = old_path.removeprefix('content/').lower()
-        stem = rel.removesuffix('.md')
-        if rel in existing_paths or f"{stem}/_index.md" in existing_paths:
-            preserved.append((old_path, new_path))
-    if preserved:
-        print(f"  Skipping {len(preserved)} renames where source URL is still served")
-        renames = [(o, n) for o, n in renames if (o, n) not in preserved]
+            # Collapse any clean full-subtree relocations into single subpath rules,
+            # leaving scattered single-page moves to the per-page exact-match path.
+            collapse_moves, renames = detect_subtree_moves(
+                renames, existing_paths, published_files
+            )
+            if collapse_moves:
+                print(f"  Collapsing {len(collapse_moves)} subtree move(s) into subpath rules:")
+                for old_prefix, new_prefix in collapse_moves:
+                    print(f"    {old_prefix}/  ->  {new_prefix}/")
 
-    if not renames:
-        print("No redirects needed")
-        return 0
-
-    print(f"Loading existing redirects from {args.output}...")
-    existing = load_existing_redirects(output_path)
-    print(f"  Found {len(existing)} existing redirects")
-
-    # Collapse any clean full-subtree relocations into single subpath rules,
-    # leaving scattered single-page moves to the per-page exact-match path.
-    collapse_moves, renames = detect_subtree_moves(
-        renames, existing_paths, published_files
-    )
-    if collapse_moves:
-        print(f"  Collapsing {len(collapse_moves)} subtree move(s) into subpath rules:")
-        for old_prefix, new_prefix in collapse_moves:
-            print(f"    {old_prefix}/  ->  {new_prefix}/")
-
-    print(f"Generating redirect entries for variants: {', '.join(variants)} (version: {version})...")
-    new_entries = generate_collapse_entries(collapse_moves, existing, version, variants)
-    new_entries += generate_redirect_entries(renames, existing, version, variants)
-
-    if not new_entries:
-        print("All renames already have redirects")
-        return 0
-
-    print(f"  Generated {len(new_entries)} new redirect entries")
+            print(f"Generating redirect entries for variants: {', '.join(variants)} (version: {version})...")
+            new_entries = generate_collapse_entries(collapse_moves, existing, version, variants)
+            new_entries += generate_redirect_entries(renames, existing, version, variants)
 
     if args.dry_run:
-        print("\nNew entries (dry run):\n")
-        for entry in new_entries:
-            print(entry)
+        # Dry run reports only the new entries it would append; it never mutates
+        # the file, so it does not run the (mutating) chain-collapse pass.
+        if new_entries:
+            print(f"  Generated {len(new_entries)} new redirect entries")
+            print("\nNew entries (dry run):\n")
+            for entry in new_entries:
+                print(entry)
+        else:
+            print("No new redirect entries (renames already covered)")
         return 0
 
-    # Append to redirects.csv
-    print(f"Appending to {args.output}...")
-    with open(output_path, 'a', newline='') as f:
-        # Ensure file ends with newline before appending
-        if output_path.stat().st_size > 0:
-            with open(output_path, 'rb') as rb:
-                rb.seek(-1, 2)
-                if rb.read(1) != b'\n':
-                    f.write('\n')
-        for entry in new_entries:
-            f.write(entry + '\n')
+    # Append any new entries to redirects.csv.
+    if new_entries:
+        print(f"  Generated {len(new_entries)} new redirect entries")
+        print(f"Appending to {args.output}...")
+        with open(output_path, 'a', newline='') as f:
+            # Ensure file ends with newline before appending
+            if output_path.stat().st_size > 0:
+                with open(output_path, 'rb') as rb:
+                    rb.seek(-1, 2)
+                    if rb.read(1) != b'\n':
+                        f.write('\n')
+            for entry in new_entries:
+                f.write(entry + '\n')
+        print(f"Added {len(new_entries)} new redirects to {args.output}")
+    else:
+        print("No new redirect entries (renames already covered)")
 
-    print(f"Added {len(new_entries)} new redirects to {args.output}")
-
-    # Collapse any multi-hop redirect chains
+    # Always collapse multi-hop redirect chains, even when no new entries were
+    # added (DOC-1190). This keeps the CSV single-hop after a manual edit or a
+    # non-rename page move; the chain pytest gates it in CI.
     print(f"Collapsing redirect chains...")
     collapsed = collapse_chains(output_path)
     if collapsed:
