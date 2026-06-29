@@ -119,6 +119,32 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Persist the user's manual collapse/expand choices across navigations.
+      // The server re-renders each section's `collapsed` class from the active
+      // path on every page load, which would otherwise re-expand sections the
+      // user had collapsed (DOC-942). We store explicit per-section state in
+      // localStorage (keyed by the section's stable href / RelPermalink) and
+      // re-apply it on load, overriding the path-based default.
+      const STORAGE_KEY = 'sidebarCollapsedSections';
+
+      function loadCollapsedState() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function saveCollapsedState(state) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          // Ignore storage failures (private mode, quota, etc.).
+        }
+      }
+
+      const collapsedState = loadCollapsedState();
+
       // Get all section titles
       const sectionTitles = document.querySelectorAll('.section-title');
 
@@ -130,8 +156,25 @@
 
         if (!sectionPages) return;
 
-        // Set initial chevron state based on whether the section is collapsed
-        if (sectionPages.classList.contains('collapsed') && chevron) {
+        // Stable id for this section: its href (RelPermalink).
+        const sectionId = title.getAttribute('href');
+        // Never force-collapse a section that contains the current page —
+        // hiding the active item would be worse than re-expanding.
+        const containsActive = sectionPages.querySelector('.active') !== null;
+
+        // Re-apply saved state, overriding the server's path-based default.
+        if (
+          sectionId &&
+          Object.prototype.hasOwnProperty.call(collapsedState, sectionId) &&
+          !containsActive
+        ) {
+          const shouldCollapse = collapsedState[sectionId];
+          sectionPages.classList.toggle('collapsed', shouldCollapse);
+          if (chevron) {
+            chevron.classList.toggle('rotated', shouldCollapse);
+          }
+        } else if (sectionPages.classList.contains('collapsed') && chevron) {
+          // Set initial chevron state based on whether the section is collapsed
           chevron.classList.add('rotated');
         }
 
@@ -143,11 +186,17 @@
             e.preventDefault();
 
             // Toggle collapsed class
-            sectionPages.classList.toggle('collapsed');
+            const nowCollapsed = sectionPages.classList.toggle('collapsed');
 
             // Toggle chevron rotation if it exists
             if (chevron) {
               chevron.classList.toggle('rotated');
+            }
+
+            // Persist the user's explicit choice for this section.
+            if (sectionId) {
+              collapsedState[sectionId] = nowCollapsed;
+              saveCollapsedState(collapsedState);
             }
           }
           // If click was not on chevron, default link behavior will navigate to the page
