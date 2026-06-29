@@ -1006,7 +1006,7 @@ www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/advanced_composition/dynam
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/advanced_composition/eager_workflows,https://www.union.ai/docs/v2/flyte/user-guide/run-scaling/scale-your-workflows/,302,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/advanced_composition/map_task,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/fanout/,302,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/advanced_composition/subworkflow,https://www.union.ai/docs/v2/flyte/user-guide/run-scaling/scale-your-workflows/,302,FALSE,TRUE,TRUE,FALSE
-www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/advanced_composition/waiting_for_external_inputs,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/human-in-the-loop/,302,FALSE,TRUE,TRUE,FALSE
+www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/advanced_composition/waiting_for_external_inputs,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/conditions,302,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/airflow_agent,https://www.union.ai/docs/v2/flyte/user-guide/migration/from-airflow/,302,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/airflow_agent/airflow_agent_example_usage,https://www.union.ai/docs/v2/flyte/user-guide/migration/from-airflow/,302,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/airflow_plugin,https://www.union.ai/docs/v2/flyte/user-guide/migration/from-airflow/,302,FALSE,TRUE,TRUE,FALSE
@@ -5560,8 +5560,8 @@ www.union.ai/docs/v2/byoc/user-guide/task-programming/grouping-actions,https://w
 www.union.ai/docs/v2/byoc/user-guide/task-programming/grouping-actions/,https://www.union.ai/docs/v2/union/user-guide/task-programming/grouping-actions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-programming/handling-custom-types,https://www.union.ai/docs/v2/union/user-guide/task-programming/handling-custom-types,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-programming/handling-custom-types/,https://www.union.ai/docs/v2/union/user-guide/task-programming/handling-custom-types,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/task-programming/human-in-the-loop,https://www.union.ai/docs/v2/union/user-guide/task-programming/human-in-the-loop,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/task-programming/human-in-the-loop/,https://www.union.ai/docs/v2/union/user-guide/task-programming/human-in-the-loop,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/task-programming/human-in-the-loop,https://www.union.ai/docs/v2/union/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/task-programming/human-in-the-loop/,https://www.union.ai/docs/v2/union/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-programming/links,https://www.union.ai/docs/v2/union/user-guide/task-programming/links,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-programming/links/,https://www.union.ai/docs/v2/union/user-guide/task-programming/links,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-programming/notebooks,https://www.union.ai/docs/v2/union/user-guide/task-programming/notebooks,302,TRUE,FALSE,TRUE,TRUE
@@ -7146,8 +7146,8 @@ www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/grouping-actions,ht
 www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/grouping-actions/,https://www.union.ai/docs/v2/union/user-guide/task-programming/grouping-actions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/handling-custom-types,https://www.union.ai/docs/v2/union/user-guide/task-programming/handling-custom-types,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/handling-custom-types/,https://www.union.ai/docs/v2/union/user-guide/task-programming/handling-custom-types,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/human-in-the-loop,https://www.union.ai/docs/v2/union/user-guide/task-programming/human-in-the-loop,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/human-in-the-loop/,https://www.union.ai/docs/v2/union/user-guide/task-programming/human-in-the-loop,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/human-in-the-loop,https://www.union.ai/docs/v2/union/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/human-in-the-loop/,https://www.union.ai/docs/v2/union/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/links,https://www.union.ai/docs/v2/union/user-guide/task-programming/links,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/links/,https://www.union.ai/docs/v2/union/user-guide/task-programming/links,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-programming/notebooks,https://www.union.ai/docs/v2/union/user-guide/task-programming/notebooks,302,TRUE,FALSE,TRUE,TRUE
@@ -8086,3 +8086,7 @@ www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-generic/,https://
 www.union.ai/docs/v2/union/deployment/byok-data-plane-setup-on-generic/,https://www.union.ai/docs/v2/union/deployment/selfmanaged-generic,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-AWS/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/selfmanaged-aws,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/byok-data-plane-setup-on-AWS/,https://www.union.ai/docs/v2/union/deployment/byok-data-plane-setup-on-aws/manual,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/task-programming/human-in-the-loop,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/task-programming/human-in-the-loop/,https://www.union.ai/docs/v2/flyte/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/task-programming/human-in-the-loop,https://www.union.ai/docs/v2/union/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/task-programming/human-in-the-loop/,https://www.union.ai/docs/v2/union/user-guide/task-programming/conditions,302,TRUE,FALSE,TRUE,TRUE
