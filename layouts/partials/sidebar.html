@@ -197,17 +197,25 @@
         });
         snapshot();                                                    // persist the resolved picture (incl. active-open)
 
-        // 2. Toggle on chevron click, then persist the full snapshot.
+        // 2. Click behavior:
+        //    - chevron  → pure toggle in place, never navigates.
+        //    - label    → navigate; if the section is collapsed, expand it
+        //                 first (NEVER collapse on a label click) and persist
+        //                 before the reload so it stays open on arrival.
         titles.forEach(function (title) {
           title.addEventListener('click', function (e) {
-            if (!(e.target.classList.contains('chevron') || e.target.closest('.chevron'))) {
-              return;                                                  // not the chevron — let the link navigate
-            }
-            e.preventDefault();
             const s = sectionOf(title);
             if (!s.pages || !s.id) return;
-            setCollapsed(s.id, !s.pages.classList.contains('collapsed'));
-            snapshot();
+            const onChevron = e.target.classList.contains('chevron') || e.target.closest('.chevron');
+            if (onChevron) {
+              e.preventDefault();                                      // toggle only — do not navigate
+              setCollapsed(s.id, !s.pages.classList.contains('collapsed'));
+              snapshot();
+            } else if (s.pages.classList.contains('collapsed')) {
+              setCollapsed(s.id, false);                               // expand-only on label click
+              snapshot();                                              // persist synchronously before navigation
+              // no preventDefault → the link navigates
+            }
           });
         });
       }
