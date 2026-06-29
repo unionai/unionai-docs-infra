@@ -1,6 +1,6 @@
 <div class="logo-container">
     <a href="{{ .Site.BaseURL }}">
-        <img src="{{ printf "images/%s" (index .Site.Params.Key.logo .Site.Params.variant) | relURL }}" class="logo" />
+        <img src="{{ printf "images/%s" (index .Site.Params.Key.logo .Site.Params.variant) | relURL }}" class="logo" alt="{{ index .Site.Params.Key.product_full_name .Site.Params.variant }} Docs logo" />
     </a>
     <a href="{{ .Site.BaseURL }}" class="title">
         <div>{{ index .Site.Params.Key.product_full_name .Site.Params.variant }} Docs</div>
