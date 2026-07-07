@@ -349,7 +349,8 @@ BLOCKQUOTE P + P {
 }
 
 IMG {
-  max-width: var(--image-width);
+  max-width: min(var(--image-width), 100%);
+  height: auto;
 }
 
 sl-alert {
