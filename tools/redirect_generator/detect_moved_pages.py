@@ -22,8 +22,22 @@ from typing import Dict, List, Tuple, Set
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _repo import get_repo_root, INFRA_ROOT
 
-# CSV format flags (matching existing redirects.csv)
+# CSV format flags (matching existing redirects.csv).
+# Columns 2-6 (after source,target): status, include_subdomains,
+# subpath_matching, preserve_query_string, preserve_path_suffix.
+#
+# Exact-match rows: subpath_matching=FALSE — the source URL is matched
+# literally. The site serves canonical *trailing-slash* URLs, so for every
+# exact-match rename we emit BOTH the no-slash and trailing-slash source forms
+# (see generate_redirect_entries); otherwise the trailing-slash form 404s.
 CSV_FLAGS = '302,TRUE,FALSE,TRUE,TRUE'
+
+# Subtree-collapse rows: subpath_matching=TRUE + preserve_path_suffix=TRUE.
+# A single rule on the moved prefix then covers the prefix itself, its
+# trailing-slash form, and every deep subpath in one hop. Only emitted for a
+# clean, fully-relocated subtree (see detect_subtree_moves' guards) — never
+# blanket-flipped, or a leaf rule would "match" non-existent children.
+COLLAPSE_FLAGS = '302,TRUE,TRUE,TRUE,TRUE'
 
 # Default output file (in unionai-docs-infra/)
 REDIRECTS_FILE = 'redirects.csv'
@@ -186,14 +200,51 @@ def load_existing_redirects(csv_path: Path) -> Dict[str, str]:
     return existing
 
 
+def _emit_entry(
+    source_url: str,
+    target_url: str,
+    flags: str,
+    existing: Dict[str, str],
+    out: List[str],
+) -> bool:
+    """Append one CSV row for source_url unless it already exists.
+
+    Dedups against `existing` (source -> destination map): if source_url is
+    already present with the same destination it is silently kept; with a
+    different destination a warning is printed. Either way nothing is emitted.
+    Returns True iff a new row was appended to `out`.
+    """
+    if source_url in existing:
+        existing_dest = existing[source_url]
+        if existing_dest == target_url:
+            print(f"  [skip] redirect already exists: {source_url}")
+        else:
+            print(f"  [skip] redirect exists with different destination: {source_url}")
+            print(f"         existing:  {existing_dest}")
+            print(f"         expected:  {target_url}")
+        return False
+
+    out.append(f"{source_url},{target_url},{flags}")
+    return True
+
+
 def generate_redirect_entries(
     renames: List[Tuple[str, str]],
     existing: Dict[str, str],
     version: str,
     variants: List[str]
 ) -> List[str]:
-    """Generate new redirect entries for all variants."""
-    new_entries = []
+    """Generate exact-match redirect entries for all variants.
+
+    For every rename we emit BOTH source forms — the no-slash URL and its
+    trailing-slash variant — pointing at the same (no-slash) target with the
+    same flags. The site serves canonical trailing-slash URLs, so emitting only
+    the no-slash source leaves bookmarked trailing-slash URLs 404ing (DOC-1233).
+
+    A rename is fully skipped only when BOTH forms already exist in `existing`;
+    if just one is present the missing form is still emitted.
+    """
+    new_entries: List[str] = []
 
     for old_path, new_path in renames:
         for variant in variants:
@@ -206,23 +257,156 @@ def generate_redirect_entries(
             if old_url.lower() == new_url.lower():
                 continue
 
-            # Skip if redirect already exists
-            if old_url in existing:
-                expected_dest = f"https://{new_url}"
-                existing_dest = existing[old_url]
-                if existing_dest == expected_dest:
-                    print(f"  [skip] redirect already exists: {old_url}")
-                else:
-                    print(f"  [skip] redirect exists with different destination: {old_url}")
-                    print(f"         existing:  {existing_dest}")
-                    print(f"         expected:  {expected_dest}")
-                continue
-
-            # Generate CSV entry
-            entry = f"{old_url},https://{new_url},{CSV_FLAGS}"
-            new_entries.append(entry)
+            target = f"https://{new_url}"
+            # Both source forms, same target/flags (target keeps no trailing
+            # slash). Per-form dedup means "skip only if BOTH already exist".
+            _emit_entry(old_url, target, CSV_FLAGS, existing, new_entries)
+            _emit_entry(old_url + '/', target, CSV_FLAGS, existing, new_entries)
 
     return new_entries
+
+
+def _is_under(path: str, prefix_components: List[str]) -> bool:
+    """True if `path` (slash-joined) sits strictly under prefix_components/."""
+    pc = path.split('/')
+    return (
+        len(pc) > len(prefix_components)
+        and pc[:len(prefix_components)] == prefix_components
+    )
+
+
+def _trailing_run_length(old_comps: List[str], new_comps: List[str]) -> int:
+    """Length of the longest equal *trailing* run of path components.
+
+    This is the preserved relative suffix of a rename; the components before it
+    are the diverging prefix. 0 means the basename (or suffix) itself changed,
+    so the rename is not a pure relocation.
+    """
+    n = 0
+    limit = min(len(old_comps), len(new_comps))
+    while n < limit and old_comps[-(n + 1)] == new_comps[-(n + 1)]:
+        n += 1
+    return n
+
+
+def detect_subtree_moves(
+    renames: List[Tuple[str, str]],
+    existing_paths: Set[str],
+    published_files: Set[str],
+) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
+    """Detect clean full-subtree relocations to collapse into one subpath rule.
+
+    Args:
+        renames: post-filter (old, new) content paths (published, still-served
+            already removed). This is the "full set" the guards reason about.
+        existing_paths: lowercased posix paths *relative to content/* that exist
+            in the current content tree (the live, still-served pages).
+        published_files: every content path ever published on the production
+            branch (current + ever-deleted), e.g. 'content/foo/bar.md'.
+
+    Returns:
+        (collapse_moves, remaining_renames) where collapse_moves is a list of
+        (old_prefix_path, new_prefix_path) content-path prefixes that each
+        qualify to collapse into a single subpath_matching rule, and
+        remaining_renames is every rename NOT consumed by a collapse (left to
+        the per-page exact-match path).
+
+    A cluster keyed on the shallowest divergence (old_prefix -> new_prefix)
+    collapses ONLY if ALL guards hold:
+      * size      >= 2 renames.
+      * uniform   every rename whose old path is under old_prefix/ is in this
+                  cluster (no page under old_prefix maps to a different prefix).
+      * survivors NO .md exists under old_prefix/ in the current content tree
+                  (safety-critical: never clobber a live page).
+      * complete  every historically-published file under old_prefix/ appears
+                  as an old in this cluster (nothing left behind / deleted
+                  without redirect / moved elsewhere undetected).
+    Conservative: only the shallowest prefix pair is considered; if it fails any
+    guard its renames fall back to per-page (we do NOT try deeper sub-prefixes).
+    """
+    # Cluster renames by (old_prefix, new_prefix) = components before the
+    # preserved trailing suffix.
+    clusters: Dict[Tuple[Tuple[str, ...], Tuple[str, ...]], List[Tuple[str, str]]] = {}
+    for old, new in renames:
+        oc = old.split('/')
+        nc = new.split('/')
+        run = _trailing_run_length(oc, nc)
+        if run == 0:
+            # Basename/suffix changed → not relocatable; leave to per-page.
+            continue
+        old_prefix = tuple(oc[:-run])
+        new_prefix = tuple(nc[:-run])
+        # Require a real path component beyond the 'content' root on the source
+        # side; collapsing at the content root itself would be absurd/unsafe.
+        if len(old_prefix) < 2 or len(new_prefix) < 1:
+            continue
+        clusters.setdefault((old_prefix, new_prefix), []).append((old, new))
+
+    collapse_moves: List[Tuple[str, str]] = []
+    consumed: Set[Tuple[str, str]] = set()
+
+    for (old_prefix, new_prefix), members in clusters.items():
+        prefix_comps = list(old_prefix)
+
+        # (size)
+        if len(members) < 2:
+            continue
+
+        # (uniform / no fan-out) — checked against the FULL renames set.
+        renames_under = [(o, n) for (o, n) in renames if _is_under(o, prefix_comps)]
+        if len(renames_under) != len(members):
+            continue
+
+        # (no survivors) — EXACT, safety-critical. existing_paths is relative to
+        # content/ and lowercased; old_prefix includes the leading 'content'.
+        rel_prefix = '/'.join(old_prefix[1:]).lower()
+        if any(ep == rel_prefix or ep.startswith(rel_prefix + '/') for ep in existing_paths):
+            continue
+
+        # (completeness)
+        cluster_olds = {o for (o, _) in members}
+        if any(
+            p not in cluster_olds
+            for p in published_files
+            if _is_under(p, prefix_comps)
+        ):
+            continue
+
+        # Qualifies.
+        collapse_moves.append(('/'.join(old_prefix), '/'.join(new_prefix)))
+        consumed.update(members)
+
+    remaining = [(o, n) for (o, n) in renames if (o, n) not in consumed]
+    return collapse_moves, remaining
+
+
+def generate_collapse_entries(
+    collapse_moves: List[Tuple[str, str]],
+    existing: Dict[str, str],
+    version: str,
+    variants: List[str],
+) -> List[str]:
+    """Generate one subpath_matching redirect per variant per collapsed subtree.
+
+    Source = URL(old_prefix), target = https://URL(new_prefix), flags
+    COLLAPSE_FLAGS. subpath_matching + preserve_path_suffix make this single
+    rule cover the prefix, its trailing-slash form, and all deep subpaths — so
+    (unlike the exact-match path) no second slash form is needed.
+    """
+    entries: List[str] = []
+
+    for old_prefix_path, new_prefix_path in collapse_moves:
+        for variant in variants:
+            old_url = content_path_to_url(old_prefix_path, variant, version)
+            new_url = content_path_to_url(new_prefix_path, variant, version)
+
+            if old_url.lower() == new_url.lower():
+                continue
+
+            target = f"https://{new_url}"
+            _emit_entry(old_url, target, COLLAPSE_FLAGS, existing, entries)
+
+    return entries
 
 
 def collapse_chains(csv_path: Path) -> int:
@@ -311,76 +495,90 @@ def main():
     renames = detect_renames(repo_path)
     print(f"  Found {len(renames)} renamed files")
 
-    if not renames:
-        print("No renames found")
-        return 0
+    # Build new redirect entries from the detected renames. Any of the filters
+    # below may legitimately leave zero new entries (e.g. every rename already
+    # has a redirect) — that is fine. On a real run we still fall through to the
+    # chain-collapse pass, which must run on EVERY invocation, not only when new
+    # entries happen to be appended: a chain can be introduced by a manual CSV
+    # edit or a delete+add page move that git does not score as a rename, and
+    # such chains would otherwise never be collapsed (DOC-1190).
+    new_entries = []
+    if renames:
+        # Filter to only renames where the source was previously published
+        published_files = get_published_files(repo_path)
+        unpublished_renames = [(o, n) for o, n in renames if o not in published_files]
+        renames = [(o, n) for o, n in renames if o in published_files]
+        if unpublished_renames:
+            print(f"  Skipping {len(unpublished_renames)} renames of files never published on {resolve_production_ref(repo_path)}")
 
-    # Filter to only renames where the source was previously published
-    published_files = get_published_files(repo_path)
-    unpublished_renames = [(o, n) for o, n in renames if o not in published_files]
-    renames = [(o, n) for o, n in renames if o in published_files]
-    if unpublished_renames:
-        print(f"  Skipping {len(unpublished_renames)} renames of files never published on {resolve_production_ref(repo_path)}")
+        # Skip renames where the source URL is still served (e.g. foo.md -> foo/_index.md).
+        # Use case-insensitive matching since Hugo lowercases all URLs.
+        content_dir = repo_path / 'content'
+        existing_paths = {
+            p.relative_to(content_dir).as_posix().lower()
+            for p in content_dir.rglob('*.md')
+        }
+        preserved = []
+        for old_path, new_path in renames:
+            rel = old_path.removeprefix('content/').lower()
+            stem = rel.removesuffix('.md')
+            if rel in existing_paths or f"{stem}/_index.md" in existing_paths:
+                preserved.append((old_path, new_path))
+        if preserved:
+            print(f"  Skipping {len(preserved)} renames where source URL is still served")
+            renames = [(o, n) for o, n in renames if (o, n) not in preserved]
 
-    if not renames:
-        print("No renames of published files found")
-        return 0
+        if renames:
+            print(f"Loading existing redirects from {args.output}...")
+            existing = load_existing_redirects(output_path)
+            print(f"  Found {len(existing)} existing redirects")
 
-    # Skip renames where the source URL is still served (e.g. foo.md -> foo/_index.md).
-    # Use case-insensitive matching since Hugo lowercases all URLs.
-    content_dir = repo_path / 'content'
-    existing_paths = {
-        p.relative_to(content_dir).as_posix().lower()
-        for p in content_dir.rglob('*.md')
-    }
-    preserved = []
-    for old_path, new_path in renames:
-        rel = old_path.removeprefix('content/').lower()
-        stem = rel.removesuffix('.md')
-        if rel in existing_paths or f"{stem}/_index.md" in existing_paths:
-            preserved.append((old_path, new_path))
-    if preserved:
-        print(f"  Skipping {len(preserved)} renames where source URL is still served")
-        renames = [(o, n) for o, n in renames if (o, n) not in preserved]
+            # Collapse any clean full-subtree relocations into single subpath rules,
+            # leaving scattered single-page moves to the per-page exact-match path.
+            collapse_moves, renames = detect_subtree_moves(
+                renames, existing_paths, published_files
+            )
+            if collapse_moves:
+                print(f"  Collapsing {len(collapse_moves)} subtree move(s) into subpath rules:")
+                for old_prefix, new_prefix in collapse_moves:
+                    print(f"    {old_prefix}/  ->  {new_prefix}/")
 
-    if not renames:
-        print("No redirects needed")
-        return 0
-
-    print(f"Loading existing redirects from {args.output}...")
-    existing = load_existing_redirects(output_path)
-    print(f"  Found {len(existing)} existing redirects")
-
-    print(f"Generating redirect entries for variants: {', '.join(variants)} (version: {version})...")
-    new_entries = generate_redirect_entries(renames, existing, version, variants)
-
-    if not new_entries:
-        print("All renames already have redirects")
-        return 0
-
-    print(f"  Generated {len(new_entries)} new redirect entries")
+            print(f"Generating redirect entries for variants: {', '.join(variants)} (version: {version})...")
+            new_entries = generate_collapse_entries(collapse_moves, existing, version, variants)
+            new_entries += generate_redirect_entries(renames, existing, version, variants)
 
     if args.dry_run:
-        print("\nNew entries (dry run):\n")
-        for entry in new_entries:
-            print(entry)
+        # Dry run reports only the new entries it would append; it never mutates
+        # the file, so it does not run the (mutating) chain-collapse pass.
+        if new_entries:
+            print(f"  Generated {len(new_entries)} new redirect entries")
+            print("\nNew entries (dry run):\n")
+            for entry in new_entries:
+                print(entry)
+        else:
+            print("No new redirect entries (renames already covered)")
         return 0
 
-    # Append to redirects.csv
-    print(f"Appending to {args.output}...")
-    with open(output_path, 'a', newline='') as f:
-        # Ensure file ends with newline before appending
-        if output_path.stat().st_size > 0:
-            with open(output_path, 'rb') as rb:
-                rb.seek(-1, 2)
-                if rb.read(1) != b'\n':
-                    f.write('\n')
-        for entry in new_entries:
-            f.write(entry + '\n')
+    # Append any new entries to redirects.csv.
+    if new_entries:
+        print(f"  Generated {len(new_entries)} new redirect entries")
+        print(f"Appending to {args.output}...")
+        with open(output_path, 'a', newline='') as f:
+            # Ensure file ends with newline before appending
+            if output_path.stat().st_size > 0:
+                with open(output_path, 'rb') as rb:
+                    rb.seek(-1, 2)
+                    if rb.read(1) != b'\n':
+                        f.write('\n')
+            for entry in new_entries:
+                f.write(entry + '\n')
+        print(f"Added {len(new_entries)} new redirects to {args.output}")
+    else:
+        print("No new redirect entries (renames already covered)")
 
-    print(f"Added {len(new_entries)} new redirects to {args.output}")
-
-    # Collapse any multi-hop redirect chains
+    # Always collapse multi-hop redirect chains, even when no new entries were
+    # added (DOC-1190). This keeps the CSV single-hop after a manual edit or a
+    # non-rename page move; the chain pytest gates it in CI.
     print(f"Collapsing redirect chains...")
     collapsed = collapse_chains(output_path)
     if collapsed:

@@ -9,7 +9,13 @@ document.addEventListener("DOMContentLoaded", function () {
         '.codeblock[data-code-lang="shell"], .codeblock[data-code-lang="bash"]'
       )
       .forEach(function (block) {
-        var btn = block.querySelector("sl-copy-button");
+        // Target the displayed-code (fragment) copy button specifically.
+        // Shortcode code blocks may also carry a "copy entire file" button
+        // (sl-copy-button[value], class .copy-all) that must NOT be stripped.
+        var btn =
+          block.querySelector(".copy-fragment sl-copy-button") ||
+          block.querySelector("sl-copy-button[from]") ||
+          block.querySelector("sl-copy-button");
         if (!btn) return;
         var codeEl = block.querySelector(".code");
         if (!codeEl) return;
