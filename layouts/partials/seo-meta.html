@@ -13,7 +13,14 @@
   {{- end -}}
 {{- else -}}
   {{- /* Extract content description from plain text (avoids re-rendering shortcodes) */ -}}
-  {{- $body := .Plain -}}
+  {{- /* Hugo's .Plain strips block tags without inserting a separator, so the page H1
+         (= .Title) runs straight into the first paragraph ("Container imagesThe image…").
+         TrimSpace first (.Plain can lead with newlines), then drop a leading copy of the
+         title before extracting the first sentence (DOC-1247). */ -}}
+  {{- $body := .Plain | strings.TrimSpace -}}
+  {{- if and .Title (hasPrefix $body .Title) -}}
+    {{- $body = strings.TrimPrefix .Title $body | strings.TrimSpace -}}
+  {{- end -}}
   {{- $sentences := findRE `[^.!?]+[.!?]` $body -}}
   {{- if gt (len $sentences) 0 -}}
     {{- $description = index $sentences 0 | replaceRE `\s+` " " | strings.TrimSpace -}}
