@@ -1,11 +1,15 @@
 {{- $description := "" -}}
+{{- $pageType := partial "page-type.html" . -}}
 
-{{- /* Check if this is an API reference page and provide better descriptions */ -}}
-{{- if or (in .RelPermalink "/api-reference/") (in .RelPermalink "/packages/") (.Description) -}}
+{{- /* Check if this is an API reference page and provide better descriptions.
+       Reference pages get an intent-distinct meta description (keyed to the symbol/page
+       title) so they don't compete with concept/guide pages for the same intro terms
+       in external search (DOC-1234). An explicit front-matter `description` always wins. */ -}}
+{{- if or (eq $pageType "reference") (.Description) -}}
   {{- if .Description -}}
     {{- $description = .Description -}}
   {{- else -}}
-    {{- $description = "API reference documentation for Union.ai workflow orchestration and machine learning pipelines." -}}
+    {{- $description = printf "API reference for %s — generated documentation for the Flyte SDK and Union.ai Python API." .Title -}}
   {{- end -}}
 {{- else -}}
   {{- /* Extract content description from plain text (avoids re-rendering shortcodes) */ -}}
