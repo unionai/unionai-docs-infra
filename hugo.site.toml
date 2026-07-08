@@ -49,6 +49,7 @@ custom_js = [
   "inline-code-linker.js",
   "codeblock-linker.js",
   "codeblock-copy-strip.js",
+  "image-lightbox.js",
 ]
 
 [params.variant_weights]
