@@ -14,7 +14,16 @@
 
 {{ $destination = partial "rel-link.html" $destination }}
 
-<img src="{{ $destination | safeURL }}"
+{{/* Cache-bust LOCAL images with the build version so a replaced same-name image
+     updates immediately across the CDN (external / data URIs are left as-is).
+     Mirrors the ?v= busting already applied to CSS/JS. DOC-1251. */}}
+{{- $src := $destination -}}
+{{- if not (or (hasPrefix $destination "http://") (hasPrefix $destination "https://") (hasPrefix $destination "//") (hasPrefix $destination "data:")) -}}
+  {{- $sep := cond (in $destination "?") "&" "?" -}}
+  {{- $src = printf "%s%sv=%s" $destination $sep (partialCached "build-version.html" .) -}}
+{{- end -}}
+
+<img src="{{ $src | safeURL }}"
     {{- with .PlainText }} alt="{{ . }}"{{ end -}}
     {{- with .Title }} title="{{ . }}"{{ end -}}
 />
