@@ -1,7 +1,7 @@
 {{ $tocEnabled := .Params.toc_enabled | default true }}
-{{ $maxTocLevel := .Params.toc_max | default 99 }}
+{{ $maxTocLevel := .Params.toc_max | default 3 }}
 {{ $headingSelector := slice }}
-{{ $level := 1 }}
+{{ $level := 2 }}
 {{ range seq 10 }}
     {{ $headingSelector = $headingSelector | append (printf "h%d" $level) }}
     {{ $level = $level | add 1 }}
