@@ -1,0 +1,4 @@
+{{- /* Build-constant version string for cache-busting asset URLs (DOC-1251).
+       Mirrors the `$v` in baseof.html. Call via `partialCached "build-version.html" .`
+       so every caller in a build gets the same value (one stable ?v per build). */ -}}
+{{- now.Format "20060102150405" -}}
