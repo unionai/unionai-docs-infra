@@ -1,9 +1,13 @@
 /*
  * image-lightbox.js — click-to-zoom for content images (DOC-1249)
  *
- * Sizeable images in `.content` (diagrams, screenshots) open in a full-viewport
- * modal on click so they can be read at large size. Tiny inline icons and images
- * that are already links are skipped. Click anywhere or press Esc to close.
+ * Sizeable images in `.content` (diagrams, screenshots) open in a modal on click.
+ * Inside the modal there are two zoom levels:
+ *   - fit    (default): whole image visible, bounded by 96vw / 96vh
+ *   - full   (click the image): width = 96vw, height auto, scroll to see it all
+ *     — useful for tall/square diagrams that stay small when height-bound on a laptop.
+ * Close: Esc, click the backdrop (outside the image), or the × button.
+ * Tiny inline icons (naturalWidth < 300) and already-linked images are skipped.
  */
 (function () {
   "use strict";
@@ -14,21 +18,43 @@
 
   function buildOverlay() {
     if (overlay) return;
+
     overlay = document.createElement("div");
     overlay.className = "img-lightbox";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-hidden", "true");
+
     overlayImg = document.createElement("img");
     overlayImg.className = "img-lightbox__img";
     overlayImg.alt = "";
+    // Click the image → toggle fit / full-width zoom (does NOT close).
+    overlayImg.addEventListener("click", function (e) {
+      e.stopPropagation();
+      overlay.classList.toggle("is-zoomed");
+      overlay.scrollTop = 0;
+    });
+
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "img-lightbox__close";
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.innerHTML = "&times;";
+    closeBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      close();
+    });
+
     overlay.appendChild(overlayImg);
+    overlay.appendChild(closeBtn);
+    // Click the backdrop (anywhere but the image / button) → close.
     overlay.addEventListener("click", close);
     document.body.appendChild(overlay);
   }
 
   function open(src, alt) {
     buildOverlay();
+    overlay.classList.remove("is-zoomed"); // always start in fit mode
     overlayImg.src = src;
     overlayImg.alt = alt || "";
     overlay.classList.add("is-open");
@@ -38,17 +64,15 @@
 
   function close() {
     if (!overlay) return;
-    overlay.classList.remove("is-open");
+    overlay.classList.remove("is-open", "is-zoomed");
     overlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("img-lightbox-open");
-    // release the (possibly large) image once hidden
-    overlayImg.removeAttribute("src");
+    overlayImg.removeAttribute("src"); // release the (possibly large) image
   }
 
   function makeZoomable(img) {
     if (img.dataset.lightbox === "done") return;
-    // skip images that are already interactive links
-    if (img.closest("a")) return;
+    if (img.closest("a")) return; // skip images that are already links
     if ((img.naturalWidth || 0) < MIN_NATURAL_WIDTH) return;
     img.dataset.lightbox = "done";
     img.classList.add("is-zoomable");
