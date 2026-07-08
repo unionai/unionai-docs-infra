@@ -5601,6 +5601,8 @@ www.union.ai/docs/v2/flyte/api-reference/integrations/snowflake/packages/flytepl
 www.union.ai/docs/v2/flyte/api-reference/integrations/snowflake/packages/flyteplugins.connectors.snowflake/snowflakeconnector,https://www.union.ai/docs/v2/flyte/api-reference/integrations/snowflake/packages/flyteplugins.snowflake.connector/snowflakeconnector,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/community/contribute/contribute-code,https://www.union.ai/docs/v2/flyte/community/contributing-code,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/community/troubleshoot,https://www.union.ai/docs/v2/flyte/community/troubleshooting,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment,https://www.union.ai/docs/v2/flyte/oss-deployment,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/,https://www.union.ai/docs/v2/flyte/oss-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture/kubernetes-rbac,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture/overview,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/overview,302,TRUE,FALSE,TRUE,TRUE
@@ -7733,6 +7735,8 @@ www.union.ai/docs/v2/union/deployment/single-sign-on-setup,https://www.union.ai/
 www.union.ai/docs/v2/union/deployment/single-sign-on-setup/google-oidc,https://www.union.ai/docs/v2/union/deployment/byoc/single-sign-on-setup/google-oidc,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/single-sign-on-setup/microsoft-entra-id,https://www.union.ai/docs/v2/union/deployment/byoc/single-sign-on-setup/microsoft-entra-id,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/single-sign-on-setup/other-identity-providers,https://www.union.ai/docs/v2/union/deployment/byoc/single-sign-on-setup/other-identity-providers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/oss-deployment,https://www.union.ai/docs/v2/union/deployment,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/oss-deployment/,https://www.union.ai/docs/v2/union/deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/security/appendix,https://www.union.ai/docs/v2/union/security,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/security/aws-iam-roles,https://www.union.ai/docs/v2/union/security/architecture/data-plane,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/security/aws-iam-roles/,https://www.union.ai/docs/v2/union/security/architecture/data-plane,302,TRUE,FALSE,TRUE,TRUE
