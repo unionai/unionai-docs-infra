@@ -28,4 +28,41 @@ img[title="medium:center"] {
   height: auto;
   margin: auto;
 }
-  
+
+/* Click-to-zoom lightbox for content images (DOC-1249) */
+.content img.is-zoomable {
+  cursor: zoom-in;
+}
+
+.img-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5vmin;
+  background: rgba(20, 22, 26, 0.85);
+  cursor: zoom-out;
+}
+
+.img-lightbox.is-open {
+  display: flex;
+}
+
+/* class selector beats the base `IMG { max-width: min(var(--image-width), 100%) }`
+   cap, so the zoomed image can fill the viewport */
+.img-lightbox__img {
+  max-width: 96vw;
+  max-height: 96vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+body.img-lightbox-open {
+  overflow: hidden;
+}
