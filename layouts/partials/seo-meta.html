@@ -54,6 +54,16 @@
 {{- else -}}
   {{- $image = printf "%s/images/icon-logo.svg" (strings.TrimSuffix "/" .Site.BaseURL) -}}
 {{- end -}}
+{{- /* Crawlers (Google logo structured data, Open Graph, Twitter) require a FULLY-QUALIFIED
+       absolute image URL, but .Site.BaseURL is a relative path (e.g. /docs/v2/union/) in
+       production, so $image above is relative. Derive the scheme+host from the absolute
+       `docs_root` param and prepend it to build an absolute logo URL (DOC-389). Leave it
+       untouched if $image is already absolute (local dev may set an absolute baseURL). */ -}}
+{{- $host := replaceRE `^(https?://[^/]+).*$` "$1" .Site.Params.docs_root -}}
+{{- $logo := $image -}}
+{{- if not (hasPrefix $image "http") -}}
+  {{- $logo = printf "%s%s" $host $image -}}
+{{- end -}}
 
 <!-- SEO Meta Tags -->
 <meta name="description" content="{{ $description | truncate 160 }}">
@@ -69,7 +79,7 @@
 <meta property="og:url" content="{{ $canonical }}">
 <meta property="og:title" content="{{ $title }} | {{ .Site.Title }}">
 <meta property="og:description" content="{{ $description | truncate 160 }}">
-<meta property="og:image" content="{{ $image }}">
+<meta property="og:image" content="{{ $logo }}">
 <meta property="og:site_name" content="{{ .Site.Title }}">
 
 <!-- Twitter -->
@@ -77,7 +87,7 @@
 <meta property="twitter:url" content="{{ $canonical }}">
 <meta property="twitter:title" content="{{ $title }} | {{ .Site.Title }}">
 <meta property="twitter:description" content="{{ $description | truncate 160 }}">
-<meta property="twitter:image" content="{{ $image }}">
+<meta property="twitter:image" content="{{ $logo }}">
 {{- if .Site.Params.twitter_site -}}
 <meta property="twitter:site" content="{{ .Site.Params.twitter_site }}">
 {{- end -}}
@@ -85,20 +95,47 @@
 <meta property="twitter:creator" content="{{ .Site.Params.twitter_creator }}">
 {{- end }}
 
+{{- if .IsHome -}}
+{{- /* Homepage: emit an Organization entity carrying the site `logo` — the schema.org
+       field Google uses to associate a logo with the site in search results / the knowledge
+       panel — alongside the WebSite entity, via @graph (DOC-389). The logo URL is absolute
+       ($logo) and points at the real, variant-correct brand asset shipped in the theme. */ -}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  {{- if .IsHome -}}
-  "@type": "WebSite",
-  "name": "{{ .Site.Title }}",
-  "description": "{{ $description }}",
-  "url": "{{ .Site.BaseURL }}",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "{{ .Site.BaseURL }}search?q={search_term_string}",
-    "query-input": "required name=search_term_string"
-  },
-  {{- else -}}
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "{{ $product_full_name }}",
+      "url": "{{ $host }}",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ $logo }}"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "name": "{{ .Site.Title }}",
+      "description": "{{ $description }}",
+      "url": "{{ .Site.BaseURL }}",
+      "publisher": {
+        "@type": "Organization",
+        "name": "{{ $product_full_name }}",
+        "url": "{{ $host }}"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ .Site.BaseURL }}search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+</script>
+{{- else -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
   "@type": "Article",
   "headline": "{{ $title }}",
   "description": "{{ $description }}",
@@ -110,21 +147,21 @@
   "author": {
     "@type": "Organization",
     "name": "{{ .Site.Params.author | default "Union.ai" }}",
-    "url": "{{ .Site.BaseURL }}"
+    "url": "{{ $host }}"
   },
   "publisher": {
     "@type": "Organization",
     "name": "{{ .Site.Params.author | default "Union.ai" }}",
-    "url": "{{ .Site.BaseURL }}",
+    "url": "{{ $host }}",
     "logo": {
       "@type": "ImageObject",
-      "url": "{{ .Site.BaseURL }}images/logo.png"
+      "url": "{{ $logo }}"
     }
   },
-  {{- end -}}
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": "{{ $canonical }}"
   }
 }
 </script>
+{{- end -}}
