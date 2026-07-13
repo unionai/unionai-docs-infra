@@ -7,11 +7,11 @@ This document describes how the Union.ai documentation platform works, including
 The docs system is split across three repositories:
 
 - **[unionai-docs](https://github.com/unionai/unionai-docs)** — the parent repository containing version-specific content and configuration. Files that differ between `main` (v2) and `v1` branches live here: `content/`, `data/`, `linkmap/`, `include/`, `api-packages.toml`, `makefile.inc`, and CI workflows (`.github/`).
-- **[unionai-docs-infra](https://github.com/unionai/unionai-docs-infra)** (this repo) — shared build infrastructure, imported as a git submodule at `unionai-docs-infra/` in the parent `unionai-docs` repo. This includes Hugo configuration (`hugo.toml`, `hugo.site.toml`, `hugo.ver.toml`, `config.*.toml`), layouts, themes, static assets (`static/`), Python tools (`tools/`), shell scripts (`scripts/`), Makefiles, and redirect data. The contents are identical across both production branches.
+- **[unionai-docs-infra](https://github.com/unionai/unionai-docs-infra)** (this repo) — shared build infrastructure, imported as a git submodule at `unionai-docs-infra/` in the parent `unionai-docs` repo. This includes Hugo configuration (`hugo.toml`, `hugo.site.toml`, `hugo.ver.toml`, `config.*.toml`), layouts, themes, static assets (`static/`), Python tools (`tools/`), shell scripts (`scripts/`), the build `Makefile` and the API-generation makefiles (`Makefile.api.sdk`, `Makefile.api.plugins`), and redirect data. The contents are identical across both production branches.
 
-A thin top-level `Makefile` in `unionai-docs` forwards all build targets to `unionai-docs-infra/Makefile`.
+A thin top-level `Makefile` in `unionai-docs` is a delegator: it reads the version-specific variables from `makefile.inc` and forwards all build targets to `unionai-docs-infra/Makefile` (the target list is enumerated explicitly there). It also provides submodule helpers that are *not* forwarded — `make init-infra` / `make update-infra` (this repo) and `make init-examples` / `make update-examples` (the examples repo).
 
-A third repository, **[unionai-examples](https://github.com/unionai/unionai-examples)** (at `unionai-examples/`), contains example code referenced by the documentation. Imported as `unionai-docs-infra/` in the parent `unionai-docs` repo.
+A third repository, **[unionai-examples](https://github.com/unionai/unionai-examples)** (at `unionai-examples/`), contains example code and tutorial notebooks referenced by the documentation. It is imported as a git submodule at `unionai-examples/` in the parent `unionai-docs` repo.
 
 ## Table of contents
 
@@ -24,11 +24,12 @@ A third repository, **[unionai-examples](https://github.com/unionai/unionai-exam
 - [Production builds](#production-builds)
   - [What `make dist` does](#what-make-dist-does)
   - [Testing the production build locally](#testing-the-production-build-locally)
-- [Cloudflare Pages deployment](#cloudflare-pages-deployment)
-  - [Build settings](#build-settings)
-  - [Environment variables](#environment-variables)
-  - [How the Cloudflare build works](#how-the-cloudflare-build-works)
-  - [Testing the Cloudflare build locally](#testing-the-cloudflare-build-locally)
+- [Deployment (GitHub Actions + Cloudflare Pages)](#deployment-github-actions--cloudflare-pages)
+  - [Production deploys](#production-deploys)
+  - [Pull request previews](#pull-request-previews)
+  - [Build provenance](#build-provenance)
+- [API reference documentation](#api-reference-documentation)
+- [Helm chart documentation](#helm-chart-documentation)
 - [Redirect management](#redirect-management)
   - [How redirects work](#how-redirects-work)
   - [Automatic redirect detection](#automatic-redirect-detection)
@@ -42,28 +43,37 @@ A third repository, **[unionai-examples](https://github.com/unionai/unionai-exam
   - [Updating the LLM docs](#updating-the-llm-docs)
 - [CI checks on pull requests](#ci-checks-on-pull-requests)
   - [Check API Docs](#check-api-docs-check-api-docs)
+  - [Check Helm Docs](#check-helm-docs-check-helm-docs)
   - [Check Images](#check-images-check-images)
   - [Check Jupyter Notebooks](#check-jupyter-notebooks-check-jupyter)
   - [Check Redirects](#check-redirects-check-redirects)
   - [Check Links](#check-links-check-links)
   - [Check Generated Content](#check-generated-content-check-generated-content)
   - [Check LLM Bundle Notes](#check-llm-bundle-notes-check-llm-bundle-notes)
-  - [Cloudflare Pages preview](#cloudflare-pages-preview)
+  - [Check Markdownlint](#check-markdownlint-check-markdownlint)
+  - [Check Spelling](#check-spelling-check-spelling)
+  - [Pull request build and preview](#pull-request-build-and-preview)
   - [Quick fix for most failures](#quick-fix-for-most-failures)
 
 ---
 
 ## Requirements
 
-1. **Hugo** (>= 0.145.0)
+1. **Hugo (extended)** (>= 0.145.0; enforced by `scripts/pre-flight.sh`). CI builds with Hugo 0.161.1.
 
    ```
    brew install hugo
    ```
 
-2. **Python** (>= 3.8) for build tools (API generator, LLM doc builder, shortcode processor).
+2. **Python** (>= 3.10; CI uses 3.12) for the build tools (API/Helm generators, LLM doc builder, shortcode processor, redirect and link tooling).
 
-3. **Local configuration file**
+3. **[uv](https://docs.astral.sh/uv/)** — the Python build tools run under `uv run --project unionai-docs-infra`, which resolves dependencies from `unionai-docs-infra/pyproject.toml` on demand. If `uv` is not on `PATH`, `make dist` installs it automatically (the Cloudflare/CI runners don't ship it). Install it yourself for local development:
+
+   ```
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+4. **Local configuration file**
 
    Copy the sample configuration and customize it:
 
@@ -166,13 +176,19 @@ make update-examples
 make dist
 ```
 
-This is the main production build command. It performs the following steps:
+This is the main production build command. `make dist` runs `scripts/build_dist.sh`, which orchestrates the whole pipeline (with per-step timing) in this order:
 
-1. Converts Jupyter notebooks from `unionai-examples` to markdown
-2. Runs `make update-redirects` to detect moved pages and update `redirects.csv`
-3. Builds both Hugo variants (flyte, union) into the `dist/` directory
-4. Generates LLM-optimized documentation (`llms-full.txt`) for each variant
-5. Regenerates API reference documentation from the latest SDK packages
+1. **Ensures `uv` is installed** (installs it if missing — the CI/Cloudflare runners don't ship it).
+2. **`make base`** — pre-build and pre-flight checks, then converts Jupyter notebooks from `unionai-examples` to markdown and scaffolds the `dist/` tree.
+3. **`make check-deleted-pages`** — warns about content files deleted without a redirect (non-fatal).
+4. **API and Helm reference docs**, in one of three modes depending on the environment:
+   - **CI / Cloudflare** (`CI` or `CF_PAGES` set): runs the `check-api-docs` and `check-helm-docs` *checks* (non-fatal) — regeneration is not done in the deploy build; drift is caught by the dedicated CI checks instead.
+   - **Local with `FLYTE_SDK_PATH` set**: regenerates the API docs from your local SDK checkout and runs `make update-helm-docs`.
+   - **Local (default)**: `make update-api-docs` + `make update-helm-docs` — regenerates both from the pinned package versions.
+5. **`make update-redirects`** — detects moved pages and appends to `redirects.csv`. Runs *after* the API/Helm regen so the redirect detector sees the regenerated content dirs and doesn't flag them as removed pages.
+6. **`make check-links`** — internal-link check (non-fatal).
+7. **Hugo builds** — builds every variant in `$(VARIANTS)` (flyte, union) into `dist/`. Runs sequentially by default; set `PARALLEL_HUGO=true` to build variants in parallel. Each variant build also runs `process_shortcodes.py` to emit the per-page `page.md` files.
+8. **`make llm-docs`** — generates the LLM-optimized bundles and indexes (`llms.txt`, `llms-full.txt`, `section.md`) for each variant.
 
 `make dist` is the single command that regenerates everything. If CI checks are failing, running `make dist` locally and committing the changed files will usually fix them.
 
@@ -186,34 +202,55 @@ make serve PORT=4444
 
 If no port is specified, defaults to `PORT=9000`. Open `http://localhost:<port>` to view the site as it would appear at its official URL.
 
-## Cloudflare Pages deployment
+## Deployment (GitHub Actions + Cloudflare Pages)
 
-The production site is deployed via Cloudflare Pages.
+The docs are **built in GitHub Actions and uploaded to Cloudflare Pages via Direct Upload** (the `wrangler pages deploy` action). Cloudflare Pages' own build runner is **not** used — CF Pages is only the static host, and its automatic build-on-push is disabled for the `docs` project so GHA owns production end-to-end. (This replaced the earlier CF-native build; see DOC-1228.)
 
-### Build settings
+All build jobs use the same toolchain: `actions/checkout` with `submodules: recursive`, Hugo 0.161.1 (extended), Python 3.12, and `astral-sh/setup-uv`, then `make dist`.
 
-Configure your Cloudflare Pages project with these settings:
+### Production deploys
 
-| Setting                  | Value                              |
-| ------------------------ | ---------------------------------- |
-| **Framework preset**     | None (Custom/Static site)          |
-| **Build command**        | `chmod +x build.sh && ./build.sh`  |
-| **Build output directory** | `dist`                           |
-| **Root directory**       | `/`                                |
+**Workflow: `.github/workflows/build-and-deploy.yml`** (in the parent `unionai-docs` repo).
 
-### Environment variables
+Triggered on push to `main` (and `workflow_dispatch`). It runs `make dist`, then deploys with:
 
-Set these in the Cloudflare Pages dashboard:
+```
+wrangler pages deploy ./dist --project-name=docs --branch=<sanitized-branch> --commit-dirty=true
+```
 
-- `PYTHON_VERSION`: `3.9` (or higher)
-- `NODE_VERSION`: `18` (or higher)
+`--commit-dirty=true` is required because `make dist` regenerates tracked files (notebooks, API/Helm docs), so the tree is always dirty at deploy time. The deploy step has its own 10-minute timeout so a hung upload fails fast instead of eating the whole job budget (DOC-1229).
 
-### How the Cloudflare build works
+### Pull request previews
 
-1. The `build.sh` script installs Python dependencies using pip3
-2. Runs `make dist`, which builds all documentation variants
-3. The Python processor (`process_shortcodes.py`) converts Hugo shortcodes to markdown
-4. Output is generated in the `dist/` directory for Cloudflare Pages to serve
+PR previews use a **two-stage, fork-safe pipeline** (DOC-1228), because GitHub does not expose repo secrets to `pull_request` runs from forks:
+
+1. **`build-pr.yml`** (`on: pull_request`) — builds `make dist` with **no secrets** and uploads the `dist/` + PR metadata as an artifact. Its check-run is named `Build and deploy docs` (preserved from the old single-stage workflow) so the branch-protection required status check keeps matching.
+2. **`deploy-pr-preview.yml`** (`on: workflow_run` after "Build PR" completes) — runs in the trusted base-repo context where secrets are available, downloads the prebuilt artifact, and deploys it to a per-branch CF Pages preview. It never checks out or executes untrusted PR code.
+
+### Build provenance
+
+Each build writes `dist/docs/build-info.json` (served at `/docs/build-info.json`) recording the builder, workflow file, run URL, commit, and timestamp — so incident response can verify what's actually serving production.
+
+## API reference documentation
+
+The API reference under `content/api-reference/` is generated from Python package docstrings by `tools/api_generator` (driven by `Makefile.api.sdk` for the SDK/CLI docs and `Makefile.api.plugins` for plugin packages). The package set and pinned versions live in the parent repo's `api-packages.toml`.
+
+```bash
+make check-api-docs     # verify the committed docs match what the pinned packages generate
+make update-api-docs    # regenerate content/api-reference/ + linkmap/flytesdk-linkmap.json
+```
+
+To regenerate from a local SDK checkout instead of the pinned release, set `FLYTE_SDK_PATH` and run `make dist` (or the `Makefile.api.sdk` target directly). Regeneration respects `__all__` and ignores `_`-prefixed and imported items.
+
+## Helm chart documentation
+
+Helm chart reference docs are generated by `tools/helm_generator` and regenerated as part of `make dist`.
+
+```bash
+make check-helm-docs      # verify committed Helm docs are current (CI gate)
+make update-helm-docs     # regenerate the Helm reference content
+make generate-helm-docs   # run the underlying generator directly
+```
 
 ## Redirect management
 
@@ -241,11 +278,17 @@ The `detect_moved_pages.py` script scans git history for file renames under `con
 make update-redirects
 ```
 
-This is also called automatically by `make dist`.
+This is also called automatically by `make dist`. To preview what it would add without writing the CSV:
+
+```
+make dry-run-redirects
+```
+
+A companion check, `make check-deleted-pages` (`check_deleted_pages.py`), verifies that every deleted content file has a corresponding redirect entry; `make dist` runs it as a non-fatal warning and CI enforces it (see [Check Redirects](#check-redirects-check-redirects)).
 
 ### Deploying redirects to Cloudflare
 
-Redirects are deployed to Cloudflare automatically via GitHub Actions when `redirects.csv` is modified on the `main` branch. The `deploy_redirects.py` script reads the CSV, converts it to the Cloudflare API format, and replaces all items in the Bulk Redirect List via a single PUT request.
+Redirects are deployed to Cloudflare automatically via GitHub Actions (`deploy-redirects.yml`) when `redirects.csv` is modified on the `main` branch. The `deploy_redirects.py` script reads the CSV, converts it to the Cloudflare API format, and replaces all items in the Bulk Redirect List with a single `PUT /accounts/{account_id}/rules/lists/{list_id}/items`, then polls the returned bulk-operation until it completes.
 
 The workflow can also be triggered manually from the Actions tab in GitHub.
 
@@ -299,16 +342,16 @@ dist/docs/v2/{variant}/
 
 ### Processing pipeline
 
-The `make llm-docs` target (called automatically by `make dist`) runs two scripts in sequence:
+The LLM docs are produced in two stages that run at different points in `make dist`:
 
-**Stage 1: `process_shortcodes.py`** — Generates `page.md` files
+**Stage 1: `process_shortcodes.py`** — Generates `page.md` files (runs during each variant's Hugo build, via the `variant` target)
 
 1. Reads Hugo's Markdown output from `tmp-md/` (Hugo builds this alongside HTML via the MD output format).
 2. Resolves all shortcodes: `{{< variant >}}`, `{{< code >}}`, `{{< tabs >}}`, `{{< note >}}`, `{{< key >}}`, `{{< llm-bundle-note >}}`, etc.
 3. Writes the result as `page.md` alongside each `index.html` in `dist/`.
 4. Converts all internal links to point to other `page.md` files using relative paths.
 
-**Stage 2: `build_llm_docs.py`** — Generates bundles and indexes
+**Stage 2: `build_llm_docs.py`** — Generates bundles and indexes (runs via the `llm-docs` target, after all variants are built)
 
 1. **Lookup tables**: Traverses all `page.md` files depth-first via `## Subpages` links, building a lookup table mapping file paths and anchors to hierarchical titles (e.g. `"user-guide/task-configuration/resources/page.md"` → `"Configure tasks > Resources"`).
 2. **`llms-full.txt`**: Processes all pages, converting internal `page.md` links to hierarchical bold references (e.g. `**Configure tasks > Resources**`).
@@ -352,7 +395,7 @@ New pages are included automatically if linked via `## Subpages` in their parent
 
 ## CI checks on pull requests
 
-Every push triggers five checks. Four are GitHub Actions workflows; one is a Cloudflare Pages build preview.
+Pull requests run a set of GitHub Actions checks (defined in the parent `unionai-docs` repo under `.github/workflows/`), plus the two-stage PR build-and-preview pipeline. The content checks are listed below. A separate guard workflow, `block-v1-to-main.yml`, prevents merging `v1` content into `main`.
 
 ### Check API Docs (`check-api-docs`)
 
@@ -365,6 +408,18 @@ Every push triggers five checks. Four are GitHub Actions workflows; one is a Clo
 make update-api-docs
 ```
 Then commit the changed files in `content/api-reference/` and `linkmap/flytesdk-linkmap.json`.
+
+### Check Helm Docs (`check-helm-docs`)
+
+**What it checks:** Whether the committed Helm chart reference docs match what the current charts would generate.
+
+**Why it fails:** A Helm chart changed but the generated Helm docs weren't regenerated.
+
+**How to fix:**
+```bash
+make update-helm-docs
+```
+Then commit the changed files.
 
 ### Check Images (`check-images`)
 
@@ -427,12 +482,28 @@ Then commit the changed files. This single command regenerates all generated con
 
 **How to fix:** Either add the missing `{{< llm-bundle-note >}}` shortcode to the page body, or add `llm_readable_bundle: true` to the frontmatter. Both must be present together, or neither.
 
-### Cloudflare Pages preview
+### Check Markdownlint (`check-markdownlint`)
 
-**What it checks:** Builds a deploy preview of the site.
+**What it checks:** That changed Markdown content conforms to the repo's markdownlint rules.
 
-**How to use:** Click the "Details" link to view a preview of your changes. This is not a pass/fail check — it just provides a preview URL.
+**Why it fails:** A content file violates a lint rule (heading style, list formatting, etc.).
+
+**How to fix:** Address the reported lint violations in the flagged files.
+
+### Check Spelling (`check-spelling`)
+
+**What it checks:** That content contains no unrecognized/misspelled words.
+
+**Why it fails:** A new word isn't in the project dictionary, or is a genuine typo.
+
+**How to fix:** Fix the typo, or add the intended term to the project's allowed-words list.
+
+### Pull request build and preview
+
+**What it does:** `build-pr.yml` builds the full site (`make dist`) for the PR and uploads it as an artifact; `deploy-pr-preview.yml` then deploys that artifact to a per-branch Cloudflare Pages preview (see [Pull request previews](#pull-request-previews)). The build half reports as the required `Build and deploy docs` status check.
+
+**How to use:** If the build check is green, the preview deployment comment/URL lets you view your changes as they'll appear on the live site.
 
 ### Quick fix for most failures
 
-Running `make dist` locally regenerates everything: API docs, redirects, and notebook conversions. It's the single command that covers all the generated-file checks. Commit any changed files afterward.
+Running `make dist` locally regenerates everything: API docs, Helm docs, redirects, and notebook conversions. It's the single command that covers all the generated-file checks. Commit any changed files afterward.
