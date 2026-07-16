@@ -281,10 +281,12 @@ def resolve_relative_link(link_path: str, source_file: Path, content_dir: Path,
         return True, "", target_path
 
     # Skip links to non-markdown files (images, static assets)
-    # These are not page links — they're handled by Hugo/the browser directly
+    # These are not page links — they're handled by Hugo/the browser directly.
+    # `.py` included: docs link to sample/source .py files under _static (e.g.
+    # the docs-builder sample.py); they're downloadable static assets, not pages.
     non_page_exts = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".pdf",
                      ".ico", ".css", ".js", ".json", ".yaml", ".yml", ".toml",
-                     ".txt", ".csv", ".zip", ".tar", ".gz", ".ipynb"}
+                     ".txt", ".csv", ".zip", ".tar", ".gz", ".ipynb", ".py"}
     if Path(file_part).suffix.lower() in non_page_exts:
         return True, "", None
 
