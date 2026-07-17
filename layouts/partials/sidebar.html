@@ -220,11 +220,23 @@
         });
       }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
-      }
+      // Run synchronously. This script sits after the nav markup it manages
+      // (both the desktop `.site-nav` and the drawer copy above), so every
+      // `.section-title` it touches is already parsed. Applying the collapse
+      // state now — before the first paint — avoids a flash of sections
+      // expanding then collapsing.
+      init();
+
+      // Center the active page in the sidebar before the first paint. A single
+      // rAF scheduled during parse runs in the pre-paint rendering step with
+      // layout resolved, so the sidebar first appears already scrolled — no
+      // visible snap from the top. (`__centerActiveSidebarItem` is defined by
+      // sidebar.js, loaded in <head>; guard in case it failed to load.)
+      requestAnimationFrame(function () {
+        if (typeof window.__centerActiveSidebarItem === 'function') {
+          window.__centerActiveSidebarItem();
+        }
+      });
     })();
   </script>
 </nav>
