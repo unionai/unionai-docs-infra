@@ -196,6 +196,14 @@ def build_manifest(variant: str, config: dict) -> dict:
     }
 
 
+def build_combined(config: dict, variants: list[str], version: dict) -> dict:
+    """The manifest a cut commits: the version decision + every variant's components."""
+    return {
+        **version,
+        "variants": {v: build_manifest(v, config)["components"] for v in variants},
+    }
+
+
 # --------------------------------------------------------------------------- #
 # cut-action version arithmetic
 # --------------------------------------------------------------------------- #
@@ -250,9 +258,12 @@ def main() -> None:
     group.add_argument("--check", action="store_true",
                        help="Resolve manifest(s) + report the next cut version. Read-only.")
     group.add_argument("--write", action="store_true",
-                       help="Resolve and write manifest.json for --variant to --out.")
+                       help="Resolve and write the combined manifest.json to --out.")
     parser.add_argument("--variant", choices=["union", "flyte", "both"], default="both")
     parser.add_argument("--out", type=Path, help="Output path for --write (manifest.json)")
+    parser.add_argument("--format", choices=["pretty", "json", "shell"], default="pretty",
+                        help="--check output format. json/shell are machine-readable "
+                             "(the version decision, for the cut workflow).")
     args = parser.parse_args()
 
     config = load_config()
@@ -264,7 +275,17 @@ def main() -> None:
         ver = compute_next_version(m["flyte_sdk"]) if m["flyte_sdk"] else None
         manifests[variant] = (m, ver)
 
+    # The version decision is variant-independent (all variants share the SDK triple).
+    decision = next((ver for _, ver in manifests.values() if ver), None)
+
     if args.check:
+        if args.format == "json":
+            print(json.dumps(decision or {}))
+            return
+        if args.format == "shell":
+            for key in ("tag", "docs_version", "cut_kind", "z"):
+                print(f"DOCS_{key.upper()}={(decision or {}).get(key, '')}")
+            return
         print("Resolving docs-version manifest (read-only)...")
         for variant in variants:
             m, ver = manifests[variant]
@@ -279,13 +300,15 @@ def main() -> None:
             print(f"\n{len(missing)} unresolved sub-part(s): {', '.join(missing)}", file=sys.stderr)
         return
 
-    # --write
-    if args.variant == "both" or not args.out:
-        parser.error("--write requires a single --variant and an --out path")
-    m, ver = manifests[args.variant]
-    out = {**m, **(ver or {})}
-    args.out.write_text(json.dumps(out, indent=2) + "\n")
-    print(f"Wrote {args.out}")
+    # --write: the combined manifest a cut commits (all variants + the version decision).
+    if not args.out:
+        parser.error("--write requires an --out path")
+    if decision is None:
+        parser.error("cannot resolve the flyte-sdk version; refusing to write a manifest")
+    combined = build_combined(config, variants, decision)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(combined, indent=2) + "\n")
+    print(f"Wrote {args.out}  ({combined['tag']}, {combined['cut_kind']})")
 
 
 if __name__ == "__main__":
