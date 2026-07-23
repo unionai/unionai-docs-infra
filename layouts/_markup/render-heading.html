@@ -1,0 +1,17 @@
+{{- /*
+  Annotator project: stamp heading elements with source coordinates so the
+  annotation UI can map a rendered selection back to its position in the
+  Markdown source. `.Position` is populated by Hugo for all render hooks.
+
+  Gated on `hugo.IsProduction` so the attributes only appear on dev/preview
+  builds (production gets clean output, no overhead).
+*/ -}}
+{{- $stamp := not hugo.IsProduction -}}
+<h{{ .Level }} id="{{ .Anchor }}"
+  {{- if $stamp }}
+    data-src-file="{{ .Page.File.Path }}"
+    data-src-line="{{ .Position.LineNumber }}"
+    data-src-col="{{ .Position.ColumnNumber }}"
+  {{- end }}
+  {{- with .Attributes.class }} class="{{ . }}"{{ end -}}
+>{{ .Text | safeHTML }}</h{{ .Level }}>
