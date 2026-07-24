@@ -73,8 +73,10 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")
 
 echo "==> docs version assembly (stable=$STABLE, enumerated=[$ENUMERATED])"
 
-# latest = current checkout (main), noindex (bleeding edge)
-build_version "latest" "HEAD" "true"
+# latest = main (bleeding edge), noindex. LATEST_REF defaults to HEAD for local
+# runs; CI sets LATEST_REF=origin/main so a tag-triggered cut still builds latest
+# from main (github.ref is the tag on a tag trigger, not main).
+build_version "latest" "${LATEST_REF:-HEAD}" "true"
 
 # v2 = the stable tag, INDEXED (the one canonical surface)
 build_version "v2" "$STABLE" ""
