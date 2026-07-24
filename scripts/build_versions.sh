@@ -53,10 +53,11 @@ rm -f "$_plan"
 [ -n "$STABLE" ] || { echo "ERROR: 'stable' not set in versions.toml" >&2; exit 1; }
 
 # Build one version into dist/docs/<label>/ from a git ref, in an isolated worktree.
-build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")
-  local label="$1" ref="$2" noindex="$3"
+build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=landing(true/"")
+  local label="$1" ref="$2" noindex="$3" landing="${4:-}"
   if [ "$DRY_RUN" = 1 ]; then
-    printf '  build  /docs/%-11s from %-11s noindex=%s\n' "$label" "$ref" "${noindex:-false}"
+    printf '  build  /docs/%-11s from %-11s noindex=%-5s landing=%s\n' \
+      "$label" "$ref" "${noindex:-false}" "${landing:-false}"
     return
   fi
   local wt; wt="$(mktemp -d)"
@@ -68,6 +69,13 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")
   mkdir -p "$DIST/docs"
   rm -rf "$DIST/docs/$label"
   cp -R "$wt/dist/docs/$label" "$DIST/docs/$label"
+  # The top-level landing pages (dist/index.html, dist/docs/index.html) point at
+  # this version's default variant. Take them from the canonical build (v2/stable),
+  # so a bare /docs or /docs/ lands on stable.
+  if [ "$landing" = "true" ]; then
+    [ -f "$wt/dist/index.html" ]      && cp "$wt/dist/index.html"      "$DIST/index.html"
+    [ -f "$wt/dist/docs/index.html" ] && cp "$wt/dist/docs/index.html" "$DIST/docs/index.html"
+  fi
   git worktree remove --force "$wt"
 }
 
@@ -78,8 +86,9 @@ echo "==> docs version assembly (stable=$STABLE, enumerated=[$ENUMERATED])"
 # from main (github.ref is the tag on a tag trigger, not main).
 build_version "latest" "${LATEST_REF:-HEAD}" "true"
 
-# v2 = the stable tag, INDEXED (the one canonical surface)
-build_version "v2" "$STABLE" ""
+# v2 = the stable tag, INDEXED (the one canonical surface); also emits the
+# top-level /docs landing pages (so a bare /docs lands on stable).
+build_version "v2" "$STABLE" "" "true"
 
 # immutable pinned versions, noindex, cache-skipped
 for tag in $ENUMERATED; do
