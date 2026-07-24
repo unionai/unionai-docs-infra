@@ -84,7 +84,7 @@ Before traffic reaches CloudFront, Cloudflare processes its own zone rules for `
 
 #### Redirect Rules (Dynamic Redirects)
 
-Processed in order:
+Processed in order (11 active as of 2026-07-24):
 
 | # | Match | Target | Code | Purpose |
 |---|-------|--------|------|---------|
@@ -96,8 +96,12 @@ Processed in order:
 | 6 | `www.union.ai/docs/flyte/*` | `/docs/v1/flyte/*` | 302 | Unversioned flyte = v1 |
 | 7 | `www.union.ai/docs/selfmanaged/*` | `/docs/v1/selfmanaged/*` | 302 | Unversioned selfmanaged = v1 |
 | 8 | `staging.union.ai/try-2.0` | Staging Cloudflare Pages URL | 302 | Staging vanity URL |
+| 9 | `www.union.ai` + `/docs/v1` or `/docs/v1/*` (excl. flyte/union/byoc/selfmanaged/serverless) | `/docs/v1/union/user-guide/` | 302 | **F1: v1 fallback** — bare/unknown v1 path → v1 landing |
+| 10 | `www.union.ai` + `/docs/v2` or `/docs/v2/*` (excl. flyte/union/byoc/selfmanaged/serverless) | `/docs/v2/union/user-guide/` | 302 | **F2: v2 fallback** — bare/unknown v2 path → v2 landing |
 
-**Key behavior**: Any request to `www.union.ai/docs/{variant}/*` without an explicit version prefix (`v1` or `v2`) is redirected to v1. This is because v1 was the original URL structure before versioning was introduced. The bare `/docs/` path, however, redirects to v2 (the current default).
+*(One further rule beyond these ten is active but not material to `/docs/*` routing. Plus a **URL Rewrite Rule**, "to public docs url", that rewrites any path containing the token `HhI8nGjMQ1x5SrxSip29` to `/`.)*
+
+**Key behavior**: Any request to `www.union.ai/docs/{variant}/*` without an explicit version prefix (`v1` or `v2`) is redirected to v1. This is because v1 was the original URL structure before versioning was introduced. The bare `/docs/` path, however, redirects to v2 (the current default). The **F1/F2 fallbacks** (rules 9–10) catch a bare or unrecognized version root (`/docs/v2`, `/docs/v2/<unknown>`) and land it on that version's user-guide home instead of a 404.
 
 #### Transform Rules
 
@@ -110,9 +114,9 @@ Processed in order:
 | `sandbox.union.ai/*` | `https://signup.union.ai` | 302 |
 | `docs.union.ai/HhI8nGjMQ1x5SrxSip29/*` | `https://docs.union.ai/*` | 302 |
 
-#### Bulk Redirects (7,776 entries)
+#### Bulk Redirects (8,142 entries)
 
-A single bulk redirect list named "redirects" containing 7,776 entries, broken down by source prefix:
+A single bulk redirect list named "redirects" containing 8,142 entries (as of 2026-07-24; sourced from `unionai-docs-infra/redirects.csv`), broken down by source prefix:
 
 - **~6,256 entries** from `www.union.ai/*` and `docs.union.ai/*` (legacy categories):
   - `www.union.ai/docs/byoc/*` style mappings (unversioned → versioned)
@@ -160,10 +164,11 @@ After Cloudflare DNS resolution and any Cloudflare-level redirects, requests to 
 |------------|-------------|--------|----------|-------|----------------------|
 | 0 | `/docs/v1` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
 | 1 | `/docs/v1/*` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 2 | `/_static/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 3 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 4 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 5 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 2 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 3 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 4 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
+
+> **Note (2026-07-24):** a former `/_static/*` → docs behavior (precedence 2) was **retired** when CloudFront `/_static/*` serving was removed (DOC-966 / cloud#16921); the table above reflects the current 5-behavior set.
 
 #### Staging Distribution: `E217EWC0JUDO1U`
 
@@ -193,10 +198,11 @@ After Cloudflare DNS resolution and any Cloudflare-level redirects, requests to 
 |------------|-------------|--------|----------|-------|----------------------|
 | 0 | `/docs/v1` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
 | 1 | `/docs/v1/*` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 2 | `/_static/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 3 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 4 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 5 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 2 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 3 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 4 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
+
+> **Note (2026-07-24):** a former `/_static/*` → docs behavior (precedence 2) was **retired** when CloudFront `/_static/*` serving was removed (DOC-966 / cloud#16921); the table above reflects the current 5-behavior set.
 
 #### How Both Distributions Work
 
@@ -214,9 +220,8 @@ The v1 docs origin is the same in both distributions — there is no separate st
 
 **How matching works**: CloudFront evaluates behaviors in precedence order. The first matching path pattern wins. Key points:
 
-- `/docs/v1` and `/docs/v1/*` (precedences 0-1) are checked before `/docs/*` (precedence 3), ensuring v1 docs requests go to the v1 origin, not the v2 docs origin.
-- `/_static/*` (precedence 2) routes docs static assets to the v2 docs origin.
-- `/docs` and `/docs/*` (precedences 3-4) catch all remaining docs traffic (v2 and anything else) and route to the v2 docs origin.
+- `/docs/v1` and `/docs/v1/*` (precedences 0-1) are checked before `/docs/*` (precedence 2), ensuring v1 docs requests go to the v1 origin, not the v2 docs origin.
+- `/docs` and `/docs/*` (precedences 2-3) catch all remaining docs traffic (v2 and anything else — including the versioned `/docs/latest`, `/docs/stable`, `/docs/v2.x.y.z` paths, see below) and route to the v2 docs origin.
 - Everything else hits the default behavior and goes to Webflow.
 
 **AllViewerExceptHostHeader**: This origin request policy forwards all viewer request headers to the origin *except* the `Host` header. This is critical because the origins are on different domains — they need to receive their own domain as `Host` (e.g., `web-docs.union.ai`), not `www.union.ai`, or they would reject the request.
@@ -398,6 +403,34 @@ Browser
   → Cloudflare Pages: serves v1 docs
 ```
 
+## Docs versioning (v2.x.y.z) — in progress (DOC-1245)
+
+The v2 docs are gaining **per-release semantic versioning** (`prds` `docs_versioning` PRD, DOC-1245). This section describes the target routing; it is **not fully live yet**. The design deliberately reuses the existing v1/v2 mechanism (separate builds served under `/docs/<version>/` path prefixes) rather than inventing a new one, and — critically — **requires no CloudFront change** (CloudFront is Terraform-managed; see Infrastructure Notes) and **no change to the ~8,142 existing redirects**.
+
+### The URL model ("A2")
+
+| URL | Content | Indexed? | Mechanism |
+|-----|---------|----------|-----------|
+| `/docs/v2/…` | **stable** = the newest cut | ✅ **yes** | the real served path — **canonical, SEO anchor** (unchanged as a URL; its *content* moves from "main" to "newest cut") |
+| `/docs/stable/…` | = stable | — | **Cloudflare redirect rule → `/docs/v2/…`** (static — v2 is always the newest stable, so it never needs re-pointing) |
+| `/docs/latest/…` | `main` (bleeding edge) | ❌ noindex | its own served path (rebuilt every merge) |
+| `/docs/v2.5.12.0/…` | immutable pinned cut | ❌ noindex | served per enumerated tag |
+
+**Only `/docs/v2` (stable) is indexed.** `/docs/latest` and every pinned `/docs/v2.x.y.z` are `noindex,nofollow`, so search stays concentrated on the one canonical surface and the newest cut doesn't cannibalize its own canonical (it exists at both `/docs/v2` and the newest `/docs/v2.x.y.z`). Pinned/latest URLs remain fully usable for direct links (support, bookmarks); they're just not search-indexed.
+
+Making `/docs/v2` serve *stable* rather than *main* also fixes the original moving-target pain (§ Overview): the default/most-linked path now shows the **released** docs, not unreleased-feature docs.
+
+### How it maps onto the existing layers
+
+- **CloudFront: no change.** The existing `/docs/*` → `docs` origin behavior already catches `/docs/latest/…`, `/docs/stable/…`, and `/docs/v2.x.y.z/…` (none match the more-specific `/docs/v1*`). Nothing new to route.
+- **The `docs` origin's deploy assembles the versions.** The production build (`build-and-deploy.yml`) additionally emits, into one dist served by `web-docs.union.ai`: `docs/latest/` (main, noindex), `docs/v2/` (the newest cut, indexed), and `docs/v2.x.y.z/` (each enumerated tag, noindex). Immutable pinned builds are cached (built once), so a normal merge rebuilds only `docs/latest/`; a cut rebuilds `docs/v2/` + the one new tag. Orchestrated by **`unionai-docs-infra/scripts/build_versions.sh`**, driven by **`versions.toml`** (the enumerated tag list) at the repo root.
+- **One new Cloudflare redirect rule:** `/docs/stable/*` → `/docs/v2/*` (static). `/docs/latest` is served, not redirected.
+- **No change to bulk redirects** — they keep landing on the real, canonical `/docs/v2/…` (no double-hop).
+
+### Cutting a version
+
+A cut creates a `v2.x.y.z` git tag + a per-variant manifest; two triggers only — a `flyte-sdk` release (auto) or a maintainer manual cut. See the `docs_versioning` PRD §9.4 and the tooling: `tools/api_generator/manifest.py` (resolver + version arithmetic), `scripts/cut-docs-version.sh` (tag), `docs-cut.yml` (the workflow). `noindex` on latest + pinned builds is set by `run_hugo.sh` (`NOINDEX=true` → a site param the `seo-meta.html` partial reads).
+
 ## Infrastructure Notes
 
 ### Why CloudFront?
@@ -410,7 +443,7 @@ The CloudFront configuration is managed via Terraform. Manual changes to the Clo
 
 ### Bulk Redirect Limits
 
-The bulk redirect list contains 7,776 entries (fetched via paginated API, 500 items per page). Cloudflare's limit for bulk redirect lists is 20,000 entries on the Enterprise plan, so there's substantial headroom.
+The bulk redirect list contains 8,142 entries (fetched via paginated API, 500 items per page). Cloudflare's limit for bulk redirect lists is 20,000 entries on the Enterprise plan, so there's substantial headroom.
 
 ### Redirect Status Codes
 

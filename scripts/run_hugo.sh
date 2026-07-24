@@ -30,6 +30,18 @@ current_version = "${VERSION}"
 EOF
 fi
 
+# Version-scoped noindex (DOC-1245, docs-versioning A2 model): when NOINDEX=true,
+# every page in this build emits robots=noindex,nofollow (via a site param the
+# seo-meta.html partial reads). Used for /docs/latest (bleeding edge) and the
+# immutable /docs/v2.x.y.z snapshots, so search concentrates on the one canonical
+# stable surface, /docs/v2. See ROUTING-ARCHITECTURE.md.
+if [[ "${NOINDEX:-}" == "true" ]]; then
+    if ! grep -q '^\[params\]' "$hugo_build_toml" 2>/dev/null; then
+        echo '[params]' >> "$hugo_build_toml"
+    fi
+    echo 'noindex = true' >> "$hugo_build_toml"
+fi
+
 readonly target
 
 echo "Target: $target"

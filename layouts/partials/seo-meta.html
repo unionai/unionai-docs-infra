@@ -69,7 +69,7 @@
 <meta name="description" content="{{ $description | truncate 160 }}">
 <meta name="keywords" content="{{ if .Params.keywords }}{{ delimit .Params.keywords ", " }}{{ else }}{{ delimit (slice "Union.ai" "Flyte" "AI workflows" "machine learning" "documentation") ", " }}{{ end }}">
 <meta name="author" content="{{ .Site.Params.author | default "Union.ai" }}">
-<meta name="robots" content="{{ if .Params.noindex }}noindex,nofollow{{ else }}index,follow{{ end }}">
+<meta name="robots" content="{{ if or .Params.noindex .Site.Params.noindex }}noindex,nofollow{{ else }}index,follow{{ end }}">
 
 <!-- Canonical URL -->
 <link rel="canonical" href="{{ $canonical }}">
