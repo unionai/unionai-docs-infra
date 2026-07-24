@@ -66,11 +66,12 @@ REPO_ROOT="$REPO_ROOT" uv run --quiet "$TOOL" --write --variant both --out "$MAN
 
 # Commit the manifest on a detached HEAD and tag it, so `main` is not advanced.
 ORIG_REF="$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)"
+BOT=(-c user.name="docsy-bot" -c user.email="noreply@union.ai")
 git checkout -q --detach
 git add "$MANIFEST_REL"
-git -c user.name="docsy-bot" -c user.email="noreply@union.ai" \
-    commit -q -m "cut ${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION} (${DOCS_CUT_KIND})."
-git tag -a "${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION}"
+git "${BOT[@]}" commit -q -s \
+    -m "cut ${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION} (${DOCS_CUT_KIND})."
+git "${BOT[@]}" tag -a "${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION}"
 git checkout -q "$ORIG_REF"
 
 echo "cut: tagged ${DOCS_TAG} (manifest pinned; ${ORIG_REF} not advanced)"
