@@ -55,7 +55,7 @@ except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _versions import extract_frontmatter_version
+from _versions import extract_frontmatter_version, pypi_version_exists
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _repo import get_repo_root
@@ -278,12 +278,24 @@ def main() -> None:
     # The version decision is variant-independent (all variants share the SDK triple).
     decision = next((ver for _, ver in manifests.values() if ver), None)
 
+    # Safety (DOC-1245): a cut must be pinned to a real flyte release. Record whether
+    # the committed SDK version is actually published on PyPI, so the cut can refuse
+    # to tag a hand-edited or dev-build (e.g. setuptools_scm dirty-tree) version.
+    sdk = next((m["flyte_sdk"] for m, _ in manifests.values() if m["flyte_sdk"]), None)
+    if decision is not None and sdk is not None:
+        exists = pypi_version_exists(SDK_PACKAGE, sdk)
+        decision = {
+            **decision,
+            "sdk": sdk,
+            "sdk_on_pypi": "unknown" if exists is None else ("true" if exists else "false"),
+        }
+
     if args.check:
         if args.format == "json":
             print(json.dumps(decision or {}))
             return
         if args.format == "shell":
-            for key in ("tag", "docs_version", "cut_kind", "z"):
+            for key in ("tag", "docs_version", "cut_kind", "z", "sdk", "sdk_on_pypi"):
                 print(f"DOCS_{key.upper()}={(decision or {}).get(key, '')}")
             return
         print("Resolving docs-version manifest (read-only)...")

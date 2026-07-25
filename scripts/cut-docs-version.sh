@@ -46,6 +46,19 @@ fi
 
 echo "cut: next version ${DOCS_TAG} (${DOCS_CUT_KIND}, z=${DOCS_Z})"
 
+# Safety guard (DOC-1245): the docs version is pinned to flyte-sdk, so refuse to
+# cut off an SDK version that isn't a published release on PyPI. Catches a
+# hand-edited API-ref frontmatter or a regen from a local/dev SDK build
+# (setuptools_scm dirty-tree version). A PyPI outage (unknown) warns, not blocks.
+case "${DOCS_SDK_ON_PYPI:-unknown}" in
+  false)
+    echo "cut: flyte-sdk ${DOCS_SDK} is NOT a published release on PyPI -- refusing to cut ${DOCS_TAG}." >&2
+    echo "cut: fix content/api-reference/flyte-sdk/_index.md 'version:' (it should match a real flyte release)." >&2
+    exit 1 ;;
+  unknown)
+    echo "cut: WARNING could not verify flyte-sdk ${DOCS_SDK:-?} on PyPI (network?) -- proceeding." >&2 ;;
+esac
+
 if [ "$AUTO" = "1" ] && [ "${DOCS_CUT_KIND}" != "sdk-release" ]; then
   echo "cut: --auto and not an sdk-release cut -- no-op (a manual cut is required)"
   exit 0
