@@ -427,9 +427,16 @@ Making `/docs/v2` serve *stable* rather than *main* also fixes the original movi
 - **One new Cloudflare redirect rule:** `/docs/stable/*` → `/docs/v2/*` (static). `/docs/latest` is served, not redirected.
 - **No change to bulk redirects** — they keep landing on the real, canonical `/docs/v2/…` (no double-hop).
 
-### Cutting a version
+### Cutting a version — the one-merge model
 
-A cut creates a `v2.x.y.z` git tag + a per-variant manifest; two triggers only — a `flyte-sdk` release (auto) or a maintainer manual cut. See the `docs_versioning` PRD §9.4 and the tooling: `tools/api_generator/manifest.py` (resolver + version arithmetic), `scripts/cut-docs-version.sh` (tag), `docs-cut.yml` (the workflow). `noindex` on latest + pinned builds is set by `run_hugo.sh` (`NOINDEX=true` → a site param the `seo-meta.html` partial reads).
+**`versions.toml` (repo root) is the source of intent**: `stable` = the tag `/docs/v2` serves; `enumerated` = every tag also published as a pinned `/docs/v2.x.y.z` copy. A **cut is materialized at merge**: when a merge to `main` names a `stable` tag that doesn't exist yet, `build-and-deploy.yml` mints it (a `v2.x.y.z` git tag + per-variant manifest) as a **pre-build step**, then assembles — so the tag creation and the build happen in one job (no cut↔deploy race), and every path collapses to **a single human merge**.
+
+Two symmetric "buttons" both open a `versions.toml`-bump PR (the version is always resolver-**computed**, never hand-typed):
+
+- **`flyte-sdk` release (auto):** `regen-api-docs.yml` regenerates the API reference **and** folds the `versions.toml` promote (`x.y.z.0`) into the **same** regen PR. Merging it updates the API ref and advances `/docs/v2` in one action.
+- **Manual cut:** a maintainer clicks Run workflow on `docs-cut.yml` → it opens a `versions.toml`-bump PR (`x.y.z.(z+1)`). Merging it is the cut.
+
+Guards: the cut refuses to mint a tag off a `flyte-sdk` version not published on PyPI, and refuses if `versions.toml`'s `stable` disagrees with the resolver (a hand-edit / stale API-ref). Tooling: `tools/api_generator/manifest.py` (resolver, `--check`/`--promote`, version arithmetic), `scripts/cut-docs-version.sh` (materialize the tag), `scripts/build_versions.sh` (multi-version assembly), `docs-cut.yml` / `regen-api-docs.yml` / `build-and-deploy.yml` (workflows). `noindex` on latest + pinned builds is set by `run_hugo.sh` (`NOINDEX=true` → a site param the `seo-meta.html` partial reads). See the `docs_versioning` PRD §9.4.
 
 ## Infrastructure Notes
 
