@@ -59,6 +59,19 @@ case "${DOCS_SDK_ON_PYPI:-unknown}" in
     echo "cut: WARNING could not verify flyte-sdk ${DOCS_SDK:-?} on PyPI (network?) -- proceeding." >&2 ;;
 esac
 
+# One-merge model (DOC-1245): versions.toml is the intent; a cut materializes the
+# tag it names. If versions.toml pins a `stable`, it MUST equal what the resolver
+# computes -- a mismatch means a hand-edited versions.toml (or a stale API-ref), so
+# refuse rather than mint a tag nobody promoted.
+if [ -f "$REPO_ROOT/versions.toml" ]; then
+  STABLE="$(sed -n 's/^stable *= *"\(.*\)"/\1/p' "$REPO_ROOT/versions.toml" | head -1)"
+  if [ -n "$STABLE" ] && [ "$STABLE" != "${DOCS_TAG}" ]; then
+    echo "cut: versions.toml stable=${STABLE} but the resolver computes ${DOCS_TAG} -- refusing." >&2
+    echo "cut: re-run 'manifest.py --promote' so versions.toml names the resolved tag." >&2
+    exit 1
+  fi
+fi
+
 if [ "$AUTO" = "1" ] && [ "${DOCS_CUT_KIND}" != "sdk-release" ]; then
   echo "cut: --auto and not an sdk-release cut -- no-op (a manual cut is required)"
   exit 0

@@ -63,6 +63,10 @@ from _repo import get_repo_root
 REPO_ROOT = get_repo_root()
 CONFIG_FILE = REPO_ROOT / "api-packages.toml"
 MANUAL_VERSIONS_FILE = REPO_ROOT / "manual-versions.toml"
+# The served-versions intent file (DOC-1245): stable = the tag /docs/v2 serves;
+# enumerated = every tag also published as a pinned /docs/v2.x.y.z copy. `--promote`
+# writes it; build-and-deploy reads it and materializes any named-but-missing tag.
+VERSIONS_FILE = REPO_ROOT / "versions.toml"
 
 # Package that versions independently of the flyte-sdk monorepo (its own 0.x line,
 # unionai/flyteplugins-union). Every other flyteplugins-* is lockstep with flyte.
@@ -240,6 +244,53 @@ def compute_next_version(sdk_version: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# --promote: write the version intent into versions.toml
+# --------------------------------------------------------------------------- #
+def _emit_versions_toml(stable: str, enumerated: list[str]) -> str:
+    """Render versions.toml (kept minimal + deterministic so diffs are clean)."""
+    def _key(tag: str):
+        try:
+            return Version(tag.lstrip("v"))
+        except Exception:
+            return Version("0")
+    ordered = sorted(set(enumerated), key=_key)
+    lines = [
+        "# Docs versions served (DOC-1245). Managed by `manifest.py --promote`;",
+        "# build-and-deploy reads it and materializes any named-but-missing tag.",
+        f'stable = "{stable}"',
+        "enumerated = [",
+        *[f'  "{t}",' for t in ordered],
+        "]",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def promote_versions_toml(decision: dict, path: Path) -> None:
+    """Set ``stable`` to the next-cut tag and add it to ``enumerated`` in versions.toml.
+
+    Refuses to promote an SDK version that isn't published on PyPI (defense-in-depth,
+    same guard the cut applies) so a hand-edited / dev-build version can't be promoted.
+    """
+    if decision.get("sdk_on_pypi") == "false":
+        sys.exit(
+            f"promote: flyte-sdk {decision.get('sdk')} is NOT a published release on "
+            f"PyPI -- refusing to promote {decision['tag']}. Fix the API-ref 'version:'."
+        )
+    if decision.get("sdk_on_pypi") == "unknown":
+        print(f"promote: WARNING could not verify {decision.get('sdk')} on PyPI "
+              "(network?) -- proceeding.", file=sys.stderr)
+    tag = decision["tag"]
+    enumerated: list[str] = []
+    if path.exists():
+        existing = tomllib.loads(path.read_text())
+        enumerated = list(existing.get("enumerated", []))
+    enumerated.append(tag)
+    path.write_text(_emit_versions_toml(stable=tag, enumerated=enumerated))
+    print(f"promote: {path.name} stable={tag} (enumerated += {tag})")
+
+
+# --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
 def _print_manifest(m: dict, ver: dict | None) -> None:
@@ -259,6 +310,9 @@ def main() -> None:
                        help="Resolve manifest(s) + report the next cut version. Read-only.")
     group.add_argument("--write", action="store_true",
                        help="Resolve and write the combined manifest.json to --out.")
+    group.add_argument("--promote", action="store_true",
+                       help="Write the next-cut tag into versions.toml (stable + "
+                            "enumerated). The one-merge intent step; refuses a non-PyPI SDK.")
     parser.add_argument("--variant", choices=["union", "flyte", "both"], default="both")
     parser.add_argument("--out", type=Path, help="Output path for --write (manifest.json)")
     parser.add_argument("--format", choices=["pretty", "json", "shell"], default="pretty",
@@ -310,6 +364,12 @@ def main() -> None:
         ]
         if missing:
             print(f"\n{len(missing)} unresolved sub-part(s): {', '.join(missing)}", file=sys.stderr)
+        return
+
+    if args.promote:
+        if decision is None:
+            parser.error("cannot resolve the flyte-sdk version; refusing to promote")
+        promote_versions_toml(decision, args.out or VERSIONS_FILE)
         return
 
     # --write: the combined manifest a cut commits (all variants + the version decision).
