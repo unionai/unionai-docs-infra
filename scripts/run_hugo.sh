@@ -42,6 +42,32 @@ if [[ "${NOINDEX:-}" == "true" ]]; then
     echo 'noindex = true' >> "$hugo_build_toml"
 fi
 
+# Version selector list (DOC-1245): when versions.toml exists, drive the dropdown
+# from it (latest -> v2/stable -> each enumerated pin, newest first -> v1) instead
+# of hugo.ver.toml's static ["v2","v1"]. This param overrides the static config, so
+# the same list shows on every versioned build. No versions.toml (v1 single build /
+# pre-go-live) -> the static list stands. Only for versioned builds (VERSION set).
+if [[ -n $VERSION && -f "${REPO_ROOT:-.}/versions.toml" ]]; then
+    versions_line="$(python3 - "${REPO_ROOT:-.}/versions.toml" <<'PY'
+import sys
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+d = tomllib.load(open(sys.argv[1], "rb"))
+def _key(t):  # sort v2.5.12.0 by numeric tuple, no third-party deps
+    try:
+        return tuple(int(x) for x in t.lstrip("v").split("."))
+    except Exception:
+        return ()
+pins = sorted(set(d.get("enumerated", [])), key=_key, reverse=True)
+items = ["latest", "v2"] + pins + ["v1"]
+print("versions = [" + ", ".join('"%s"' % i for i in items) + "]")
+PY
+)"
+    echo "$versions_line" >> "$hugo_build_toml"
+fi
+
 readonly target
 
 echo "Target: $target"
