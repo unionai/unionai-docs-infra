@@ -63,7 +63,21 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
   local wt; wt="$(mktemp -d)"
   git worktree add --detach "$wt" "$ref" >/dev/null
   ( cd "$wt"
+    # Submodules don't reliably init inside a linked git worktree (a known git
+    # worktree+submodule friction — it silently leaves the submodule dir empty,
+    # so `make -f unionai-docs-infra/Makefile` then can't find the Makefile).
+    # Try the normal init, then for any submodule that's still empty, populate it
+    # from the superproject's already-checked-out copy (the checkout step's
+    # `submodules: recursive` guarantees those are present). All current cut tags
+    # pin the same infra, so the superproject copy is the right content; drop its
+    # .git so the build treats it as plain files (it only reads them, and the
+    # worktree's own git still resolves gitlink SHAs from the tree).
     git submodule update --init --recursive >/dev/null 2>&1 || true
+    for sub in unionai-docs-infra unionai-examples; do
+      if [ -z "$(ls -A "$sub" 2>/dev/null)" ] && [ -d "$REPO_ROOT/$sub" ]; then
+        rm -rf "$sub"; cp -R "$REPO_ROOT/$sub" "$sub"; rm -rf "$sub/.git"
+      fi
+    done
     REPO_ROOT="$wt" VERSION="$label" NOINDEX="$noindex" VARIANTS="$VARIANTS" \
       make -f unionai-docs-infra/Makefile dist )
   mkdir -p "$DIST/docs"
