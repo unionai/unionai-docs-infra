@@ -42,30 +42,46 @@ if [[ "${NOINDEX:-}" == "true" ]]; then
     echo 'noindex = true' >> "$hugo_build_toml"
 fi
 
-# Version selector list (DOC-1245): when versions.toml exists, drive the dropdown
-# from it (latest -> v2/stable -> each enumerated pin, newest first -> v1) instead
-# of hugo.ver.toml's static ["v2","v1"]. This param overrides the static config, so
-# the same list shows on every versioned build. No versions.toml (v1 single build /
-# pre-go-live) -> the static list stands. Only for versioned builds (VERSION set).
+# Version selector (DOC-1245): when versions.toml exists, drive the two-level version
+# selector from it. Emits a structured `version_menu` (JSON) grouped by line (v2, v1),
+# each line -> Latest (the line's bleeding edge, where one is served) / Stable (the
+# bare line segment) / the numbered pins (newest first). A flat `versions` is also
+# emitted for back-compat. No versions.toml (v1 single build / pre-go-live) -> neither
+# is set and hugo.ver.toml's static ["v2","v1"] stands. Only for versioned builds.
 if [[ -n $VERSION && -f "${REPO_ROOT:-.}/versions.toml" ]]; then
-    versions_line="$(python3 - "${REPO_ROOT:-.}/versions.toml" <<'PY'
-import sys
+    # Append the params straight from python's stdout (no command substitution —
+    # a heredoc inside $() plus single quotes trips macOS bash 3.2).
+    python3 - "${REPO_ROOT:-.}/versions.toml" >> "$hugo_build_toml" <<'PY'
+import sys, json
 try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
 d = tomllib.load(open(sys.argv[1], "rb"))
-def _key(t):  # sort v2.5.12.0 by numeric tuple, no third-party deps
+enum = set(d.get("enumerated", []))
+def vkey(t):  # numeric-tuple sort, no third-party deps
     try:
         return tuple(int(x) for x in t.lstrip("v").split("."))
     except Exception:
         return ()
-pins = sorted(set(d.get("enumerated", [])), key=_key, reverse=True)
-items = ["latest", "v2"] + pins + ["v1"]
-print("versions = [" + ", ".join('"%s"' % i for i in items) + "]")
+# Which lines to show, in top-level order. A line's "latest" segment is served only
+# where a bleeding-edge build exists -- currently v2 (/docs/latest); v1 is frozen, so
+# it shows Stable + pins until a v1 latest is served.
+LINES = [("v2", "latest"), ("v1", None)]
+menu, flat = [], []
+for line, latest_seg in LINES:
+    items = []
+    if latest_seg:
+        items.append({"seg": latest_seg, "label": "Latest", "channel": "latest"})
+    items.append({"seg": line, "label": "Stable", "channel": "stable"})
+    for p in sorted((p for p in enum if p.startswith(line + ".")), key=vkey, reverse=True):
+        items.append({"seg": p, "label": p.lstrip("v"), "channel": "pin"})
+    menu.append({"line": line, "items": items})
+    flat += [it["seg"] for it in items]
+print("versions = " + json.dumps(flat))
+# JSON in a TOML single-quoted literal string (JSON uses only double quotes, so safe).
+print("version_menu = '" + json.dumps(menu) + "'")
 PY
-)"
-    echo "$versions_line" >> "$hugo_build_toml"
 fi
 
 readonly target
