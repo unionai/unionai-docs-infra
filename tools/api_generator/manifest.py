@@ -68,12 +68,42 @@ MANUAL_VERSIONS_FILE = REPO_ROOT / "manual-versions.toml"
 # writes it; build-and-deploy reads it and materializes any named-but-missing tag.
 VERSIONS_FILE = REPO_ROOT / "versions.toml"
 
-# Package that versions independently of the flyte-sdk monorepo (its own 0.x line,
-# unionai/flyteplugins-union). Every other flyteplugins-* is lockstep with flyte.
-UNION_PLUGIN_PACKAGE = "flyteplugins-union"
-SDK_PACKAGE = "flyte"
-FLYTE_BACKEND_REPO = "flyteorg/flyte"
-FLYTE_BACKEND_SERIES = "v2.0."  # the v2 backend line
+# Per-branch docs-version wiring. Defaults target the v2 line (flyte-sdk); a branch
+# overrides them in api-packages.toml's [docs_version] section. This is what lets the
+# SAME resolver drive both the v2 line (flyte-sdk) and the v1 line (flytekit) — the
+# docs version is SDK-triple + z, and each line's SDK major (2 / 1) yields v2.x.y.z /
+# v1.x.y.z naturally. The "passenger" is the one independently-versioned sub-part
+# (v2: flyteplugins-union, its own 0.x line; v1: the union SDK, its own 0.x line);
+# every other flyteplugins-* is lockstep with the SDK. See DOC-1245.
+_VERSION_DEFAULTS = {
+    "sdk_package": "flyte",
+    "sdk_label": "flyte-sdk",
+    "passenger_package": "flyteplugins-union",
+    "passenger_label": "flyteplugins-union",
+    "backend_repo": "flyteorg/flyte",
+    "backend_series": "v2.0.",  # the backend release line to track
+}
+
+
+def version_config(config: dict) -> dict:
+    """The [docs_version] wiring for this branch, defaulting to the v2 values."""
+    dv = config.get("docs_version", {})
+    return {**_VERSION_DEFAULTS, **{k: dv[k] for k in _VERSION_DEFAULTS if k in dv}}
+
+
+def _version_file(config: dict, package: str) -> str | None:
+    """API-ref frontmatter path for a package, searching [[sdks]] then [[plugins]]."""
+    for sdk in config.get("sdks", []):
+        if sdk.get("package") == package:
+            return sdk.get("version_file")
+    base = config.get("plugins_config", {}).get(
+        "output_base", "content/api-reference/integrations"
+    )
+    for plugin in config.get("plugins", []):
+        if plugin.get("package") == package:
+            folder = plugin.get("output_folder") or f"{base}/{plugin['name']}"
+            return f"{folder}/_index.md"
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -113,28 +143,22 @@ def submodule_sha(path: str) -> str | None:
 # per-sub-part resolvers
 # --------------------------------------------------------------------------- #
 def resolve_sdk(config: dict) -> str | None:
-    """flyte-sdk version = committed frontmatter of the SDK API-ref index."""
-    for sdk in config.get("sdks", []):
-        if sdk.get("package") == SDK_PACKAGE:
-            return extract_frontmatter_version(REPO_ROOT / sdk["version_file"])
-    return None
+    """Docs SDK version = committed frontmatter of the SDK API-ref index (flyte / flytekit)."""
+    vf = _version_file(config, version_config(config)["sdk_package"])
+    return extract_frontmatter_version(REPO_ROOT / vf) if vf else None
 
 
-def resolve_union_plugin(config: dict) -> str | None:
-    """flyteplugins-union version = committed frontmatter of its API-ref index."""
-    base = config.get("plugins_config", {}).get(
-        "output_base", "content/api-reference/integrations"
-    )
-    for plugin in config.get("plugins", []):
-        if plugin.get("package") == UNION_PLUGIN_PACKAGE:
-            folder = plugin.get("output_folder") or f"{base}/{plugin['name']}"
-            return extract_frontmatter_version(REPO_ROOT / folder / "_index.md")
-    return None
+def resolve_passenger(config: dict) -> str | None:
+    """The one independently-versioned passenger (v2: flyteplugins-union; v1: union SDK)."""
+    vf = _version_file(config, version_config(config)["passenger_package"])
+    return extract_frontmatter_version(REPO_ROOT / vf) if vf else None
 
 
-def resolve_flyte_backend() -> str | None:
-    """Newest flyteorg/flyte v2.0.x release, via the GitHub REST API."""
-    url = f"https://api.github.com/repos/{FLYTE_BACKEND_REPO}/releases?per_page=100"
+def resolve_flyte_backend(config: dict) -> str | None:
+    """Newest backend release on the tracked line (v2.0.x / v1.x), via the GitHub REST API."""
+    vc = version_config(config)
+    repo, backend_series = vc["backend_repo"], vc["backend_series"]
+    url = f"https://api.github.com/repos/{repo}/releases?per_page=100"
     req = urllib.request.Request(url, headers={"Accept": "application/vnd.github+json"})
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     if token:
@@ -143,7 +167,7 @@ def resolve_flyte_backend() -> str | None:
         with urllib.request.urlopen(req, timeout=15) as resp:
             releases = json.loads(resp.read())
     except Exception as e:
-        print(f"  Warning: failed to query {FLYTE_BACKEND_REPO} releases: {e}", file=sys.stderr)
+        print(f"  Warning: failed to query {repo} releases: {e}", file=sys.stderr)
         return None
 
     series = []
@@ -151,7 +175,7 @@ def resolve_flyte_backend() -> str | None:
         if rel.get("draft") or rel.get("prerelease"):
             continue
         tag = rel.get("tag_name", "")
-        if tag.startswith(FLYTE_BACKEND_SERIES):
+        if tag.startswith(backend_series):
             try:
                 series.append((Version(tag.lstrip("v")), tag))
             except Exception:
@@ -180,14 +204,15 @@ def resolve_union_backend() -> str | None:
 # --------------------------------------------------------------------------- #
 def build_manifest(variant: str, config: dict) -> dict:
     """Collect every sub-part's current value for one variant (union|flyte)."""
+    vc = version_config(config)
     sdk = resolve_sdk(config)
-    components: dict[str, str | None] = {"flyte-sdk": sdk}
+    components: dict[str, str | None] = {vc["sdk_label"]: sdk}
 
     if variant == "union":
-        components["flyteplugins-union"] = resolve_union_plugin(config)
+        components[vc["passenger_label"]] = resolve_passenger(config)
         components["backend"] = resolve_union_backend()
     else:  # flyte
-        components["backend"] = resolve_flyte_backend()
+        components["backend"] = resolve_flyte_backend(config)
 
     components["examples"] = submodule_sha("unionai-examples")
     components["content"] = _git("rev-parse", "HEAD")
@@ -204,6 +229,7 @@ def build_combined(config: dict, variants: list[str], version: dict) -> dict:
     """The manifest a cut commits: the version decision + every variant's components."""
     return {
         **version,
+        "sdk_label": version_config(config)["sdk_label"],
         "variants": {v: build_manifest(v, config)["components"] for v in variants},
     }
 
@@ -337,7 +363,7 @@ def main() -> None:
     # to tag a hand-edited or dev-build (e.g. setuptools_scm dirty-tree) version.
     sdk = next((m["flyte_sdk"] for m, _ in manifests.values() if m["flyte_sdk"]), None)
     if decision is not None and sdk is not None:
-        exists = pypi_version_exists(SDK_PACKAGE, sdk)
+        exists = pypi_version_exists(version_config(config)["sdk_package"], sdk)
         decision = {
             **decision,
             "sdk": sdk,
