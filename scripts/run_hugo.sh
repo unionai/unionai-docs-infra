@@ -43,10 +43,10 @@ if [[ "${NOINDEX:-}" == "true" ]]; then
 fi
 
 # Version selector (DOC-1245): when versioning is on (versions.toml present), emit a
-# `version_menu` (JSON, grouped by line for the "Flyte 2 / Flyte 1" dividers, but rendered
-# as ONE flat list) plus a flat `versions` for back-compat. Each line lists: latest (v2
-# only), stable (the newest tag, served at /docs/<line>; the number is annotated), then the
-# OLDER pins at /docs/<tag>. The newest tag is never a separate pin -- no duplicate tree.
+# `version_menu` (JSON, grouped by line for the "v2 / v1" dividers, but rendered as ONE
+# flat list) plus a flat `versions` for back-compat. Each line lists: latest (v2 only, a
+# LATEST badge), stable (the newest tag, served at /docs/<line>; number + a STABLE badge),
+# then the OLDER pins at /docs/<tag>. The newest tag is never a separate pin -- no dup tree.
 # SOURCE: the shared cross-line registry unionai-docs-infra/served-versions.toml when
 # present (so every build lists both lines); else the per-branch versions.toml (this line
 # only). No versions.toml (v1 single build / pre-go-live) -> hugo.ver.toml's static
@@ -72,8 +72,6 @@ LINE_ORDER = ["v2", "v1"]
 # A line's bleeding-edge ("latest") URL segment. v2 -> /docs/latest; v1 is frozen, so
 # it has no latest (skipped even if the registry flags it).
 LATEST_SEG = {"v2": "latest"}
-def line_label(ln):
-    return "Flyte " + ln[1:]          # v2 -> "Flyte 2"
 if any(ln in d for ln in LINE_ORDER):
     # Shared registry: explicit per-line [v2]/[v1] tables (latest flag + stable tag +
     # enumerated OLDER pins).
@@ -90,25 +88,25 @@ else:
             return (ln == "v2"), "", []
         return (ln == "v2"), _stable, [p for p in _enum if p.startswith(ln + ".")]
 menu, flat = [], []
+# Each item is {seg, num, badge}: `num` is the version number shown (empty for
+# latest); `badge` is a real badge label ("LATEST"/"STABLE") or "" (older pins +
+# a frozen line's newest, which show the bare number). The line token (v2/v1) is
+# the group heading + the closed-state prefix.
 for ln in LINE_ORDER:
     has_latest, stable, enum = line_cfg(ln)
     if not stable and not enum:
         continue                      # line not served -> no group
     items = []
     if has_latest and LATEST_SEG.get(ln):
-        items.append({"seg": LATEST_SEG[ln], "label": "latest", "channel": "latest"})
+        items.append({"seg": LATEST_SEG[ln], "num": "", "badge": "LATEST"})
     if stable:
         num = stable.lstrip("v")
-        if has_latest:
-            # Active line: the canonical /docs/<line> is the moving "stable" pointer;
-            # annotate which tag it currently is.
-            items.append({"seg": ln, "label": "stable", "version": num, "channel": "stable"})
-        else:
-            # Frozen line: /docs/<line> just IS the newest tag -- show the number.
-            items.append({"seg": ln, "label": num, "channel": "stable"})
+        # Active line: /docs/<line> is the moving "stable" pointer -> number + badge.
+        # Frozen line (v1): no moving stable -> the newest is just a bare number.
+        items.append({"seg": ln, "num": num, "badge": "STABLE" if has_latest else ""})
     for p in sorted(set(enum), key=vkey, reverse=True):
-        items.append({"seg": p, "label": p.lstrip("v"), "channel": "pin"})
-    menu.append({"line": ln, "label": line_label(ln), "items": items})
+        items.append({"seg": p, "num": p.lstrip("v"), "badge": ""})
+    menu.append({"line": ln, "items": items})
     flat += [it["seg"] for it in items]
 print("versions = " + json.dumps(flat))
 # JSON in a TOML single-quoted literal string (JSON uses only double quotes, so safe).

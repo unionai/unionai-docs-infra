@@ -265,7 +265,8 @@ header .header-toolbar-spacer {
   font-weight: 500;
 }
 
-.version-item .badge {
+.version-item .badge,
+.version-btn .badge {
   background: #dcfce7;
   color: #15803d;
   font-size: 0.625rem;
@@ -289,15 +290,13 @@ header .header-toolbar-spacer {
 /* ── Flat version selector with line dividers (DOC-1245) ── */
 .version-menu { min-width: 200px; }
 
-/* Non-clickable "Flyte 2 / Flyte 1" group divider. */
+/* Non-clickable line heading ("v2" / "v1") above each group's entries. */
 .version-group-label {
   padding: 8px 14px 4px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--text-color-light);
-  opacity: 0.7;
+  opacity: 0.8;
 }
 .version-group-label:not(:first-child) {
   margin-top: 4px;
@@ -305,8 +304,9 @@ header .header-toolbar-spacer {
   padding-top: 8px;
 }
 
-/* Muted tag-number annotation next to "stable" (menu items + closed label). */
-.vi-version { color: var(--text-color-light); font-weight: 400; }
+/* Closed-state label: "<line> <number> <badge>" laid out inline. */
+.version-label { display: inline-flex; align-items: center; gap: 6px; }
+.version-label .vl-line { font-weight: 600; }
 
 [data-theme="dark"] .version-group-label { color: var(--text-color-light); }
 [data-theme="dark"] .version-group-label:not(:first-child) { border-top-color: rgba(255, 255, 255, 0.12); }

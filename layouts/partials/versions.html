@@ -1,23 +1,24 @@
 {{- /*
 Version selector (DOC-1245). A single FLAT list when a structured `version_menu` is
-present (a versioned build): each line (Flyte 2, Flyte 1) is a non-clickable divider
-followed by its entries -- latest (v2 only), stable (newest tag, at /docs/<line>, with
-the tag number annotated), then the older numbered pins at /docs/<tag>. The closed button
-shows the current entry's label (+ the stable number when on stable). Falls back to the
-flat single-level list (hugo.ver.toml's static ["v2","v1"]) on a v1 single build or
-pre-go-live, so the same partial is safe on every branch.
+present (a versioned build): each line (v2, v1) is a non-clickable divider followed by its
+entries -- latest (v2 only; a LATEST badge, no number), stable (newest tag at /docs/<line>;
+number + a STABLE badge), then the older numbered pins at /docs/<tag>. A frozen line (v1)
+shows its newest as a bare number (no badge). The closed button shows "<line> <number>
+<badge>". Falls back to the flat single-level list (hugo.ver.toml's static ["v2","v1"]) on
+a v1 single build or pre-go-live, so the same partial is safe on every branch.
 */ -}}
 {{- $menuJSON := .Site.Params.version_menu -}}
 {{- if $menuJSON -}}
   {{- $menu := $menuJSON | transform.Unmarshal -}}
   {{- $cur := .Site.Params.current_version -}}
-  {{- /* Resolve the current entry's label (+ stable number) for the closed state. */ -}}
-  {{- $curLabel := $cur -}}{{- $curVer := "" -}}
+  {{- /* Resolve the current entry's line + number + badge for the closed state. */ -}}
+  {{- $curLine := "" -}}{{- $curNum := "" -}}{{- $curBadge := "" -}}
   {{- range $g := $menu -}}
     {{- range $it := $g.items -}}
-      {{- if eq $it.seg $cur -}}{{- $curLabel = $it.label -}}{{- with $it.version -}}{{- $curVer = . -}}{{- end -}}{{- end -}}
+      {{- if eq $it.seg $cur -}}{{- $curLine = $g.line -}}{{- $curNum = $it.num -}}{{- $curBadge = $it.badge -}}{{- end -}}
     {{- end -}}
   {{- end -}}
+  {{- if not $curLine -}}{{- $curLine = (index (index $menu 0) "line") -}}{{- end -}}
 <div class="version-dropdown" id="version-dropdown"
 {{- if not hugo.IsProduction -}}
     onmouseenter="document.getElementById('verwarn').style.display = '';"
@@ -26,17 +27,22 @@ pre-go-live, so the same partial is safe on every branch.
 >
     <button class="version-btn" onclick="toggleVersionMenu()"
         {{- if not hugo.IsProduction }} disabled{{ end -}}>
-        <span class="version-label">{{- $curLabel -}}{{- with $curVer }} <span class="vi-version">· {{ . }}</span>{{- end -}}</span>
+        <span class="version-label">
+            <span class="vl-line">{{- $curLine -}}</span>
+            {{- with $curNum }}<span class="vl-num">{{ . }}</span>{{- end -}}
+            {{- with $curBadge }}<span class="badge">{{ . }}</span>{{- end -}}
+        </span>
         <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="version-menu">
         {{- range $g := $menu -}}
-        <div class="version-group-label">{{- $g.label -}}</div>
+        <div class="version-group-label">{{- $g.line -}}</div>
         {{- range $it := $g.items -}}
         <button class="version-item{{- if eq $it.seg $cur }} selected{{- end -}}"
                 data-version="{{- $it.seg -}}" onclick="handleVersionChange(event)">
             <svg class="check-icon" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7.5L5.5 10L11 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>{{- $it.label -}}{{- with $it.version }} <span class="vi-version">· {{ . }}</span>{{- end -}}</span>
+            {{- with $it.num }}<span class="vl-num">{{ . }}</span>{{- end -}}
+            {{- with $it.badge }}<span class="badge">{{ . }}</span>{{- end -}}
         </button>
         {{- end -}}
         {{- end -}}
