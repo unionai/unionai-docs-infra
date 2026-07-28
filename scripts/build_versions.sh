@@ -46,11 +46,19 @@ except ModuleNotFoundError:
 d = tomllib.load(open(sys.argv[1], "rb"))
 print("STABLE=" + d.get("stable", ""))
 print('ENUMERATED="' + " ".join(d.get("enumerated", [])) + '"')
+# latest defaults on; a frozen line (v1) sets `latest = false` to suppress it.
+print("BUILD_LATEST=" + ("0" if d.get("latest") is False else "1"))
 PY
 source "$_plan"
 rm -f "$_plan"
 
 [ -n "$STABLE" ] || { echo "ERROR: 'stable' not set in versions.toml" >&2; exit 1; }
+
+# The "line" (v2 / v1) is just the stable tag's prefix — v2.5.12.0 -> v2,
+# v1.16.23.0 -> v1. It's the dist path for the stable, indexed tree
+# (/docs/<line>), which lets this one script serve both branches. Derived, so
+# there's no extra field to keep in sync.
+LINE="${STABLE%%.*}"
 
 # Build one version into dist/docs/<label>/ from a git ref, in an isolated worktree.
 build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=landing(true/"")
@@ -107,14 +115,21 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
 
 echo "==> docs version assembly (stable=$STABLE, enumerated=[$ENUMERATED])"
 
-# latest = main (bleeding edge), noindex. LATEST_REF defaults to HEAD for local
-# runs; CI sets LATEST_REF=origin/main so a tag-triggered cut still builds latest
-# from main (github.ref is the tag on a tag trigger, not main).
-build_version "latest" "${LATEST_REF:-HEAD}" "true"
+# latest = the branch tip (bleeding edge), noindex — but ONLY for a line that
+# has one. LATEST_REF defaults to HEAD for local runs; CI sets it to the branch
+# (origin/main for v2, origin/v1 for v1) so a tag-triggered cut still builds
+# latest from the branch (github.ref is the tag on a tag trigger). A frozen line
+# (v1) sets `latest = false`: its /docs/latest would be unreachable (the edge
+# routes /docs/latest to the v2 deployment) and waste files against its budget.
+if [ "$BUILD_LATEST" = 1 ]; then
+  build_version "latest" "${LATEST_REF:-HEAD}" "true"
+else
+  echo "  skip   /docs/latest (latest = false for this line)"
+fi
 
-# v2 = the stable tag, INDEXED (the one canonical surface); also emits the
+# <line> = the stable tag, INDEXED (the one canonical surface); also emits the
 # top-level /docs landing pages (so a bare /docs lands on stable).
-build_version "v2" "$STABLE" "" "true"
+build_version "$LINE" "$STABLE" "" "true"
 
 # immutable pinned versions, noindex, cache-skipped
 for tag in $ENUMERATED; do
