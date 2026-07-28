@@ -1,0 +1,8 @@
+# Sample of manual-versions.toml -- the real file lives in the unionai-docs repo
+# ROOT (content-side, so editing it rides /docs/latest), NOT here in infra.
+#
+# It holds the docs-version sub-parts that have no build-time-introspectable
+# source yet. Currently just the Union control-plane backend (DOC-1276).
+[backend]
+# BYOC baseline; self-managed / self-hosted deployments may run an earlier version.
+union = "2.5.9-byoc"
