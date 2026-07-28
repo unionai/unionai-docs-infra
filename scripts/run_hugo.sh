@@ -42,41 +42,54 @@ if [[ "${NOINDEX:-}" == "true" ]]; then
     echo 'noindex = true' >> "$hugo_build_toml"
 fi
 
-# Version selector (DOC-1245): when versions.toml exists, drive the two-level version
-# selector from it. Emits a structured `version_menu` (JSON) grouped by line (v2, v1),
-# each line -> Latest (the line's bleeding edge, where one is served) / Stable (the
-# bare line segment) / the numbered pins (newest first). A flat `versions` is also
-# emitted for back-compat. No versions.toml (v1 single build / pre-go-live) -> neither
-# is set and hugo.ver.toml's static ["v2","v1"] stands. Only for versioned builds.
+# Version selector (DOC-1245): when versioning is on (versions.toml present), emit a
+# structured `version_menu` (JSON grouped by line: v2, v1 -> Latest/Stable/pins) plus a
+# flat `versions` for back-compat. The menu's SOURCE is the shared cross-line registry
+# unionai-docs-infra/served-versions.toml when present (so every build lists both lines'
+# versions); else the per-branch versions.toml (this line's pins by prefix + the other
+# line's Stable). No versions.toml (v1 single build / pre-go-live) -> hugo.ver.toml's
+# static ["v2","v1"] stands. Only for versioned builds (VERSION set).
 if [[ -n $VERSION && -f "${REPO_ROOT:-.}/versions.toml" ]]; then
-    # Append the params straight from python's stdout (no command substitution —
+    _sel_src="${REPO_ROOT:-.}/unionai-docs-infra/served-versions.toml"
+    [[ -f "$_sel_src" ]] || _sel_src="${REPO_ROOT:-.}/versions.toml"
+    # Append the params straight from python's stdout (no command substitution --
     # a heredoc inside $() plus single quotes trips macOS bash 3.2).
-    python3 - "${REPO_ROOT:-.}/versions.toml" >> "$hugo_build_toml" <<'PY'
+    python3 - "$_sel_src" >> "$hugo_build_toml" <<'PY'
 import sys, json
 try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
 d = tomllib.load(open(sys.argv[1], "rb"))
-enum = set(d.get("enumerated", []))
 def vkey(t):  # numeric-tuple sort, no third-party deps
     try:
         return tuple(int(x) for x in t.lstrip("v").split("."))
     except Exception:
         return ()
-# Which lines to show, in top-level order. A line's "latest" segment is served only
-# where a bleeding-edge build exists -- currently v2 (/docs/latest); v1 is frozen, so
-# it shows Stable + pins until a v1 latest is served.
-LINES = [("v2", "latest"), ("v1", None)]
+LINE_ORDER = ["v2", "v1"]
+# A line's bleeding-edge ("Latest") URL segment. v2 -> /docs/latest; v1 has none yet
+# (frozen), so its Latest is skipped even if the registry flags it.
+LATEST_SEG = {"v2": "latest"}
+if any(ln in d for ln in LINE_ORDER):
+    # Shared registry: explicit per-line [v2]/[v1] tables (latest flag + enumerated).
+    def line_cfg(ln):
+        c = d.get(ln, {})
+        return bool(c.get("latest", ln == "v2")), list(c.get("enumerated", []))
+else:
+    # Per-branch versions.toml fallback: this line's pins by prefix; v2 has a latest.
+    enum_all = list(d.get("enumerated", []))
+    def line_cfg(ln):
+        return (ln == "v2"), [p for p in enum_all if p.startswith(ln + ".")]
 menu, flat = [], []
-for line, latest_seg in LINES:
+for ln in LINE_ORDER:
+    has_latest, enum = line_cfg(ln)
     items = []
-    if latest_seg:
-        items.append({"seg": latest_seg, "label": "Latest", "channel": "latest"})
-    items.append({"seg": line, "label": "Stable", "channel": "stable"})
-    for p in sorted((p for p in enum if p.startswith(line + ".")), key=vkey, reverse=True):
+    if has_latest and LATEST_SEG.get(ln):
+        items.append({"seg": LATEST_SEG[ln], "label": "Latest", "channel": "latest"})
+    items.append({"seg": ln, "label": "Stable", "channel": "stable"})
+    for p in sorted(set(enum), key=vkey, reverse=True):
         items.append({"seg": p, "label": p.lstrip("v"), "channel": "pin"})
-    menu.append({"line": line, "items": items})
+    menu.append({"line": ln, "items": items})
     flat += [it["seg"] for it in items]
 print("versions = " + json.dumps(flat))
 # JSON in a TOML single-quoted literal string (JSON uses only double quotes, so safe).
