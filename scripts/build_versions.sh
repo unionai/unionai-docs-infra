@@ -46,7 +46,7 @@ except ModuleNotFoundError:
 d = tomllib.load(open(sys.argv[1], "rb"))
 print("STABLE=" + d.get("stable", ""))
 print('ENUMERATED="' + " ".join(d.get("enumerated", [])) + '"')
-# latest defaults on; a frozen line (v1) sets `latest = false` to suppress it.
+# latest defaults on; a secondary line (v1) sets `latest = false` (/docs/latest is v2's global URL).
 print("BUILD_LATEST=" + ("0" if d.get("latest") is False else "1"))
 PY
 source "$_plan"
@@ -118,7 +118,7 @@ echo "==> docs version assembly (stable=$STABLE, enumerated=[$ENUMERATED])"
 # latest = the branch tip (bleeding edge), noindex — but ONLY for a line that
 # has one. LATEST_REF defaults to HEAD for local runs; CI sets it to the branch
 # (origin/main for v2, origin/v1 for v1) so a tag-triggered cut still builds
-# latest from the branch (github.ref is the tag on a tag trigger). A frozen line
+# latest from the branch (github.ref is the tag on a tag trigger). A secondary line
 # (v1) sets `latest = false`: its /docs/latest would be unreachable (the edge
 # routes /docs/latest to the v2 deployment) and waste files against its budget.
 if [ "$BUILD_LATEST" = 1 ]; then
