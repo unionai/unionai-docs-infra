@@ -63,9 +63,35 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
   local wt; wt="$(mktemp -d)"
   git worktree add --detach "$wt" "$ref" >/dev/null
   ( cd "$wt"
+    # Submodules don't reliably init inside a linked git worktree (a known git
+    # worktree+submodule friction — it silently leaves the submodule dir empty,
+    # so `make -f unionai-docs-infra/Makefile` then can't find the Makefile).
+    # Try the normal init, then for any submodule that's still empty, populate it
+    # from the superproject's already-checked-out copy (the checkout step's
+    # `submodules: recursive` guarantees those are present). All current cut tags
+    # pin the same infra, so the superproject copy is the right content; drop its
+    # .git so the build treats it as plain files (it only reads them, and the
+    # worktree's own git still resolves gitlink SHAs from the tree).
     git submodule update --init --recursive >/dev/null 2>&1 || true
-    REPO_ROOT="$wt" VERSION="$label" NOINDEX="$noindex" VARIANTS="$VARIANTS" \
-      make -f unionai-docs-infra/Makefile dist )
+    for sub in unionai-docs-infra unionai-examples; do
+      if [ -z "$(ls -A "$sub" 2>/dev/null)" ] && [ -d "$REPO_ROOT/$sub" ]; then
+        rm -rf "$sub"; cp -R "$REPO_ROOT/$sub" "$sub"; rm -rf "$sub/.git"
+      fi
+    done
+    # The version selector (run_hugo's version_menu injection) + the footer's
+    # manifest-gen both gate on versions.toml being present in the build root. The
+    # worktrees are checked out from main/tags that don't carry it, so copy the
+    # superproject's versions.toml in — it's the "versioning is on" signal (and this
+    # whole script only runs when the superproject has it, so it stays inert otherwise).
+    [ -f "$REPO_ROOT/versions.toml" ] && cp "$REPO_ROOT/versions.toml" versions.toml
+    # VERSION/VARIANTS as make command-line variables (not env): the inner
+    # `make` build_dist.sh spawns picks up the top-level Makefile, whose
+    # makefile.inc hardcodes `VERSION := v2` and would clobber an env VERSION.
+    # Command-line vars override `:=` and propagate to sub-makes via MAKEFLAGS,
+    # so each version actually builds into dist/docs/<label>/. NOINDEX stays env
+    # (run_hugo reads it from the environment).
+    REPO_ROOT="$wt" NOINDEX="$noindex" \
+      make -f unionai-docs-infra/Makefile dist VERSION="$label" VARIANTS="$VARIANTS" )
   mkdir -p "$DIST/docs"
   rm -rf "$DIST/docs/$label"
   cp -R "$wt/dist/docs/$label" "$DIST/docs/$label"
