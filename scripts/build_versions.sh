@@ -78,6 +78,12 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
         rm -rf "$sub"; cp -R "$REPO_ROOT/$sub" "$sub"; rm -rf "$sub/.git"
       fi
     done
+    # The version selector (run_hugo's version_menu injection) + the footer's
+    # manifest-gen both gate on versions.toml being present in the build root. The
+    # worktrees are checked out from main/tags that don't carry it, so copy the
+    # superproject's versions.toml in — it's the "versioning is on" signal (and this
+    # whole script only runs when the superproject has it, so it stays inert otherwise).
+    [ -f "$REPO_ROOT/versions.toml" ] && cp "$REPO_ROOT/versions.toml" versions.toml
     # VERSION/VARIANTS as make command-line variables (not env): the inner
     # `make` build_dist.sh spawns picks up the top-level Makefile, whose
     # makefile.inc hardcodes `VERSION := v2` and would clobber an env VERSION.
