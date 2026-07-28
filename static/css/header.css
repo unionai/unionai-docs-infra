@@ -247,7 +247,7 @@ header .header-toolbar-spacer {
   font-weight: 500;
   cursor: pointer;
   background: transparent;
-  color: var(--text-color-light);
+  color: var(--text-color);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -262,7 +262,7 @@ header .header-toolbar-spacer {
 .version-item.selected {
   background: var(--code-bg);
   color: var(--text-color);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .version-item .badge,
@@ -290,13 +290,13 @@ header .header-toolbar-spacer {
 /* ── Flat version selector with line dividers (DOC-1245) ── */
 .version-menu { min-width: 200px; }
 
-/* Non-clickable line heading ("v2" / "v1") above each group's entries. */
+/* Non-clickable line heading ("v2" / "v1") above each group's entries. Full
+   contrast + bold so it reads as a heading, not a disabled/quiet label. */
 .version-group-label {
   padding: 8px 14px 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-color-light);
-  opacity: 0.8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-color);
 }
 .version-group-label:not(:first-child) {
   margin-top: 4px;
@@ -308,7 +308,7 @@ header .header-toolbar-spacer {
 .version-label { display: inline-flex; align-items: center; gap: 6px; }
 .version-label .vl-line { font-weight: 600; }
 
-[data-theme="dark"] .version-group-label { color: var(--text-color-light); }
+[data-theme="dark"] .version-group-label { color: var(--text-color); }
 [data-theme="dark"] .version-group-label:not(:first-child) { border-top-color: rgba(255, 255, 255, 0.12); }
 
 /* ── Dark theme overrides ── */
