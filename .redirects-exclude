@@ -69,7 +69,7 @@ content/user-guide/feature-showcase/*
 
 # Never published in flyte variant (variants: -flyte +union)
 content/deployment/selfmanaged/selfmanaged-aws/manual.md
-# Renamed to infrastructure-requirements/ (union-only); union redirect added in redirects.csv
+# Renamed to infrastructure-recommendations/ (union-only); union redirect added in redirects.csv
 content/deployment/selfmanaged/cluster-recommendations.md
 
 # Never published in either v2 variant (variants: -flyte -union) — pruned in DOC-1225 (unionai-docs#1217)
