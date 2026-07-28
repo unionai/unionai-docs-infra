@@ -2,8 +2,8 @@
 Version selector (DOC-1245). A single FLAT list when a structured `version_menu` is
 present (a versioned build): each line (v2, v1) is a non-clickable divider followed by its
 entries -- latest (v2 only; a LATEST badge, no number), stable (newest tag at /docs/<line>;
-number + a STABLE badge), then the older numbered pins at /docs/<tag>. A frozen line (v1)
-shows its newest as a bare number (no badge). The closed button shows "<line> <number>
+number + a STABLE badge), then the older numbered pins at /docs/<tag>. A secondary line (v1)
+advances too but is de-emphasized: its newest shows as a bare number, no STABLE badge. The closed button shows "<line> <number>
 <badge>". Falls back to the flat single-level list (hugo.ver.toml's static ["v2","v1"]) on
 a v1 single build or pre-go-live, so the same partial is safe on every branch.
 */ -}}

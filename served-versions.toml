@@ -9,10 +9,10 @@
 #
 # If this file is absent, the selector falls back to the per-branch versions.toml (this
 # line only). Per line:
-#   latest      whether the line has a bleeding-edge build (v2 -> /docs/latest; v1 is
-#               frozen, so false — no latest served).
+#   latest      whether the line has a bleeding-edge build (only v2 -> /docs/latest.
+#               That URL is global (edge routes it to v2), so a secondary line (v1) = false.
 #   stable      the newest tag, served ONCE at /docs/<line> (the one indexed URL). Shown
-#               as "stable · <n>" on the active line, or just "<n>" on a frozen line.
+#               with a STABLE badge on the primary line (v2), or a bare number on the secondary line (v1).
 #   enumerated  the OLDER tags, each served at /docs/<tag>. The newest tag is NEVER here
 #               (it's stable, at /docs/<line>) — no byte-identical duplicate tree.
 
@@ -24,4 +24,4 @@ enumerated = []          # older v2 tags, newest-first, once there are any
 [v1]
 latest = false
 stable = "v1.16.23.0"
-enumerated = []          # older v1 tags (frozen line — grows only if v1 is ever re-cut)
+enumerated = []          # older v1 tags -- grows as v1 advances (new flytekit 1.x cuts)

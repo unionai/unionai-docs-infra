@@ -69,8 +69,8 @@ def vkey(t):  # numeric-tuple sort, no third-party deps
     except Exception:
         return ()
 LINE_ORDER = ["v2", "v1"]
-# A line's bleeding-edge ("latest") URL segment. v2 -> /docs/latest; v1 is frozen, so
-# it has no latest (skipped even if the registry flags it).
+# A line's bleeding-edge ("latest") URL segment. only v2 -> /docs/latest. That URL is global (the edge routes it to the v2
+# deployment), so a secondary line (v1) has none -- skipped even if flagged.
 LATEST_SEG = {"v2": "latest"}
 if any(ln in d for ln in LINE_ORDER):
     # Shared registry: explicit per-line [v2]/[v1] tables (latest flag + stable tag +
@@ -90,7 +90,7 @@ else:
 menu, flat = [], []
 # Each item is {seg, num, badge}: `num` is the version number shown (empty for
 # latest); `badge` is a real badge label ("LATEST"/"STABLE") or "" (older pins +
-# a frozen line's newest, which show the bare number). The line token (v2/v1) is
+# a secondary line's newest (v1), which shows the bare number). The line token (v2/v1) is
 # the group heading + the closed-state prefix.
 for ln in LINE_ORDER:
     has_latest, stable, enum = line_cfg(ln)
@@ -101,8 +101,9 @@ for ln in LINE_ORDER:
         items.append({"seg": LATEST_SEG[ln], "num": "", "badge": "LATEST"})
     if stable:
         num = stable.lstrip("v")
-        # Active line: /docs/<line> is the moving "stable" pointer -> number + badge.
-        # Frozen line (v1): no moving stable -> the newest is just a bare number.
+        # Primary line (v2): /docs/<line> is the moving stable pointer -> number + STABLE badge.
+        # Secondary line (v1): advances too, but deliberately de-emphasized -> bare number, no
+        # badge (the numbered git tag still exists; we just do not surface STABLE in the menu).
         items.append({"seg": ln, "num": num, "badge": "STABLE" if has_latest else ""})
     for p in sorted(set(enum), key=vkey, reverse=True):
         items.append({"seg": p, "num": p.lstrip("v"), "badge": ""})

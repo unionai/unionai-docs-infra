@@ -25,4 +25,4 @@ enumerated = [
   "v2.5.10.0",
 ]
 
-# latest = false   # set on a frozen line (v1) to suppress the /docs/latest build.
+# latest = false   # a secondary line (v1) serves no /docs/latest (that URL is v2's).
