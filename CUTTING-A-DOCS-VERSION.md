@@ -18,10 +18,10 @@ and the `docs_versioning` PRD §9.4 (the design). Scheme: **DOC-1245**.
 
 ```toml
 # versions.toml
-stable = "v2.5.13.0"        # the tag /docs/v2 serves (the public default)
-enumerated = [              # every tag also published as a pinned /docs/v2.x.y.z copy
-  "v2.5.12.0",
-  "v2.5.13.0",
+stable = "v2.5.13.0"        # newest tag, served at /docs/v2 (the public default)
+enumerated = [              # OLDER tags only, each at a pinned /docs/v2.x.y.z copy.
+  "v2.5.12.0",              # the current stable is NEVER here (no duplicate tree) --
+  "v2.5.11.0",              # `--promote` rotates the outgoing stable in for you.
 ]
 ```
 

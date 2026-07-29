@@ -283,6 +283,9 @@ def _emit_versions_toml(stable: str, enumerated: list[str]) -> str:
     lines = [
         "# Docs versions served (DOC-1245). Managed by `manifest.py --promote`;",
         "# build-and-deploy reads it and materializes any named-but-missing tag.",
+        "# stable     = newest tag, served at /docs/<line> (the one indexed URL).",
+        "# enumerated = OLDER tags only, served at /docs/<tag>. The newest is NEVER",
+        "#              enumerated -- no byte-identical duplicate tree.",
         f'stable = "{stable}"',
         "enumerated = [",
         *[f'  "{t}",' for t in ordered],
@@ -293,7 +296,12 @@ def _emit_versions_toml(stable: str, enumerated: list[str]) -> str:
 
 
 def promote_versions_toml(decision: dict, path: Path) -> None:
-    """Set ``stable`` to the next-cut tag and add it to ``enumerated`` in versions.toml.
+    """Set ``stable`` to the next-cut tag; rotate the OUTGOING stable into ``enumerated``.
+
+    The newest tag is served once at the line's canonical path (/docs/v2, /docs/v1) --
+    never ALSO as a pinned /docs/<tag> copy. So ``enumerated`` holds OLDER tags only:
+    the outgoing stable rotates in, the incoming stable never does. No two byte-identical
+    trees on the server; one indexed URL per line.
 
     Refuses to promote an SDK version that isn't published on PyPI (defense-in-depth,
     same guard the cut applies) so a hand-edited / dev-build version can't be promoted.
@@ -308,12 +316,17 @@ def promote_versions_toml(decision: dict, path: Path) -> None:
               "(network?) -- proceeding.", file=sys.stderr)
     tag = decision["tag"]
     enumerated: list[str] = []
+    old_stable: str | None = None
     if path.exists():
         existing = tomllib.loads(path.read_text())
         enumerated = list(existing.get("enumerated", []))
-    enumerated.append(tag)
+        old_stable = existing.get("stable") or None
+    if old_stable and old_stable != tag:
+        enumerated.append(old_stable)          # yesterday's stable becomes an older pin
+    enumerated = [t for t in enumerated if t != tag]  # the new stable is NEVER enumerated
     path.write_text(_emit_versions_toml(stable=tag, enumerated=enumerated))
-    print(f"promote: {path.name} stable={tag} (enumerated += {tag})")
+    print(f"promote: {path.name} stable={tag} (was {old_stable or 'none'}; "
+          f"{len(set(enumerated))} older pin(s))")
 
 
 # --------------------------------------------------------------------------- #

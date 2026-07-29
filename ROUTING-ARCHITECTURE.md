@@ -414,22 +414,22 @@ The v2 docs are gaining **per-release semantic versioning** (`prds` `docs_versio
 | `/docs/v2/…` | **stable** = the newest cut | ✅ **yes** | the real served path — **canonical, SEO anchor** (unchanged as a URL; its *content* moves from "main" to "newest cut") |
 | `/docs/stable/…` | = stable | — | **Cloudflare redirect rule → `/docs/v2/…`** (static — v2 is always the newest stable, so it never needs re-pointing) |
 | `/docs/latest/…` | `main` (bleeding edge) | ❌ noindex | its own served path (rebuilt every merge) |
-| `/docs/v2.5.12.0/…` | immutable pinned cut | ❌ noindex | served per enumerated tag |
+| `/docs/v2.5.11.0/…` | immutable pinned **older** cut | ❌ noindex | served per enumerated tag (older-than-stable only) |
 
-**Only `/docs/v2` (stable) is indexed.** `/docs/latest` and every pinned `/docs/v2.x.y.z` are `noindex,nofollow`, so search stays concentrated on the one canonical surface and the newest cut doesn't cannibalize its own canonical (it exists at both `/docs/v2` and the newest `/docs/v2.x.y.z`). Pinned/latest URLs remain fully usable for direct links (support, bookmarks); they're just not search-indexed.
+**Only `/docs/v2` (stable) is indexed.** `/docs/latest` and every pinned `/docs/v2.x.y.z` are `noindex,nofollow`, so search stays concentrated on the one canonical surface. The newest cut is served **once**, at `/docs/v2` — it is **not** also published at `/docs/v2.<newest>.0` (no byte-identical duplicate tree, so nothing can cannibalize the canonical). A tag gets its permanent pinned `/docs/v2.x.y.z` URL when it is **superseded** (rotated out of `stable`). Pinned/latest URLs remain fully usable for direct links (support, bookmarks); they're just not search-indexed.
 
 Making `/docs/v2` serve *stable* rather than *main* also fixes the original moving-target pain (§ Overview): the default/most-linked path now shows the **released** docs, not unreleased-feature docs.
 
 ### How it maps onto the existing layers
 
 - **CloudFront: no change.** The existing `/docs/*` → `docs` origin behavior already catches `/docs/latest/…`, `/docs/stable/…`, and `/docs/v2.x.y.z/…` (none match the more-specific `/docs/v1*`). Nothing new to route.
-- **The `docs` origin's deploy assembles the versions.** The production build (`build-and-deploy.yml`) additionally emits, into one dist served by `web-docs.union.ai`: `docs/latest/` (main, noindex), `docs/v2/` (the newest cut, indexed), and `docs/v2.x.y.z/` (each enumerated tag, noindex). Immutable pinned builds are cached (built once), so a normal merge rebuilds only `docs/latest/`; a cut rebuilds `docs/v2/` + the one new tag. Orchestrated by **`unionai-docs-infra/scripts/build_versions.sh`**, driven by **`versions.toml`** (the enumerated tag list) at the repo root.
+- **The `docs` origin's deploy assembles the versions.** The production build (`build-and-deploy.yml`) additionally emits, into one dist served by `web-docs.union.ai`: `docs/latest/` (main, noindex), `docs/v2/` (the newest cut, indexed), and `docs/v2.x.y.z/` (each **older** enumerated tag, noindex — the newest is served only at `docs/v2`). Immutable pinned builds are cached (built once), so a normal merge rebuilds only `docs/latest/`; a cut rebuilds `docs/v2/` + rotates the outgoing stable into a new pinned tree. Orchestrated by **`unionai-docs-infra/scripts/build_versions.sh`** (line-aware: it derives the line from the stable tag, so the same script serves `/docs/v1` on the v1 branch and skips the `latest` build for a secondary line (v1, whose /docs/latest URL is v2's)), driven by **`versions.toml`** at the repo root.
 - **One new Cloudflare redirect rule:** `/docs/stable/*` → `/docs/v2/*` (static). `/docs/latest` is served, not redirected.
 - **No change to bulk redirects** — they keep landing on the real, canonical `/docs/v2/…` (no double-hop).
 
 ### Cutting a version — the one-merge model
 
-**`versions.toml` (repo root) is the source of intent**: `stable` = the tag `/docs/v2` serves; `enumerated` = every tag also published as a pinned `/docs/v2.x.y.z` copy. A **cut is materialized at merge**: when a merge to `main` names a `stable` tag that doesn't exist yet, `build-and-deploy.yml` mints it (a `v2.x.y.z` git tag + per-variant manifest) as a **pre-build step**, then assembles — so the tag creation and the build happen in one job (no cut↔deploy race), and every path collapses to **a single human merge**.
+**`versions.toml` (repo root) is the source of intent**: `stable` = the newest tag, served once at `/docs/v2`; `enumerated` = the **older** tags, each published as a pinned `/docs/v2.x.y.z` copy (the newest is never enumerated — no duplicate tree). A **cut is materialized at merge**: when a merge to `main` names a `stable` tag that doesn't exist yet, `build-and-deploy.yml` mints it (a `v2.x.y.z` git tag + per-variant manifest) as a **pre-build step**, then assembles — so the tag creation and the build happen in one job (no cut↔deploy race), and every path collapses to **a single human merge**.
 
 Two symmetric "buttons" both open a `versions.toml`-bump PR (the version is always resolver-**computed**, never hand-typed):
 
