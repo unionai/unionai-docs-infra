@@ -92,6 +92,11 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
     # superproject's versions.toml in — it's the "versioning is on" signal (and this
     # whole script only runs when the superproject has it, so it stays inert otherwise).
     [ -f "$REPO_ROOT/versions.toml" ] && cp "$REPO_ROOT/versions.toml" versions.toml
+    # /docs/latest is the live main tip, not a frozen cut: drop any committed
+    # data/version-manifest.json so `base` regenerates it fresh (footer shows main's
+    # current resolved versions). Pinned tags (/docs/<line>, /docs/<tag>) keep their
+    # committed, backend-pinned manifest. (Inline-cut model, DOC-1245.)
+    [ "$label" = "latest" ] && rm -f data/version-manifest.json
     # VERSION/VARIANTS as make command-line variables (not env): the inner
     # `make` build_dist.sh spawns picks up the top-level Makefile, whose
     # makefile.inc hardcodes `VERSION := v2` and would clobber an env VERSION.
