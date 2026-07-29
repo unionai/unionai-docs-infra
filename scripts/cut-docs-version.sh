@@ -2,10 +2,14 @@
 #
 # Cut a docs version (DOC-1245, prds docs_versioning §9.4).
 #
-# Resolves the manifest, writes the combined data/version-manifest.json, commits
-# it on a detached HEAD (so `main` never advances), tags the commit v2.x.y.z, and
-# optionally pushes the tag. The tag pins the manifest, giving an immutable,
-# reproducible snapshot; `main` (and /docs/latest) is left untouched.
+# Materializes the version, then tags v2.x.y.z. The tag pins the combined
+# data/version-manifest.json (an immutable, reproducible snapshot incl. the resolved
+# backend version, which the footer shows). INLINE-first: when the cut/regen PR folds
+# the manifest into HEAD, the tag is placed ON the branch commit (so it's inline in
+# history and the manifest is a normal tracked file); otherwise it falls back to a
+# detached manifest commit. Either way we push ONLY the tag, never a branch. Pushing a
+# branch is impossible here anyway (main/v1 are protected). /docs/latest regenerates
+# its manifest at build time, so only pinned tags carry a frozen manifest.
 #
 # Two triggers call this (§9.4):
 #   * a flyte-sdk release  -> --auto  (proceeds only if this is an sdk-release cut)
@@ -87,20 +91,32 @@ if [ "$DRY_RUN" = "1" ]; then
   exit 0
 fi
 
-# Materialize the combined manifest (all variants + the version decision).
-REPO_ROOT="$REPO_ROOT" uv run --quiet "$TOOL" --write --variant both --out "$MANIFEST_REL"
-
-# Commit the manifest on a detached HEAD and tag it, so `main` is not advanced.
-ORIG_REF="$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)"
 BOT=(-c user.name="docsy-bot" -c user.email="noreply@union.ai")
-git checkout -q --detach
-git add "$MANIFEST_REL"
-git "${BOT[@]}" commit -q -s \
-    -m "cut ${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION} (${DOCS_CUT_KIND})."
-git "${BOT[@]}" tag -a "${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION}"
-git checkout -q "$ORIG_REF"
 
-echo "cut: tagged ${DOCS_TAG} (manifest pinned; ${ORIG_REF} not advanced)"
+# INLINE-first: if HEAD already carries the manifest for THIS cut (folded into the
+# cut/regen PR alongside versions.toml), tag HEAD directly. The tag is then INLINE in
+# the branch history (git describe / log --tags find it), and the manifest is a normal
+# tracked file on the branch — no detached sidecar commit. We push ONLY the tag (never
+# the branch), so branch protection is never touched. build_versions regenerates the
+# manifest for the /docs/latest build, so latest's footer stays live while pinned tags
+# keep their committed (backend-pinned) manifest.
+if git cat-file -e "HEAD:${MANIFEST_REL}" 2>/dev/null && \
+   git show "HEAD:${MANIFEST_REL}" | grep -q "\"docs_version\": \"${DOCS_DOCS_VERSION}\""; then
+  git "${BOT[@]}" tag -a "${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION}" HEAD
+  echo "cut: tagged ${DOCS_TAG} INLINE on HEAD (manifest committed in the PR)"
+else
+  # Fallback (manifest not folded — a legacy or bare manual cut): materialize it and
+  # commit on a DETACHED HEAD so the branch is not advanced (no branch push needed).
+  REPO_ROOT="$REPO_ROOT" uv run --quiet "$TOOL" --write --variant both --out "$MANIFEST_REL"
+  ORIG_REF="$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)"
+  git checkout -q --detach
+  git add "$MANIFEST_REL"
+  git "${BOT[@]}" commit -q -s \
+      -m "cut ${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION} (${DOCS_CUT_KIND})."
+  git "${BOT[@]}" tag -a "${DOCS_TAG}" -m "Docs version ${DOCS_DOCS_VERSION}"
+  git checkout -q "$ORIG_REF"
+  echo "cut: tagged ${DOCS_TAG} detached (manifest not folded; ${ORIG_REF} not advanced)"
+fi
 
 if [ "$PUSH" = "1" ]; then
   git push origin "refs/tags/${DOCS_TAG}"
