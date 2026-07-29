@@ -18,10 +18,10 @@
 
 [v2]
 latest = true
-stable = "v2.5.12.0"
+stable = "v2.5.16.0"
 enumerated = []          # older v2 tags, newest-first, once there are any
 
 [v1]
 latest = false
-stable = "v1.16.23.0"
+stable = "v1.16.26.0"
 enumerated = []          # older v1 tags -- grows as v1 advances (new flytekit 1.x cuts)
