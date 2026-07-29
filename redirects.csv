@@ -8140,3 +8140,11 @@ www.union.ai/docs/v2/union/user-guide/agent-framework-integrations/bring-your-ow
 www.union.ai/docs/v2/union/user-guide/agent-framework-integrations/langgraph,https://www.union.ai/docs/v2/union/integrations/agents/langgraph,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/user-guide/agent-framework-integrations/pydantic-ai,https://www.union.ai/docs/v2/union/integrations/agents/pydantic-ai,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/user-guide/agent-framework-integrations/openai-agents-sdk,https://www.union.ai/docs/v2/union/integrations/agents/openai,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/integrations/anthropic,https://www.union.ai/docs/v2/flyte/integrations/agents/claude-agent-sdk,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/integrations/anthropic,https://www.union.ai/docs/v2/union/integrations/agents/claude-agent-sdk,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/integrations/gemini,https://www.union.ai/docs/v2/flyte/integrations/agents/google-adk,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/integrations/gemini,https://www.union.ai/docs/v2/union/integrations/agents/google-adk,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/integrations/openai,https://www.union.ai/docs/v2/flyte/integrations/agents/openai,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/integrations/openai,https://www.union.ai/docs/v2/union/integrations/agents/openai,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/integrations/openai/agent_tools,https://www.union.ai/docs/v2/flyte/integrations/agents/openai,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/integrations/openai/agent_tools,https://www.union.ai/docs/v2/union/integrations/agents/openai,302,TRUE,FALSE,TRUE,TRUE
