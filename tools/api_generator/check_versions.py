@@ -17,11 +17,8 @@ Reads api-packages.toml for the list of packages and their version files.
 """
 
 import argparse
-import json
-import re
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
 from packaging.version import Version
@@ -30,6 +27,9 @@ try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _versions import extract_frontmatter_version, get_pypi_latest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _repo import get_repo_root
@@ -41,52 +41,6 @@ CONFIG_FILE = REPO_ROOT / "api-packages.toml"
 def load_config() -> dict:
     with open(CONFIG_FILE, "rb") as f:
         return tomllib.load(f)
-
-
-def extract_frontmatter_version(version_file: Path) -> str | None:
-    """Extract version: field from Hugo YAML frontmatter."""
-    if not version_file.exists():
-        return None
-    text = version_file.read_text()
-    # Match YAML frontmatter between --- delimiters
-    m = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
-    if not m:
-        return None
-    for line in m.group(1).splitlines():
-        if line.startswith("version:"):
-            return line.split(":", 1)[1].strip()
-    return None
-
-
-def get_pypi_latest(package: str) -> str | None:
-    """Get latest version from PyPI."""
-    url = f"https://pypi.org/pypi/{package}/json"
-    try:
-        with urllib.request.urlopen(url, timeout=15) as resp:
-            data = json.loads(resp.read())
-    except Exception as e:
-        print(f"  Warning: failed to query PyPI for {package}: {e}", file=sys.stderr)
-        return None
-
-    # Find the latest stable version from all releases
-    versions = []
-    for ver_str, files in data.get("releases", {}).items():
-        # Skip yanked releases and releases with no files
-        if not files:
-            continue
-        if all(f.get("yanked", False) for f in files):
-            continue
-        try:
-            v = Version(ver_str)
-            if not v.is_prerelease:
-                versions.append(v)
-        except Exception:
-            continue
-
-    if not versions:
-        return None
-
-    return str(max(versions))
 
 
 def check_all(config: dict) -> list[dict]:

@@ -31,6 +31,15 @@ base:
 	@if ! unionai-docs-infra/scripts/pre-flight.sh; then exit 1; fi
 	@echo "Converting Jupyter notebooks..."
 	@unionai-docs-infra/tools/jupyter_generator/gen_jupyter.sh
+	@# Docs version manifest (DOC-1245, PRD §9.1): a pinned tag build carries a
+	@# committed data/version-manifest.json (written by the cut); for /docs/latest
+	@# and dev it's absent, so generate it from the current tree. Gated on
+	@# versions.toml so it's inert without versioning; best-effort so a resolver
+	@# hiccup never fails the build (the version-footer partial just no-ops).
+	@if [ -f versions.toml ] && [ ! -f data/version-manifest.json ]; then \
+		echo "Generating data/version-manifest.json (versioning on, not a pinned cut)..."; \
+		$(UV) unionai-docs-infra/tools/api_generator/manifest.py --write --variant both --out data/version-manifest.json || echo "  (manifest generation skipped)"; \
+	fi
 	rm -rf dist
 	mkdir -p dist
 	mkdir -p dist/docs

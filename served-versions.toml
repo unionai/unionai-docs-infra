@@ -1,0 +1,22 @@
+# Cross-line served-versions registry (DOC-1245) — the version SELECTOR's full list.
+#
+# Each branch's own versions.toml (at its repo root) drives what THAT build assembles
+# and cuts. This shared file — read by every build on both branches (it lives in the
+# shared unionai-docs-infra submodule) — is the UNION across lines, so the two-level
+# selector on any page can list every line's Latest / Stable / numbered pins, even
+# though a given deployment only holds its own line's trees (CloudFront routes across
+# lines). Maintain it when either line cuts a new version.
+#
+# If this file is absent, the selector falls back to the per-branch versions.toml
+# (this line's pins + the other line's Stable only). Per line:
+#   latest      whether the line has a bleeding-edge build (v2 -> /docs/latest; v1
+#               is frozen, so false until a v1 latest is served).
+#   enumerated  the numbered pins to show in the selector for that line.
+
+[v2]
+latest = true
+enumerated = ["v2.5.12.0"]
+
+[v1]
+latest = false
+enumerated = ["v1.16.23.0"]

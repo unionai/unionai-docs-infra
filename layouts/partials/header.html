@@ -105,6 +105,13 @@ function toggleVersionMenu() {
     if (dropdown) dropdown.classList.toggle('open');
 }
 
+// Two-level selector (DOC-1245): expand/collapse a line's sub-menu (Latest/Stable/pins).
+function toggleVersionLine(event) {
+    event.stopPropagation();
+    const line = event.currentTarget.closest('.version-line');
+    if (line) line.classList.toggle('expanded');
+}
+
 // Close version dropdown on outside click
 document.addEventListener('click', function(e) {
     const dropdown = document.getElementById('version-dropdown');

@@ -1,0 +1,28 @@
+{{- /*
+Docs version + component-version stamp (DOC-1245, PRD §9.1). Shown at the bottom
+of every versioned page. Source: the `current_version` build param + the per-cut
+`data/version-manifest.json` (the committed manifest on a tag build; a generated
+one on /docs/latest). Renders NOTHING when either is absent (a v1 single build or
+dev), so the same shared template is safe on every branch.
+*/ -}}
+{{- $cur := .Site.Params.current_version -}}
+{{- $mf := index hugo.Data "version-manifest" -}}
+{{- if and $cur $mf -}}
+  {{- $variant := .Site.Params.variant -}}
+  {{- $c := index $mf.variants $variant -}}
+  {{- if $c -}}
+    {{- /* Render generically off the manifest so the same partial serves v2
+           (flyte-sdk / flyteplugins-union) and v1 (flytekit / union): lead with the
+           SDK (named by sdk_label), then every other non-null component except the
+           git-SHA book-keeping keys. */ -}}
+    {{- $sdk := $mf.sdk_label | default "flyte-sdk" -}}
+    {{- $skip := slice "content" "infra" "examples" $sdk -}}
+<div class="docs-version-info" style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border-color,#e5e7eb);font-size:.8rem;color:var(--text-muted,#6b7280);display:flex;flex-wrap:wrap;gap:.4rem 1rem;">
+  <span><strong>Docs version</strong> {{ if eq $cur "latest" }}latest (main){{ else }}{{ $mf.docs_version }}{{ end }}</span>
+  {{- with index $c $sdk }}<span>{{ $sdk }} {{ . }}</span>{{ end -}}
+  {{- range $k, $v := $c -}}
+    {{- if and $v (not (in $skip $k)) }}<span>{{ $k }} {{ $v }}</span>{{ end -}}
+  {{- end -}}
+</div>
+  {{- end -}}
+{{- end -}}
