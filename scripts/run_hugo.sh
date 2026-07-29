@@ -63,30 +63,41 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 d = tomllib.load(open(sys.argv[1], "rb"))
+import re
 def vkey(t):  # numeric-tuple sort, no third-party deps
     try:
         return tuple(int(x) for x in t.lstrip("v").split("."))
     except Exception:
         return ()
-LINE_ORDER = ["v2", "v1"]
-# A line's bleeding-edge ("latest") URL segment. only v2 -> /docs/latest. That URL is global (the edge routes it to the v2
-# deployment), so a secondary line (v1) has none -- skipped even if flagged.
-LATEST_SEG = {"v2": "latest"}
-if any(ln in d for ln in LINE_ORDER):
-    # Shared registry: explicit per-line [v2]/[v1] tables (latest flag + stable tag +
-    # enumerated OLDER pins).
+def line_key(ln):  # "v2" -> 2, to order lines newest-major-first
+    try:
+        return int(ln[1:])
+    except Exception:
+        return 0
+# The line list AND which line owns /docs/latest are DERIVED, not hardcoded, so adding a
+# new major line (v3) is pure config: add a [v3] table to served-versions.toml with
+# latest=true and set the old primary's latest=false. No code change here. The latest
+# segment is always the global "/docs/latest", owned by whichever line has latest=true.
+_lines = [k for k in d if re.match(r"^v\d+$", k)]
+if _lines:
+    # Shared registry: explicit per-line [vN] tables (latest flag + stable tag +
+    # enumerated OLDER pins). Order newest-major-first (v3, v2, v1, ...).
+    LINE_ORDER = sorted(_lines, key=line_key, reverse=True)
     def line_cfg(ln):
         c = d.get(ln, {})
-        return bool(c.get("latest", ln == "v2")), c.get("stable", ""), list(c.get("enumerated", []))
+        return bool(c.get("latest", False)), c.get("stable", ""), list(c.get("enumerated", []))
 else:
-    # Per-branch versions.toml fallback: only THIS line (stable + older pins, matched by
-    # prefix); the cross-line registry is the real source for both lines.
+    # Per-branch versions.toml fallback: only THIS line, derived from the stable tag's
+    # prefix; its own `latest` flag says whether it owns /docs/latest.
     _stable = d.get("stable", "")
+    _line = _stable.split(".")[0] if _stable else ""
+    _lat = bool(d.get("latest", True))
     _enum = list(d.get("enumerated", []))
+    LINE_ORDER = [_line] if _line else []
     def line_cfg(ln):
-        if not _stable.startswith(ln + "."):
-            return (ln == "v2"), "", []
-        return (ln == "v2"), _stable, [p for p in _enum if p.startswith(ln + ".")]
+        if ln != _line:
+            return False, "", []
+        return _lat, _stable, _enum
 menu, flat = [], []
 # Each item is {seg, num, badge}: `num` is the version number shown (empty for
 # latest); `badge` is a real badge label ("LATEST"/"STABLE") or "" (older pins +
@@ -97,8 +108,8 @@ for ln in LINE_ORDER:
     if not stable and not enum:
         continue                      # line not served -> no group
     items = []
-    if has_latest and LATEST_SEG.get(ln):
-        items.append({"seg": LATEST_SEG[ln], "num": "", "badge": "LATEST"})
+    if has_latest:
+        items.append({"seg": "latest", "num": "", "badge": "LATEST"})
     if stable:
         num = stable.lstrip("v")
         # Primary line (v2): /docs/<line> is the moving stable pointer -> number + STABLE badge.
