@@ -40,6 +40,9 @@
   --accent-dark: #c88c0c;
   --accent-very-light: #fbeed1;
   --accent-search: #edab1c;
+  /* elevation — mode-invariant (every consuming rule is un-themed) */
+  --shadow-hairline: 0 1px 0 0 rgba(31, 35, 40, 0.04);
+  --shadow-card: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
 
   /* Light theme variables (default) */
   --primary-color: var(--union-color);
