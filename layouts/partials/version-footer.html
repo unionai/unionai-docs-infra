@@ -6,7 +6,7 @@ one on /docs/latest). Renders NOTHING when either is absent (a v1 single build o
 dev), so the same shared template is safe on every branch.
 */ -}}
 {{- $cur := .Site.Params.current_version -}}
-{{- $mf := index hugo.Data "version-manifest" -}}
+{{- $mf := index .Site.Data "version-manifest" -}}
 {{- if and $cur $mf -}}
   {{- $variant := .Site.Params.variant -}}
   {{- $c := index $mf.variants $variant -}}
