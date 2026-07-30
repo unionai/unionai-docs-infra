@@ -51,7 +51,7 @@ dist:
 
 variant:
 	@if [ -z ${VARIANT} ]; then echo "VARIANT is not set"; exit 1; fi
-	@VERSION=${VERSION} unionai-docs-infra/scripts/run_hugo.sh
+	@VERSION=${VERSION} BUILD=${BUILD} unionai-docs-infra/scripts/run_hugo.sh
 	@VERSION=${VERSION} VARIANT=${VARIANT} PREFIX=${PREFIX} BUILD=${BUILD} unionai-docs-infra/scripts/gen_404.sh
 	@if [ -d "dist/docs/${VERSION}/${VARIANT}/tmp-md" ]; then \
 		$(UV) unionai-docs-infra/tools/llms_generator/process_shortcodes.py \

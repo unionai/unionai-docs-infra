@@ -42,6 +42,24 @@ if [[ "${NOINDEX:-}" == "true" ]]; then
     echo 'noindex = true' >> "$hugo_build_toml"
 fi
 
+# Asset cache-buster (DOC-1309): ONE value for the whole build.
+#
+# baseof.html used to compute this as `now.Format`, which Hugo evaluates per PAGE
+# render. A build takes ~25-30s, so pages emitted different stamps (…195646,
+# …195705, …195708, …195709) and every CSS/JS file ended up cached under roughly
+# as many URLs as the build had seconds. Navigating between two pages rendered in
+# different seconds re-downloaded all 26 stylesheets — the cache was busted
+# continuously rather than once per deploy.
+#
+# Passing it as a site param fixes that: identical for every page in this build,
+# new on the next one, so a deploy still invalidates cleanly. BUILD comes from the
+# Makefile (`BUILD := $(shell date +%s)`, shared with gen_404.sh); we fall back to
+# our own timestamp so a direct run of this script is still correct.
+if ! grep -q '^\[params\]' "$hugo_build_toml" 2>/dev/null; then
+    echo '[params]' >> "$hugo_build_toml"
+fi
+echo "build_id = \"${BUILD:-$(date +%s)}\"" >> "$hugo_build_toml"
+
 # Version selector (DOC-1245): when versioning is on (versions.toml present), emit a
 # `version_menu` (JSON, grouped by line for the "v2 / v1" dividers, but rendered as ONE
 # flat list) plus a flat `versions` for back-compat. Each line lists: latest (v2 only, a
