@@ -6,7 +6,9 @@ one on /docs/latest). Renders NOTHING when either is absent (a v1 single build o
 dev), so the same shared template is safe on every branch.
 */ -}}
 {{- $cur := .Site.Params.current_version -}}
-{{- $mf := index .Site.Data "version-manifest" -}}
+{{- /* hugo.Data (Hugo >= 0.156) — .Site.Data is deprecated and, with the build's
+       --panicOnWarning, fatal on the pinned Hugo 0.161.x. Do not switch back. */ -}}
+{{- $mf := index hugo.Data "version-manifest" -}}
 {{- if and $cur $mf -}}
   {{- $variant := .Site.Params.variant -}}
   {{- $c := index $mf.variants $variant -}}
