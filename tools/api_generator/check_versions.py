@@ -90,6 +90,7 @@ def check_all(config: dict) -> list[dict]:
             "extras": plugin.get("extras", []),
             "output_folder": output_folder,
             "weight": plugin.get("weight"),
+            "variants": plugin.get("variants"),
             "committed": committed,
             "latest": latest,
             "outdated": _is_outdated(committed, latest),
@@ -199,6 +200,10 @@ def regenerate(results: list[dict]) -> None:
                 cmd.append(f"OUTPUT_FOLDER={r['output_folder']}")
             if r.get("weight") is not None:
                 cmd.append(f"WEIGHT={r['weight']}")
+            # A plugin may restrict which variants it appears in (e.g. union-plugin
+            # is Union-only); defaults to "+flyte +union" in the Makefile otherwise.
+            if r.get("variants"):
+                cmd.append(f"VARIANTS={r['variants']}")
             subprocess.run(cmd, cwd=REPO_ROOT, check=True)
 
     # Clean up shared venv
