@@ -127,7 +127,7 @@ header .header-toolbar-spacer {
 }
 
 .product-toggle button.active {
-  background: #cbd5e1;
+  background: var(--toggle-active-bg);
   color: var(--text-color);
   font-weight: 500;
   box-shadow: var(--shadow-hairline), 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -222,7 +222,7 @@ header .header-toolbar-spacer {
   top: calc(100% + 6px);
   right: 0;
   width: max-content;
-  background-color: #ffffff;
+  background-color: var(--menu-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -314,7 +314,7 @@ header .header-toolbar-spacer {
 /* ── Dark theme overrides ── */
 /* In dark mode, --code-bg (#2d3748) is the track, #141d33 is the active segment */
 [data-theme="dark"] .product-toggle button.active {
-  background: #141d33;
+  background: var(--toggle-active-bg);
   box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
@@ -325,7 +325,7 @@ header .header-toolbar-spacer {
 }
 
 [data-theme="dark"] .version-menu {
-  background-color: #141d33;
+  background-color: var(--menu-bg);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
 }
 

@@ -56,6 +56,17 @@
   /* foreground on solid / scrim surfaces */
   --on-accent: #fff;
   --on-scrim: #fff;
+  /* chrome surfaces with a [data-theme="dark"] counterpart */
+  --toggle-active-bg: #cbd5e1;
+  --menu-bg: #ffffff;
+  /* code chrome — invariant: code blocks are dark in both themes */
+  --code-chrome-bg: #3a3f47;
+  --code-chrome-text: #c9d1d9;
+  --code-link: #f8f8f2;
+  /* NB: do NOT name a token --text-muted; seo.css reads var(--text-muted, #6b7280)
+     and that token is undefined, so defining it would change that colour. */
+  --text-2: #6b7280;
+  --text-2-dim: #9ca3af;
 
   /* Light theme variables (default) */
   --primary-color: var(--union-color);
@@ -143,6 +154,8 @@ body.has-secondary-topnav {
   --accent-search: #edab1c;
   --success-soft: #064e3b;
   --success-text: #6ee7b7;
+  --toggle-active-bg: #141d33;
+  --menu-bg: #141d33;
 
   --primary-color: var(--union-color);
   --text-color: var(--text);
