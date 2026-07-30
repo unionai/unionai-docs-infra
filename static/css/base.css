@@ -1,21 +1,61 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
 
+/* ---------------------------------------------------------------------------
+   PRIMITIVE LAYER (scale-keyed) — DOC-1308, phase 1 of the Union V2 reskin.
+
+   Every colour the theme uses is declared here first, then the component-keyed
+   tokens below are expressed in terms of these. Phase 2 recolours the site by
+   editing this layer alone.
+
+   Values here are TODAY'S values. Phase 1 changes no pixels.
+
+   Note on structure: a custom property is substituted at computed-value time on
+   the element that declares it, so an alias like `--bg-color: var(--bg)` does
+   NOT follow a `--bg` that a descendant selector overrides. Every block that
+   overrides a primitive therefore re-declares the aliases that depend on it.
+   --------------------------------------------------------------------------- */
 :root {
+  /* surfaces */
+  --bg: #ffffff;
+  --bg-1: #f8fafc;
+  --bg-2: #f1f5f9;
+  --bg-3: hsl(0, 0%, 97%);
+  /* text */
+  --text: #1f2937;
+  --text-3: #bfbfbf;
+  /* lines */
+  --border: #e2e8f0;
+  --border-2: #c7ccd6;
+  --rule: gray;
+  --rule-soft: #80808020;
+  /* code surface (dark in both themes) */
+  --code-surface: #1e293b;
+  --code-surface-text: #e2e8f0;
+  /* table rows */
+  --row-alt: #f8fafc;
+  --row-hover: #f1f5f9;
+  /* accent — union by default, overridden per variant */
+  --accent: #e6a720;
+  --accent-light: #ffe6b1;
+  --accent-dark: #c88c0c;
+  --accent-very-light: #fbeed1;
+  --accent-search: #edab1c;
+
   /* Light theme variables (default) */
   --primary-color: var(--union-color);
-  --text-color: #1f2937;
-  --text-color-light: #bfbfbf;
-  --bg-color: #ffffff;
-  --sidebar-bg: #f8fafc;
-  --border-color: #e2e8f0;
-  --separator: #c7ccd6;
-  --code-bg: #f1f5f9;
-  --pre-bg: #1e293b;
-  --pre-color: #e2e8f0;
-  --blockquote-border: gray;
-  --blockquote-border-trans: #80808020;
-  --table-row-even: #f8fafc;
-  --table-row-hover: #f1f5f9;
+  --text-color: var(--text);
+  --text-color-light: var(--text-3);
+  --bg-color: var(--bg);
+  --sidebar-bg: var(--bg-1);
+  --border-color: var(--border);
+  --separator: var(--border-2);
+  --code-bg: var(--bg-2);
+  --pre-bg: var(--code-surface);
+  --pre-color: var(--code-surface-text);
+  --blockquote-border: var(--rule);
+  --blockquote-border-trans: var(--rule-soft);
+  --table-row-even: var(--row-alt);
+  --table-row-hover: var(--row-hover);
   --menu-indent: 0.5rem;
   --menu-submenu-indent: 1rem;
   --menu-v-space: 0.2rem;
@@ -29,18 +69,18 @@
   --tabs-height: 64px;
   --content-width: 900px;
   --image-width: 880px;
-  --union-color: #e6a720;
-  --union-color-light: #ffe6b1;
-  --union-color-dark: #c88c0c;
-  --union-color-very-light: #fbeed1;
+  --union-color: var(--accent);
+  --union-color-light: var(--accent-light);
+  --union-color-dark: var(--accent-dark);
+  --union-color-very-light: var(--accent-very-light);
   --main-content-padding: 2rem;
   --toc-bg: var(--bg-color);
-  --docsearch-primary-color: #edab1c !important;
+  --docsearch-primary-color: var(--accent-search) !important;
   --docsearch-highlight-color: var(--docsearch-primary-color) !important;
   --docsearcowh-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
   --breadcrumbs-height: 128px;
   --old-version-border: 3px solid var(--union-color);
-  --old-version-background: hsl(0, 0%, 97%);
+  --old-version-background: var(--bg-3);
   --banner-height: 48px;
   --secondary-topnav-height: 0px;
 }
@@ -50,50 +90,83 @@ body.has-secondary-topnav {
 }
 
 :root .variant-flyte {
+  --accent: #6f2aef;
+  --accent-light: #cbb5f5;
+  --accent-dark: #621ce4;
+  --accent-very-light: #d5c5f4;
+  --accent-search: #6f2aef;
+
   --primary-color: var(--union-color);
-  --union-color: #6f2aef;
-  --union-color-light: #cbb5f5;
-  --union-color-dark: #621ce4;
-  --union-color-very-light: #d5c5f4;
-  --docsearch-primary-color: #6f2aef !important;
-  --docsearch-highlight-color: #6f2aef !important;
+  --union-color: var(--accent);
+  --union-color-light: var(--accent-light);
+  --union-color-dark: var(--accent-dark);
+  --union-color-very-light: var(--accent-very-light);
+  --docsearch-primary-color: var(--accent-search) !important;
+  --docsearch-highlight-color: var(--accent-search) !important;
   --docsearch-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
   --old-version-border: 3px solid var(--union-color);
 }
 
 /* Dark theme variables */
 [data-theme="dark"] {
+  --bg: #121212;
+  --bg-1: #191919;
+  --bg-2: #2d3748;
+  --text: #cbd1d9;
+  --text-3: hsl(214, 0%, 50%);
+  --border: #282828;
+  --rule: #4a5568;
+  --code-surface: #0f172a;
+  --code-surface-text: #e2e8f0;
+  --row-alt: #1b1812;
+  --row-hover: #554d3b;
+  --accent-light: #817457;
+  --accent-very-light: #766e5e;
+  --accent-search: #edab1c;
+
   --primary-color: var(--union-color);
-  --text-color: #cbd1d9;
-  --text-color-light: hsl(214, 0%, 50%);
-  --bg-color: #121212;
-  --sidebar-bg: #191919;
-  --border-color: #282828;
-  --code-bg: #2d3748;
-  --pre-bg: #0f172a;
-  --pre-color: #e2e8f0;
-  --blockquote-border: #4a5568;
-  --table-row-even: #1b1812;
-  --table-row-hover: #554d3b;
-  --union-color-light: #817457;
-  --union-color-very-light: #766e5e;
-  --docsearch-primary-color: #edab1c !important;
+  --text-color: var(--text);
+  --text-color-light: var(--text-3);
+  --bg-color: var(--bg);
+  --sidebar-bg: var(--bg-1);
+  --border-color: var(--border);
+  --code-bg: var(--bg-2);
+  --pre-bg: var(--code-surface);
+  --pre-color: var(--code-surface-text);
+  --blockquote-border: var(--rule);
+  --table-row-even: var(--row-alt);
+  --table-row-hover: var(--row-hover);
+  --union-color-light: var(--accent-light);
+  --union-color-very-light: var(--accent-very-light);
+  --docsearch-primary-color: var(--accent-search) !important;
   --docsearch-searchbox-shadow: 0 0 0 1px var(--docsearch-primary-color) !important;
 }
 
 [data-theme="dark"] .variant-flyte {
+  --accent: #6f2aef;
+  --accent-light: #9065e1;
+  --accent-dark: #43139d;
+  --accent-very-light: #966fde;
+  --accent-search: #6f2aef;
+  /* Phase 2 removes these three: the Union V2 spec keeps neutrals
+     variant-invariant, so Flyte dark loses its purple background cast. */
+  --bg: #050310;
+  --bg-1: #100e18;
+  --row-alt: #1a1720;
+  --row-hover: #292532;
+
   --primary-color: var(--union-color-light);
-  --union-color: #6f2aef;
-  --union-color-light: #9065e1;
-  --union-color-dark: #43139d;
-  --union-color-very-light: #966fde;
-  --docsearch-primary-color: #6f2aef !important;
-  --docsearch-highlight-color: #6f2aef !important;
-  --table-row-even: #1a1720;
-  --table-row-hover: #292532;
-  --bg-color: #050310;
-  --sidebar-bg: #100e18;
-  --toc-bg: #050310;
+  --union-color: var(--accent);
+  --union-color-light: var(--accent-light);
+  --union-color-dark: var(--accent-dark);
+  --union-color-very-light: var(--accent-very-light);
+  --docsearch-primary-color: var(--accent-search) !important;
+  --docsearch-highlight-color: var(--accent-search) !important;
+  --table-row-even: var(--row-alt);
+  --table-row-hover: var(--row-hover);
+  --bg-color: var(--bg);
+  --sidebar-bg: var(--bg-1);
+  --toc-bg: var(--bg);
 }
 
 * {
