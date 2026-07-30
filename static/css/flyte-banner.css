@@ -32,7 +32,7 @@
     padding-left: .5rem;
     padding-right: .5rem;
     row-gap: .5rem;
-    text-decoration-color: rgb(255, 255, 255);
+    text-decoration-color: var(--on-accent);
     text-decoration-line: none;
     text-decoration-style: solid;
     text-decoration-thickness: auto;
@@ -45,7 +45,7 @@ a.flyte-banner-link:hover {
 .flyte-banner-button {
     align-items: center;
     background-color: #0000;
-    border-bottom-color: rgb(255, 255, 255);
+    border-bottom-color: var(--on-accent);
     border-bottom-left-radius: 0.5rem;
     border-bottom-right-radius: 0.5rem;
     border-bottom-style: solid;
@@ -55,13 +55,13 @@ a.flyte-banner-link:hover {
     border-image-slice: 100%;
     border-image-source: none;
     border-image-width: 1;
-    border-left-color: rgb(255, 255, 255);
+    border-left-color: var(--on-accent);
     border-left-style: solid;
     border-left-width: 1px;
-    border-right-color: rgb(255, 255, 255);
+    border-right-color: var(--on-accent);
     border-right-style: solid;
     border-right-width: 1px;
-    border-top-color: rgb(255, 255, 255);
+    border-top-color: var(--on-accent);
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
     border-top-style: solid;

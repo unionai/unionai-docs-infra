@@ -104,7 +104,7 @@ header .header-toolbar-spacer {
 
 .product-toggle:hover {
   border-color: var(--separator);
-  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
+  box-shadow: var(--shadow-card);
 }
 
 .product-toggle button {
@@ -127,10 +127,10 @@ header .header-toolbar-spacer {
 }
 
 .product-toggle button.active {
-  background: #cbd5e1;
+  background: var(--toggle-active-bg);
   color: var(--text-color);
   font-weight: 500;
-  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-hairline), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .product-toggle button:not(.active):hover {
@@ -156,8 +156,8 @@ header .header-toolbar-spacer {
   opacity: 0.35;
 }
 
-.product-toggle .dot.union { background: #e6a720; }
-.product-toggle .dot.flyte { background: #6f2aef; }
+.product-toggle .dot.union { background: var(--brand-union); }
+.product-toggle .dot.flyte { background: var(--brand-flyte); }
 
 /* ── Version dropdown ── */
 .version-dropdown {
@@ -177,7 +177,7 @@ header .header-toolbar-spacer {
   cursor: pointer;
   background: var(--code-bg);
   color: var(--text-color);
-  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04);
+  box-shadow: var(--shadow-hairline);
   transition: border-color 0.2s, box-shadow 0.2s;
   white-space: nowrap;
   height: 34px;
@@ -186,7 +186,7 @@ header .header-toolbar-spacer {
 
 .version-btn:hover {
   border-color: var(--separator);
-  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
+  box-shadow: var(--shadow-card);
 }
 
 .version-btn:disabled {
@@ -195,8 +195,8 @@ header .header-toolbar-spacer {
 }
 
 .version-btn .badge {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--success-soft);
+  color: var(--success-text);
   font-size: 0.625rem;
   font-weight: 700;
   padding: 2px 6px;
@@ -222,7 +222,7 @@ header .header-toolbar-spacer {
   top: calc(100% + 6px);
   right: 0;
   width: max-content;
-  background-color: #ffffff;
+  background-color: var(--menu-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -267,8 +267,8 @@ header .header-toolbar-spacer {
 
 .version-item .badge,
 .version-btn .badge {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--success-soft);
+  color: var(--success-text);
   font-size: 0.625rem;
   font-weight: 700;
   padding: 2px 6px;
@@ -314,18 +314,18 @@ header .header-toolbar-spacer {
 /* ── Dark theme overrides ── */
 /* In dark mode, --code-bg (#2d3748) is the track, #141d33 is the active segment */
 [data-theme="dark"] .product-toggle button.active {
-  background: #141d33;
+  background: var(--toggle-active-bg);
   box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .version-btn .badge,
 [data-theme="dark"] .version-item .badge {
-  background: #064e3b;
-  color: #6ee7b7;
+  background: var(--success-soft);
+  color: var(--success-text);
 }
 
 [data-theme="dark"] .version-menu {
-  background-color: #141d33;
+  background-color: var(--menu-bg);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
 }
 
@@ -414,7 +414,7 @@ header .toggle-sidebar {
   box-sizing: border-box;
   padding: 0 0.9rem;
   background-color: var(--union-color);
-  color: #fff;
+  color: var(--on-accent);
   border: 1px solid var(--union-color);
   border-radius: 6px;
   font-family: inherit;
@@ -434,7 +434,7 @@ header .toggle-sidebar {
   border-radius: 6px;
   background: var(--code-bg);
   border: 1px solid var(--border-color);
-  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04);
+  box-shadow: var(--shadow-hairline);
   color: var(--text-color);
   cursor: pointer;
   display: flex;
@@ -450,7 +450,7 @@ header .toggle-sidebar {
 
 #support-trigger:hover {
   border-color: var(--separator);
-  box-shadow: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
+  box-shadow: var(--shadow-card);
 }
 
 #support-trigger sl-icon {
@@ -475,13 +475,13 @@ header .toggle-sidebar {
 }
 
 [data-theme="dark"] .signup-button {
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .signup-button:hover {
   background-color: var(--union-color-dark);
   border-color: var(--union-color-dark);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .old-version {

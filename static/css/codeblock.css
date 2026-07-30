@@ -14,8 +14,8 @@
 }
 
 .codeblock-header {
-    background: #3a3f47; /* Slightly lighter than code bg for subtle separation */
-    color: #c9d1d9; /* Light gray for good readability */
+    background: var(--code-chrome-bg); /* Slightly lighter than code bg for subtle separation */
+    color: var(--code-chrome-text); /* Light gray for good readability */
     padding: 0.75rem 1rem;
     display: flex;
     justify-content: space-between;
@@ -79,7 +79,7 @@
 }
 
 .highlight a {
-    color: #f8f8f2;
+    color: var(--code-link);
     text-decoration: underline;
     text-decoration-color: rgba(255, 255, 255, 0.3) !important;
     text-underline-offset: 2px;
