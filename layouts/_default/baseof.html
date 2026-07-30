@@ -1,4 +1,11 @@
-{{- $v := now.Format "20060102150405" }}
+{{- /* Asset cache-buster — ONE value per build (DOC-1309).
+
+       This used to be an inline `now.Format`, which Hugo evaluates per PAGE render,
+       so a ~25-30s build emitted a different stamp on nearly every page and each
+       CSS/JS file was cached under ~30 URLs — navigation re-fetched all 26
+       stylesheets. Images were already correct via partialCached; now CSS/JS use the
+       same partial, so the two cannot drift apart again. */ -}}
+{{- $v := partialCached "build-version.html" . }}
 {{- $variant := .Site.Params.variant -}}
 {{- $access := partial "page-allowed.html" . -}}
 {{- $hasSecondaryTopnav := partial "secondary-topnav-active.html" . -}}
