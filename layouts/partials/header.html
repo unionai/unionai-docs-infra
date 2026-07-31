@@ -105,6 +105,93 @@ function toggleVersionMenu() {
     if (dropdown) dropdown.classList.toggle('open');
 }
 
+// ---------------------------------------------------------------------------
+// Refresh the sibling lines' menu entries at runtime (DOC-1330, defect 3).
+//
+// The menu is baked at build time, so a page knows the OTHER line's versions only
+// as of its own last build. Cut v2 and every deployed v1 page still shows v2's
+// previous stable number, and omits the pin that cut just created. Each line
+// publishes its own state at /docs/<line>/versions.json (build_versions.sh); we
+// fetch the siblings and patch their groups.
+//
+// Contract: this may only ever IMPROVE on the baked render. Any failure -- offline,
+// 404 before the sibling has deployed the file, malformed JSON -- leaves the baked
+// markup untouched, which is exactly today's behaviour. So there is no path where
+// this makes the selector worse than not running at all.
+(function refreshSiblingVersions() {
+    const dropdown = document.getElementById('version-dropdown');
+    if (!dropdown) return;
+    const menu = dropdown.querySelector('.version-menu');
+    if (!menu) return;
+
+    // The line this page belongs to is already current (its own cut built this
+    // page), so re-fetching it would be pure noise. Everything else is a sibling.
+    const currentSeg = "{{- .Site.Params.current_version -}}";
+
+    // Group the baked markup by line: the label element plus the buttons that
+    // follow it, so a group can be replaced in place without disturbing the rest.
+    const groups = [];
+    let cur = null;
+    for (const node of Array.from(menu.children)) {
+        if (node.classList.contains('version-group-label')) {
+            cur = { line: node.textContent.trim(), label: node, items: [] };
+            groups.push(cur);
+        } else if (cur && node.classList.contains('version-item')) {
+            cur.items.push(node);
+        }
+    }
+    if (!groups.length) return;
+
+    const ownLine = (groups.find(g => g.items.some(
+        b => b.getAttribute('data-version') === currentSeg)) || {}).line;
+
+    const icon = '<svg class="check-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">'
+        + '<path d="M3 7.5L5.5 10L11 4" stroke="currentColor" stroke-width="2" '
+        + 'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    const render = (it) => {
+        const b = document.createElement('button');
+        b.className = 'version-item' + (it.seg === currentSeg ? ' selected' : '');
+        b.setAttribute('data-version', it.seg);
+        b.addEventListener('click', handleVersionChange);
+        // textContent for the version number: it comes from a fetched document, so
+        // it is never interpolated into markup.
+        let html = icon;
+        if (it.num)   { html += '<span class="vl-num"></span>'; }
+        if (it.badge) { html += '<span class="badge"></span>'; }
+        b.innerHTML = html;
+        if (it.num)   b.querySelector('.vl-num').textContent = it.num;
+        if (it.badge) b.querySelector('.badge').textContent = it.badge;
+        return b;
+    };
+
+    for (const g of groups) {
+        if (!g.line || g.line === ownLine) continue;
+        // `no-cache` forces revalidation against the browser cache. The EDGE ttl is
+        // a CDN setting, not something a fetch option can override -- it must be
+        // kept short for this to be timely (see DOC-1330).
+        fetch(`/docs/${g.line}/versions.json`, { cache: 'no-cache' })
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(data => {
+                if (!data || data.line !== g.line || !Array.isArray(data.items) || !data.items.length) return;
+                const fresh = data.items.map(render);
+                // Replace only if something actually changed, so we do not churn the
+                // DOM (or drop a menu the user has open) on the common no-op case.
+                const before = g.items.map(b => b.getAttribute('data-version')).join(',');
+                const after = data.items.map(i => i.seg).join(',');
+                const beforeNums = g.items.map(
+                    b => (b.querySelector('.vl-num') || {}).textContent || '').join(',');
+                const afterNums = data.items.map(i => i.num).join(',');
+                if (before === after && beforeNums === afterNums) return;
+                g.items.forEach(b => b.remove());
+                let anchor = g.label;
+                for (const b of fresh) { anchor.after(b); anchor = b; }
+                g.items = fresh;
+            })
+            .catch(() => { /* keep the baked entries -- see contract above */ });
+    }
+})();
+
 // Close version dropdown on outside click
 document.addEventListener('click', function(e) {
     const dropdown = document.getElementById('version-dropdown');

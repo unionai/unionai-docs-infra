@@ -136,6 +136,52 @@ fi
 # top-level /docs landing pages (so a bare /docs lands on stable).
 build_version "$LINE" "$STABLE" "" "true"
 
+# ---------------------------------------------------------------------------
+# Per-line runtime manifest (DOC-1330, defect 3).
+#
+# The version selector is rendered SERVER-SIDE and baked into every page. So a
+# page only ever knows the OTHER line's entries as of ITS OWN last build: cut v2
+# and every already-deployed v1 page still shows v2's previous stable number in
+# the dropdown, and omits the pin the cut just created (that pinned tree exists
+# and is served, but nothing on a v1 page links to it). Vice versa for v1.
+#
+# Fixing that by rebuilding the sibling line on every cut would couple the two
+# deploys. Instead each line PUBLISHES ITS OWN state at a URL it owns, and the
+# selector fetches its siblings at runtime (see header.html). A v1 cut updates
+# /docs/v1/versions.json the moment v1 deploys; v2's pages pick it up on the next
+# page load, with no v2 rebuild. Deliberately NOT one shared /docs/versions.json:
+# that file would have to be written by a single deployment, which would then need
+# rebuilding whenever the other line cut -- the same coupling, relocated.
+#
+# This describes THIS line only. Shape matches one `version_menu` group so the
+# client re-renders without duplicating any badge logic -- but the rules are also
+# implemented in run_hugo.sh for the baked render; keep the two in step.
+if [ "$DRY_RUN" != 1 ] && [ -d "$DIST/docs/$LINE" ]; then
+  python3 - "$DIST/docs/$LINE/versions.json" "$LINE" "$STABLE" "$BUILD_LATEST" "$ENUMERATED" <<'PY'
+import json, sys
+path, line, stable, latest, enum = sys.argv[1:6]
+has_latest = latest == "1"
+
+def vkey(t):
+    try:
+        return tuple(int(x) for x in t.lstrip("v").split("."))
+    except Exception:
+        return ()
+
+items = []
+if has_latest:                      # global /docs/latest, owned by the primary line
+    items.append({"seg": "latest", "num": "", "badge": "LATEST"})
+if stable:                          # /docs/<line> -- the moving stable pointer
+    items.append({"seg": line, "num": stable.lstrip("v"),
+                  "badge": "STABLE" if has_latest else ""})
+for p in sorted({e for e in enum.split() if e}, key=vkey, reverse=True):
+    items.append({"seg": p, "num": p.lstrip("v"), "badge": ""})
+
+json.dump({"line": line, "items": items}, open(path, "w"))
+PY
+  echo "  wrote  /docs/$LINE/versions.json ($(python3 -c 'import json,sys;print(len(json.load(open(sys.argv[1]))["items"]))' "$DIST/docs/$LINE/versions.json") entries)"
+fi
+
 # immutable pinned versions, noindex, cache-skipped
 for tag in $ENUMERATED; do
   if [ "$DRY_RUN" != 1 ] && [ -d "$DIST/docs/$tag" ]; then
