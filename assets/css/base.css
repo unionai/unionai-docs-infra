@@ -519,45 +519,122 @@ pre code {
 .main-content ol {
   margin: 1rem 0;
 }
-.main-content li {
-  margin: 0 2rem;
-}
+/* Tables — DOC-1324, phase 3c.
+
+   Figma's table is a set of horizontal rules, not a grid: no outer border, no
+   cell borders, no header fill. THead carries a 0.5px --border underneath and
+   each TRow a 0.5px --divider. The header is the same uppercase eyebrow used by
+   H6 and "On this page" (11/600, +5% tracking, --text-3), which is what ties
+   those three together as one idea rather than three small-caps accidents.
+
+   DEPARTURE 1 — column widths. Figma sizes its columns 150/110/110/350, i.e.
+   proportional to content. Ours were `table-layout: fixed` + `width: 100%`,
+   which forces every column to the SAME width. Surveying the corpus: of 1613
+   tables, 417 are 2-column and 1071 are 3-column, and the dominant shape is
+   `Property | Type | Description` — where equal thirds is the worst possible
+   split, since Description needs the room and Type needs almost none. At the
+   720px measure that got worse. So: `auto`, with overflow-wrap kept so a long
+   identifier still wraps instead of blowing the table out.
+
+   DEPARTURE 2 — the mono first column. Figma sets its first column in Roboto
+   Mono, because in that example the first column holds shortcode names. That is
+   a property of the sample, not of tables: our first columns are just as often
+   prose or a badge (the support severity table). Applying mono by position
+   would have been the third time in this phase that sample content got mistaken
+   for a specification. Inline code in a cell is already mono, which handles the
+   identifier case without guessing. */
 .main-content table {
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto;
   border-collapse: collapse;
   margin: 1.5rem 0;
   font-size: var(--type-small);
 }
 .main-content th,
 .main-content td {
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
+  padding: 10px 14px 10px 0;
+  border: none;
+  border-bottom: 0.5px solid var(--divider);
   text-align: left;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  vertical-align: top;
+  /* break-word, NOT anywhere. `anywhere` sets the min-content width to a single
+     character, so with table-layout:auto the browser thinks a column can be
+     arbitrarily narrow and collapses it — `AsyncFunctionTaskTemplate` came out
+     as "AsyncFunctionTaskTemplat / e" with room to spare. `break-word` leaves
+     intrinsic sizing alone, so auto layout sizes the column to the longest word
+     and only breaks one that cannot fit a line by itself. */
+  overflow-wrap: break-word;
+  color: var(--text-2);
 }
 .main-content td code {
   /* Was `word-break: break-all`, which breaks at whatever character the line
      happens to end on — so `Trigger` came out as `Trig` / `ger` even with a
      whole empty line under it. `anywhere` only breaks a word that cannot fit
      on a line of its own, which is the case this was reaching for: a long
-     dotted identifier in a narrow fixed-layout cell. */
-  overflow-wrap: anywhere;
+     dotted identifier in a narrow cell.
+
+     Phase 3c: same reasoning as the cell rule above — under table-layout:auto,
+     `anywhere` here would also collapse the column it sits in. */
+  overflow-wrap: break-word;
 }
 .main-content th {
-  background-color: var(--sidebar-bg);
-  font-weight: 600;
+  padding: 8px 14px 8px 0;
+  background: none;
+  border-bottom: 0.5px solid var(--border);
+  font-size: var(--type-h6);          /* 11 */
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
 }
-.main-content tr:nth-child(even) {
-  background-color: var(--table-row-even);
+/* Zebra striping and row hover are dropped. Figma has neither, and with the
+   grid borders gone they fight the horizontal rules for the same job — the
+   rules already say where a row begins and ends. */
+
+/* Blockquote — a 2px bar and an 18px gap, per Figma's geometry (a 2px rect at
+   x=0 with the text starting at x=20). Distinct from a callout, which is a
+   tinted panel; a blockquote is quoted material.
+
+   40 of the 49 non-callout blockquotes in the corpus contain inline code, so
+   the bar must not restyle what sits inside it. */
+.main-content blockquote {
+  margin: 1.5rem 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--rule-soft);
+  color: var(--text-2);
 }
-.main-content tr:hover {
-  background-color: var(--table-row-hover);
+.main-content blockquote > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists. Figma indents 22px per level with a 6px dot, and shows two levels.
+   The corpus goes to FIVE (49 bullets at depth 5), so the indent has to hold up
+   under nesting rather than just look right at depth 2 — 22px compounds
+   gently, where the previous `margin: 0 2rem` (32px, applied to every li
+   regardless of depth) both over-indented level 1 and doubled up on nesting. */
+.main-content ul,
+.main-content ol {
+  margin: 1rem 0;
+  padding-left: 22px;
 }
 .main-content li {
-  margin: 0 2rem;
+  margin: 0;
 }
+.main-content li + li {
+  margin-top: 0.375rem;
+}
+.main-content li > ul,
+.main-content li > ol {
+  margin: 0.375rem 0 0;
+}
+.main-content ul li::marker {
+  color: var(--text-3);
+}
+.main-content ol li::marker {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
 
 .grid-container {
   display: grid;
@@ -772,11 +849,13 @@ footer {
   min-height: calc(1rem + var(--main-content-padding) / 2);
 }
 
+/* Rule. Figma draws a 720x1 bar with 20px of space either side — symmetric,
+   where ours was 2rem above and 1rem below. A rule separates two things
+   equally; the asymmetry made it read as belonging to the section above. */
 hr {
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin: 20px 0;
   border: 0;
-  border-top: 1px solid var(--separator);
+  border-top: 1px solid var(--divider);
 }
 
 .codeblock {
