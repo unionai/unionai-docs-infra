@@ -192,10 +192,17 @@ for ln in LINE_ORDER:
         items.append({"seg": "latest", "num": "", "badge": "LATEST"})
     if stable:
         num = stable.lstrip("v")
-        # Primary line (v2): /docs/<line> is the moving stable pointer -> number + STABLE badge.
-        # Secondary line (v1): advances too, but deliberately de-emphasized -> bare number, no
-        # badge (the numbered git tag still exists; we just do not surface STABLE in the menu).
-        items.append({"seg": ln, "num": num, "badge": "STABLE" if has_latest else ""})
+        # /docs/<line> is that line's moving stable pointer, on BOTH lines -> number +
+        # STABLE badge. The badge is deliberately NOT tied to `has_latest`: v1 is a
+        # secondary line (it does not own /docs/latest) but it advances and its newest
+        # cut is genuinely its stable, so it earns the badge too (Peeter, 2026-07-31 --
+        # this had been an open question since go-live).
+        #
+        # Keeping them coupled had a second, sharper cost: restoring v1's dropped
+        # `latest = false` would ALSO have silently removed v1's STABLE badge, so one
+        # fix would have quietly undone something wanted. Independent facts, independent
+        # flags.
+        items.append({"seg": ln, "num": num, "badge": "STABLE"})
     for p in sorted(set(enum), key=vkey, reverse=True):
         items.append({"seg": p, "num": p.lstrip("v"), "badge": ""})
     menu.append({"line": ln, "items": items})
