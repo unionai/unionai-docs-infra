@@ -2,13 +2,23 @@
     <head>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-        <link id="home_css" rel="stylesheet" href="@@BASE@@/css/home.css?v=@@BUILD@@" />
+        <!-- Inter, matching the rest of the site since phase 2b. This page used
+             to request Open Sans, which nothing has been set in since. -->
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <!-- Static assets publish PER VARIANT, so home.css lives at
+             <base>/<variant>/css/, never at <base>/css/. This link pointed at the
+             latter and had been 404ing in production (302 to the redirect
+             handler) for as long as the file has existed. Masked because a
+             Cloudflare redirect shadows /docs/ and nobody reaches this page. -->
+        <link id="home_css" rel="stylesheet" href="@@BASE@@/@@DEFAULT_VARIANT@@/css/home.css?v=@@BUILD@@" />
     </head>
     <body>
         <div class="container">
             <h1>
-                <img id="logo" src="@@BASE@@/images/icon-logo.svg" class="logo"
+                <!-- Same per-variant path issue as home.css above. This one has an
+                     onerror that hides the img, so the broken logo has been failing
+                     silently rather than showing a broken-image icon. -->
+                <img id="logo" src="@@BASE@@/@@DEFAULT_VARIANT@@/images/icon-logo.svg" class="logo"
                      onerror="this.style.display='none'" />
                 Union.ai
             </h1>
