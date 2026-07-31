@@ -15,7 +15,7 @@ article.plugin table td:nth-child(1) {
 
 article.plugin table td:nth-child(2) {
     white-space: nowrap;
-    font-family: monospace;
+    font-family: var(--font-mono);
 }
 
 article.plugin table td:nth-child(2).source {
