@@ -33,7 +33,7 @@
   --border: #1410081a;
   --border-2: #1410082e;
   --divider: #14100814;
-  --rule: var(--border-2);
+  --rule: var(--text-3);           /* solid mid-tone: this draws the callout rule */
   --rule-soft: var(--divider);
   /* status hues */
   --green: #15803d;
@@ -235,7 +235,7 @@ body.has-secondary-topnav {
   --accent-light: color-mix(in srgb, var(--accent) 22%, var(--bg));
   --accent-very-light: color-mix(in srgb, var(--accent) 12%, var(--bg));
 
-  --primary-color: var(--union-color-light);
+  --primary-color: var(--union-color);
   --union-color: var(--accent);
   --union-color-light: var(--accent-light);
   --union-color-dark: var(--accent-dark);
