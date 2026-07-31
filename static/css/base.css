@@ -15,58 +15,93 @@
    overrides a primitive therefore re-declares the aliases that depend on it.
    --------------------------------------------------------------------------- */
 :root {
-  /* surfaces */
+  /* surfaces — --bg-1 is the page canvas, --bg the raised content surface,
+     --bg-2..4 progressively stronger chrome (naming per the Figma spec) */
   --bg: #ffffff;
-  --bg-1: #f8fafc;
-  --bg-2: #f1f5f9;
-  --bg-3: hsl(0, 0%, 97%);
+  --bg-1: #f7f7f5;
+  --bg-2: #f2f2f0;
+  --bg-3: #eaeae7;
+  --bg-4: #dededa;
   /* text */
-  --text: #1f2937;
-  --text-3: #bfbfbf;
-  /* lines */
-  --border: #e2e8f0;
-  --border-2: #c7ccd6;
-  --rule: gray;
-  --rule-soft: #80808020;
-  /* code surface (dark in both themes) */
-  --code-surface: #1e293b;
-  --code-surface-text: #e2e8f0;
-  /* table rows */
-  --row-alt: #f8fafc;
-  --row-hover: #f1f5f9;
-  /* accent — union by default, overridden per variant */
-  --accent: #e6a720;
-  --accent-light: #ffe6b1;
-  --accent-dark: #c88c0c;
-  --accent-very-light: #fbeed1;
-  --accent-search: #edab1c;
+  --text: #1c1a15;
+  --text-1: #2a2822;
+  --text-2: #5c584f;
+  --text-3: #8f8a80;
+  /* lines — ALPHA in both modes (black-alpha light, white-alpha dark). These
+     compose over whatever surface is beneath, unlike the opaque hexes they
+     replace, so nested surfaces read differently than a flat swap implies. */
+  --border: #1410081a;
+  --border-2: #1410082e;
+  --divider: #14100814;
+  --rule: var(--text-3);           /* solid mid-tone: this draws the callout rule */
+  --rule-soft: var(--divider);
+  /* status hues */
+  --green: #15803d;
+  --blue: #1d4ed8;
+  --orange: #c2410c;
+  --red: #b91c1c;
+  /* semantic tints, derived from the status hues */
+  --success-soft: #15803d0f;
+  --success-border: #15803d59;
+  --info-soft: #1d4ed80f;
+  --info-bar: #1d4ed873;
+  --info-border: #1d4ed859;
+  --warning-soft: #c2410c0f;
+  --warning-bar: #c2410c73;
+  --warning-border: #c2410c59;
+  --danger-soft: #b91c1c0f;
+  --danger-bar: #b91c1c73;
+  --danger-border: #b91c1c59;
+  /* code surface — dark in BOTH modes; the light value is a dark surface,
+     because the syntax colours are tuned for dark */
+  --code-surface: #16181d;
+  --code-surface-text: #d6d9de;
+  /* table rows — not in the Figma spec; derived from the surface ramp */
+  --row-alt: var(--bg-1);
+  --row-hover: var(--bg-2);
+  /* accent — union by default, overridden per variant AND per mode. The accent
+     DARKENS in light mode for contrast (#f5a623 dark -> #b45309 light); it was
+     previously mode-constant, so this is new behaviour, not a recolour. */
+  --accent: #b45309;
+  --accent-search: var(--accent);
+  /* Derived, not specified by Figma: our theme needs a link colour and two
+     accent tints that the spec has no equivalent for. color-mix keeps them
+     correct per mode and per variant without a value table. */
+  --accent-dark: var(--accent);
+  --accent-light: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  --accent-very-light: color-mix(in srgb, var(--accent) 12%, var(--bg));
   /* elevation — mode-invariant (every consuming rule is un-themed) */
   --shadow-hairline: 0 1px 0 0 rgba(31, 35, 40, 0.04);
   --shadow-card: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
   /* brand marks — each product's own colour, independent of the ACTIVE variant
-     (the product toggle shows both at once, so these must not follow --accent) */
-  --brand-union: #e6a720;
-  --brand-flyte: #6f2aef;
-  /* decorative accent — landing-page cards; variant-scoped, distinct from --accent */
+     (the product toggle shows both at once, so these must not follow --accent).
+     The saturated dark-mode accents serve as the brand colours. */
+  --brand-union: #FCB51D;
+  --brand-flyte: #c084fc;
+  /* Foreground for BRAND surfaces (banner, signup CTA). The brand gold is a
+     filled surface, not text, so it takes near-black — white on gold is
+     1.78:1 and fails WCAG, which is what production has been shipping. With
+     #131108 it is 10.59:1. Mirrors how Figma pairs accent surfaces with
+     accent/on-accent in dark mode. */
+  --on-brand: #131108;
+  /* decorative accent — landing-page cards. NOT covered by the Figma spec;
+     left on the previous palette deliberately and tracked for the long-tail
+     phase, rather than invented here. */
   --decor: #d97706;
   --decor-soft: #fea034;
-  /* status */
-  --success-soft: #dcfce7;
-  --success-text: #15803d;
-  /* foreground on solid / scrim surfaces */
-  --on-accent: #fff;
+  /* success text — pairs with --success-soft above */
+  --success-text: var(--green);
+  /* foreground on a solid accent; dark mode uses near-black for contrast */
+  --on-accent: #ffffff;
   --on-scrim: #fff;
-  /* chrome surfaces with a [data-theme="dark"] counterpart */
-  --toggle-active-bg: #cbd5e1;
-  --menu-bg: #ffffff;
-  /* code chrome — invariant: code blocks are dark in both themes */
-  --code-chrome-bg: #3a3f47;
-  --code-chrome-text: #c9d1d9;
-  --code-link: #f8f8f2;
-  /* NB: do NOT name a token --text-muted; seo.css reads var(--text-muted, #6b7280)
-     and that token is undefined, so defining it would change that colour. */
-  --text-2: #6b7280;
-  --text-2-dim: #9ca3af;
+  /* chrome surfaces — derived from the surface ramp */
+  --toggle-active-bg: var(--bg-3);
+  --menu-bg: var(--bg);
+  /* code chrome — invariant: code blocks are dark in both themes, so these
+     take values from the DARK end of the ramp regardless of active mode */
+  --code-chrome-bg: #1a1a1f;
+  --code-chrome-text: #9e9ea7;
+  --code-link: #d7d7dc;
 
   /* Light theme variables (default) */
   --primary-color: var(--union-color);
@@ -104,7 +139,7 @@
   --toc-bg: var(--bg-color);
   --docsearch-primary-color: var(--accent-search) !important;
   --docsearch-highlight-color: var(--docsearch-primary-color) !important;
-  --docsearcowh-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
+  --docsearch-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
   --breadcrumbs-height: 128px;
   --old-version-border: 3px solid var(--union-color);
   --old-version-background: var(--bg-3);
@@ -117,13 +152,18 @@ body.has-secondary-topnav {
 }
 
 :root .variant-flyte {
-  --accent: #6f2aef;
-  --accent-light: #cbb5f5;
-  --accent-dark: #621ce4;
-  --accent-very-light: #d5c5f4;
-  --accent-search: #6f2aef;
+  /* Variant changes the ACCENT ONLY — neutrals are variant-invariant per the
+     Union V2 spec. Light mode darkens the accent, as it does for Union. */
+  --accent: #7c3aed;
   --decor: #7652a2;
   --decor-soft: #c7b1dc;
+  /* Re-declared, not inherited: these are computed on the element that declares
+     them, so a copy on :root would resolve against the UNION accent and leak
+     orange links into the Flyte variant. */
+  --accent-search: var(--accent);
+  --accent-dark: var(--accent);
+  --accent-light: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  --accent-very-light: color-mix(in srgb, var(--accent) 12%, var(--bg));
 
   --primary-color: var(--union-color);
   --union-color: var(--accent);
@@ -138,24 +178,37 @@ body.has-secondary-topnav {
 
 /* Dark theme variables */
 [data-theme="dark"] {
-  --bg: #121212;
-  --bg-1: #191919;
-  --bg-2: #2d3748;
-  --text: #cbd1d9;
-  --text-3: hsl(214, 0%, 50%);
-  --border: #282828;
-  --rule: #4a5568;
-  --code-surface: #0f172a;
-  --code-surface-text: #e2e8f0;
-  --row-alt: #1b1812;
-  --row-hover: #554d3b;
-  --accent-light: #817457;
-  --accent-very-light: #766e5e;
-  --accent-search: #edab1c;
-  --success-soft: #064e3b;
-  --success-text: #6ee7b7;
-  --toggle-active-bg: #141d33;
-  --menu-bg: #141d33;
+  --bg: #0e0e11;
+  --bg-1: #09090b;
+  --bg-2: #131316;
+  --bg-3: #1a1a1f;
+  --bg-4: #232329;
+  --text: #f7f7f8;
+  --text-1: #d7d7dc;
+  --text-2: #9e9ea7;
+  --text-3: #6f6f79;
+  --border: #ffffff14;
+  --border-2: #ffffff21;
+  --divider: #ffffff0a;
+  --green: #4ade80;
+  --blue: #60a5fa;
+  --orange: #fb923c;
+  --red: #f87171;
+  --success-soft: #4ade8012;
+  --success-border: #4ade8059;
+  --info-soft: #60a5fa14;
+  --info-bar: #60a5fa8c;
+  --info-border: #60a5fa66;
+  --warning-soft: #fb923c12;
+  --warning-bar: #fb923c8c;
+  --warning-border: #fb923c59;
+  --danger-soft: #f8717112;
+  --danger-bar: #f871718c;
+  --danger-border: #f8717159;
+  --code-surface: #131316;
+  --code-surface-text: #d7d7dc;
+  --accent: #f5a623;
+  --on-accent: #131108;
 
   --primary-color: var(--union-color);
   --text-color: var(--text);
@@ -176,19 +229,19 @@ body.has-secondary-topnav {
 }
 
 [data-theme="dark"] .variant-flyte {
-  --accent: #6f2aef;
-  --accent-light: #9065e1;
-  --accent-dark: #43139d;
-  --accent-very-light: #966fde;
-  --accent-search: #6f2aef;
-  /* Phase 2 removes these three: the Union V2 spec keeps neutrals
-     variant-invariant, so Flyte dark loses its purple background cast. */
-  --bg: #050310;
-  --bg-1: #100e18;
-  --row-alt: #1a1720;
-  --row-hover: #292532;
+  /* Accent only. The purple background cast (--bg #050310, --bg-1 #100e18 and
+     the row tints) is deliberately gone: neutrals are variant-invariant, so
+     Flyte dark now shares Union dark's surfaces. Decision locked 2026-07-30. */
+  --accent: #c084fc;
+  /* Re-declared, not inherited: these are computed on the element that declares
+     them, so a copy on :root would resolve against the UNION accent and leak
+     orange links into the Flyte variant. */
+  --accent-search: var(--accent);
+  --accent-dark: var(--accent);
+  --accent-light: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  --accent-very-light: color-mix(in srgb, var(--accent) 12%, var(--bg));
 
-  --primary-color: var(--union-color-light);
+  --primary-color: var(--union-color);
   --union-color: var(--accent);
   --union-color-light: var(--accent-light);
   --union-color-dark: var(--accent-dark);

@@ -413,9 +413,9 @@ header .toggle-sidebar {
   height: 34px;
   box-sizing: border-box;
   padding: 0 0.9rem;
-  background-color: var(--union-color);
-  color: var(--on-accent);
-  border: 1px solid var(--union-color);
+  background-color: var(--brand-union);
+  color: var(--on-brand);
+  border: 1px solid var(--brand-union);
   border-radius: 6px;
   font-family: inherit;
   font-size: 0.84rem;
@@ -475,13 +475,13 @@ header .toggle-sidebar {
 }
 
 [data-theme="dark"] .signup-button {
-  color: var(--on-accent);
+  color: var(--on-brand);
 }
 
 .signup-button:hover {
-  background-color: var(--union-color-dark);
-  border-color: var(--union-color-dark);
-  color: var(--on-accent);
+  background-color: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: var(--on-brand);
 }
 
 .old-version {
