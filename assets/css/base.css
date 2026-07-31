@@ -105,6 +105,27 @@
   --code-chrome-text: #9e9ea7;
   --code-link: #d7d7dc;
 
+  /* syntax colours (DOC-1324, phase 4) — INVARIANT across all four quadrants,
+     because the code surface stays dark in both modes. Declared once here;
+     `chroma.css` consumes them.
+
+     Deliberately only five things carry colour. Figma's own code samples render
+     `flyte.init(endpoint=` entirely plain, with just the string and the number
+     tinted — names, operators and punctuation inherit --code-surface-text. The
+     previous Monokai theme coloured nearly every token; this lets the code
+     recede and the meaningful parts stand out.
+
+     There is no --syntax-dec token on purpose. The decorator follows the accent,
+     and an alias declared here would be substituted at computed-value time
+     against the UNION accent, leaking orange decorators into the flyte variant
+     (the bug caught in phase 2a). chroma.css writes var(--accent) at the point
+     of use instead, where it resolves per variant. */
+  --syntax-kw: #c084fc;
+  --syntax-fn: #60a5fa;
+  --syntax-str: #4ade80;
+  --syntax-num: #fb923c;
+  --syntax-comment: var(--code-chrome-text);
+
   /* -------------------------------------------------------------------------
      TYPE SCALE (Union V2) — DOC-1317, phase 2b.
 
