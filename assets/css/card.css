@@ -21,9 +21,23 @@
   gap: 7px;
   height: 100%;
   padding: 16px;
-  border: 0.5px solid var(--border);
+  /* LIGHT-MODE CONTRAST (reported by Peeter, live).
+
+     Figma's Link Card is border-only with no fill, and that works in the comp
+     because the comp is the DARK canvas: an 8% white border on #0e0e11 reads
+     clearly. Inverted, it does not. In light mode the card was #ffffff on a
+     #ffffff page — 1.00:1 fill contrast — with a 0.5px 10%-black border
+     landing at 1.24:1. A white box on a white page with a hairline.
+
+     Same defect class as DOC-1315, where callouts were white-on-white. Both
+     come from taking a value that is legible on dark and assuming it inverts.
+
+     So: a surface a step off the page (--bg-1 is below --bg in light and below
+     it in dark, so the card is distinguishable either way), and --border-2
+     rather than --border for the edge. */
+  border: 0.5px solid var(--border-2);
   border-radius: var(--radius-dropdown);
-  background: var(--bg);
+  background: var(--bg-1);
   /* The card is a link, so opt out of the underline the content area puts on
      every <a>; the box is the affordance. */
   text-decoration: none;
@@ -36,7 +50,7 @@
 
 .link-card:hover {
   border-color: var(--rule);
-  background: var(--bg-1);
+  background: var(--bg-2);
 }
 
 /* Keyboard users get a real focus ring — the old card could not be focused at
