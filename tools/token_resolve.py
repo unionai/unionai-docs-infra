@@ -18,15 +18,25 @@ CSS = Path(sys.argv[1] if len(sys.argv) > 1 else "static/css/base.css")
 
 # Selector -> (specificity, applies-to-context predicate).
 # Specificity is the plain CSS a/b/c count; higher wins on conflict.
+# A context is modelled as a chain of ELEMENTS, not one merged declaration set.
+#
+# This matters. `:root` and `[data-theme="dark"]` both match <html>, so they
+# merge and a var() reference sees the winning value. But `.variant-flyte` is a
+# DESCENDANT element: a property declared only on :root is computed there, using
+# :root's values, and the descendant inherits that COMPUTED value. Overriding
+# `--accent` on .variant-flyte does not retroactively change an `--accent-dark:
+# var(--accent)` that was computed on :root.
+#
+# Modelling both as one merged set (as this script originally did) hides exactly
+# that bug: it reports the variant value where the browser would render the root
+# one. Each entry below is [element1_selectors, element2_selectors, ...].
 CONTEXTS = {
-    "union-light": [":root"],
-    "flyte-light": [":root", ":root .variant-flyte"],
-    "union-dark": [":root", '[data-theme="dark"]'],
+    "union-light": [[":root"]],
+    "union-dark": [[":root", '[data-theme="dark"]']],
+    "flyte-light": [[":root"], [":root .variant-flyte"]],
     "flyte-dark": [
-        ":root",
-        ":root .variant-flyte",
-        '[data-theme="dark"]',
-        '[data-theme="dark"] .variant-flyte',
+        [":root", '[data-theme="dark"]'],
+        [":root .variant-flyte", '[data-theme="dark"] .variant-flyte'],
     ],
 }
 
@@ -105,15 +115,34 @@ def resolve(name, env, seen=None):
     return " ".join(val.replace("!important", "").split())
 
 
+def compute_element(by_sel, selectors, inherited):
+    """Computed custom properties for one element.
+
+    `inherited` holds the parent's already-computed values. The element's own
+    declarations override them, and each declaration's var() references resolve
+    against (inherited + own) — which is what the browser does at computed-value
+    time. Properties the element does not declare keep the inherited computed
+    value verbatim; they are NOT re-resolved against the new values.
+    """
+    own = cascade(by_sel, selectors)
+    env = {**inherited, **own}
+    computed = dict(inherited)
+    for name in own:
+        computed[name] = resolve(name, env)
+    return computed
+
+
 def main():
     src = CSS.read_text()
     by_sel = build(src)
     names = sorted({n for props in by_sel.values() for n in props})
-    for ctx, selectors in CONTEXTS.items():
-        env = cascade(by_sel, selectors)
+    for ctx, chain in CONTEXTS.items():
+        computed = {}
+        for selectors in chain:
+            computed = compute_element(by_sel, selectors, computed)
         print(f"=== {ctx} ===")
         for n in names:
-            print(f"{n} = {resolve(n, env)}")
+            print(f"{n} = {computed.get(n, '<unset>')}")
         print()
 
 

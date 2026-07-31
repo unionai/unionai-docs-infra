@@ -38,7 +38,7 @@
 
 .page-list p {
   margin: 0.5rem 0 0 0;
-  color: var(--text-muted, #6b7280);
+  color: var(--text-2);
   font-size: 0.875rem;
 }
 

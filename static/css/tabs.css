@@ -42,7 +42,7 @@ body > .tabs .tabs-nav {
 }
 
 .tab.active {
-  color: var(--union-dark);
+  color: var(--union-color-dark);
 }
 
 .tab.active::after {
