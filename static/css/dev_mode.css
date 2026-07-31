@@ -9,7 +9,7 @@
 
 .docs-builder.shortcodes ~ blockquote {
     border: 0;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: var(--font-mono);
     font-weight: 700;
     margin-left: 3rem;
     white-space: pre-wrap;

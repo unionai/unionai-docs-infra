@@ -109,7 +109,7 @@
 .four-notice-path {
     margin: 0.125rem 0 0;
     color: var(--on-scrim);
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 0.78rem;
     opacity: 0.92;
     white-space: nowrap;

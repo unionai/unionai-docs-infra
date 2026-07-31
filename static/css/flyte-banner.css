@@ -3,7 +3,7 @@
     color: var(--on-brand);
     box-sizing: border-box;
     display: flex;
-    font-family: Inter,sans-serif;
+    font-family: var(--font-sans);
     font-size: .875rem;
     justify-content: center;
     line-height: 1.5;
@@ -82,7 +82,7 @@ a.flyte-banner-link:hover {
 }
 .new-tab-arrow {
     display: inline-block;
-    font-family: "Inter",sans-serif;
+    font-family: var(--font-sans);
     padding-left: 3px;
     transform: translateY(1px);
 }

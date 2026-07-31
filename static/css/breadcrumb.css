@@ -1,8 +1,10 @@
 .breadcrumb {
   display: flex;
   align-items: center;
-  margin-bottom: 2rem;
-  font-size: 0.875rem;
+  /* Figma sets the crumb 16px above the H1, not 32. */
+  margin-bottom: 1rem;
+  font-size: var(--type-crumb);
+  line-height: var(--lh-crumb);
   color: var(--text-2);
 }
 .breadcrumb-item {

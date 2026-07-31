@@ -1,7 +1,10 @@
 .container .toc-container {
   padding: var(--sidepanels-padding);
-  font-weight: 100;
+  /* Was 100. Inter is served at 400-700, so 100 was already being snapped up to
+     400 by the font matcher — saying 400 just stops it looking intentional. */
+  font-weight: 400;
   font-size: var(--toc-font-size);
+  line-height: 1.36;   /* 17 / 12.5 */
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
   background-color: var(--toc-bg);
@@ -22,8 +25,14 @@
   padding-left: 1rem;
 }
 
+/* "On this page" is an uppercase eyebrow in Figma, not a sentence-case
+   heading — same treatment as H6. */
 .container .toc-container .toc-header {
-  font-weight: 600;
+  font-size: var(--type-h6);
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   padding-left: 1rem;

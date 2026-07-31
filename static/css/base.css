@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
+/* Fonts are loaded via <link> in baseof.html, not @import. A CSS @import is
+   render-blocking and cannot be preconnected, so it costs a serial round trip
+   before any text paints. */
 
 /* ---------------------------------------------------------------------------
    PRIMITIVE LAYER (scale-keyed) — DOC-1308, phase 1 of the Union V2 reskin.
@@ -103,6 +105,73 @@
   --code-chrome-text: #9e9ea7;
   --code-link: #d7d7dc;
 
+  /* -------------------------------------------------------------------------
+     TYPE SCALE (Union V2) — DOC-1317, phase 2b.
+
+     Sizes come from the Figma `docs/*` text styles. They are theme-independent,
+     so unlike the colour ramp they are declared once and never overridden per
+     variant or per mode.
+
+     Two deliberate conversions from the Figma values:
+
+     - Line heights are UNITLESS ratios, not the px the comps specify. A px
+       line-height does not grow when a reader raises their default font size,
+       so the text gets taller inside a box that doesn't — lines overlap. The
+       ratio is the same rhythm at 16px and survives at 24px.
+     - Letter spacing is in `em`. Figma expresses tracking as a percentage of
+       the font size (H1's "-2" renders as -0.68px at 34px), and `em` is that
+       same proportion in CSS. Copying "-2px" would have been ~3x too tight.
+     ------------------------------------------------------------------------- */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* sizes — Figma px expressed against the 16px root. The root itself is left
+     alone: reducing it would silently shrink anything a reader's browser or
+     extension sizes in rem. */
+  --type-h1: 2.125rem;         /* 34   */
+  --type-h2: 1.3125rem;        /* 21   */
+  --type-h3: 1.03125rem;       /* 16.5 */
+  --type-h4: 0.90625rem;       /* 14.5 */
+  --type-h5: 0.8125rem;        /* 13   */
+  --type-h6: 0.6875rem;        /* 11   */
+  --type-lead: 1.03125rem;     /* 16.5 */
+  --type-body: 0.90625rem;     /* 14.5 */
+  --type-small: 0.84375rem;    /* 13.5 */
+  --type-crumb: 0.78125rem;    /* 12.5 */
+  --type-code: 0.78125rem;     /* 12.5 */
+  --type-code-tab: 0.6875rem;  /* 11   */
+
+  /* line heights — ratio = Figma line-height / Figma size */
+  --lh-h1: 1.21;               /* 41 / 34   */
+  --lh-h2: 1.29;               /* 27 / 21   */
+  --lh-h3: 1.33;               /* 22 / 16.5 */
+  --lh-h4: 1.38;               /* 20 / 14.5 */
+  --lh-tight: 1.3;             /* H5/H6, which Figma leaves at `normal` */
+  --lh-lead: 1.76;             /* 29 / 16.5 */
+  --lh-body: 1.79;             /* 26 / 14.5 */
+  --lh-small: 1.7;             /* 23 / 13.5 */
+  --lh-crumb: 1.28;            /* 16 / 12.5 */
+  --lh-code: 1.76;             /* 22 / 12.5 */
+  --lh-code-tab: 1.27;         /* 14 / 11   */
+
+  /* tracking — Figma percentages as em */
+  --track-h1: -0.02em;
+  --track-h2: -0.01em;
+  --track-caps: 0.06em;        /* the uppercase eyebrows: H6, "On this page" */
+
+  --weight-heading: 600;
+  --weight-h1: 700;
+
+  /* vertical rhythm — the gaps between the Article frame's children. Headings
+     carry all the space; the elements they introduce carry none on top. */
+  --space-h1-below: 1.125rem;  /* 18 */
+  --space-h2-above: 3.5rem;    /* 56 */
+  --space-h2-below: 0.875rem;  /* 14 */
+  --space-h3-above: 2rem;      /* 32 */
+  --space-h3-below: 0.75rem;   /* 12 */
+  --space-h4-above: 1.5rem;    /* 24 */
+  --space-h4-below: 0.625rem;  /* 10 */
+
   /* Light theme variables (default) */
   --primary-color: var(--union-color);
   --text-color: var(--text);
@@ -122,15 +191,22 @@
   --menu-submenu-indent: 1rem;
   --menu-v-space: 0.2rem;
   --sidepanels-padding: 2rem 1.5rem;
-  --sidebar-width: 300px;
-  --sidebar-font-size: 0.85rem;
+  --sidebar-width: 264px;
+  --sidebar-font-size: var(--type-small);
+  /* Left at 256. Figma's TOC is a 168px frame with no padding of its own, but
+     ours is a grid column that also has to hold 56px of left padding/indent and
+     40px on the right — so 256 already yields ~160px of text, which is the
+     number to compare against Figma's 168. Cutting the column to 168 would
+     leave 72px of text. Flattening that padding is component work (phase 3). */
   --toc-width: 256px;
-  --toc-font-size: 0.75rem;
+  --toc-font-size: var(--type-crumb);
   --toc-header-height: 96px;
   --header-height: 64px;
   --tabs-height: 64px;
-  --content-width: 900px;
-  --image-width: 880px;
+  --content-width: 720px;
+  /* Kept at the measure. An image wider than the text it sits in breaks the
+     left margin the eye is tracking down. */
+  --image-width: 720px;
   --union-color: var(--accent);
   --union-color-light: var(--accent-light);
   --union-color-dark: var(--accent-dark);
@@ -261,9 +337,10 @@ body.has-secondary-topnav {
   box-sizing: border-box;
 }
 body {
-  font-family: "Instrument Sans", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
   color: var(--text-color);
-  line-height: 1.6;
+  line-height: var(--lh-body);
   background: var(--bg-color);
   overflow: hidden;
 }
@@ -299,23 +376,70 @@ body {
 }
 
 h1 {
-  font-size: 2.25rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
+  font-size: var(--type-h1);
+  font-weight: var(--weight-h1);
+  line-height: var(--lh-h1);
+  letter-spacing: var(--track-h1);
+  margin-bottom: var(--space-h1-below);
   color: var(--text-color);
 }
 h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 2rem 0 1rem;
+  font-size: var(--type-h2);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-h2);
+  letter-spacing: var(--track-h2);
+  margin: var(--space-h2-above) 0 var(--space-h2-below);
   color: var(--text-color);
 }
-h3, h4 {
-  margin: 1rem 0;
+h3 {
+  font-size: var(--type-h3);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-h3);
+  margin: var(--space-h3-above) 0 var(--space-h3-below);
+  color: var(--text-color);
+}
+h4 {
+  font-size: var(--type-h4);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-h4);
+  margin: var(--space-h4-above) 0 var(--space-h4-below);
+  color: var(--text-color);
+}
+/* H5 and H6 carry no named style in Figma, but the gallery renders both: H5 at
+   13/600 in --text-1, H6 at 11/600 uppercase with +6% tracking in --text-2.
+   They step DOWN in colour as well as size, so a level-6 heading reads as a
+   label rather than competing with the body text under it. */
+h5 {
+  font-size: var(--type-h5);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-tight);
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text-1);
+}
+h6 {
+  font-size: var(--type-h6);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text-2);
+}
+/* The first heading on a page has nothing to be spaced away from. */
+.main-content > :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
 }
 p {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: var(--text-color);
+}
+/* The standfirst: a leading paragraph set one step up from body. Opt-in via
+   frontmatter/markup rather than "the first p", which would catch every page
+   whose first paragraph is just a sentence of throat-clearing. */
+.main-content .lead {
+  font-size: var(--type-lead);
+  line-height: var(--lh-lead);
+  color: var(--text-1);
 }
 a {
   color: var(--union-color-dark);
@@ -354,8 +478,10 @@ code {
   background: var(--code-bg);
   padding: 0.2em 0.4em;
   border-radius: 4px;
-  font-size: 0.875em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  /* em, not rem: 12.5/14.5 of whatever it sits in, so an identifier inside a
+     heading scales with the heading instead of collapsing to body size. */
+  font-size: 0.86em;
+  font-family: var(--font-mono);
 }
 pre {
   background: var(--pre-bg);
@@ -364,11 +490,18 @@ pre {
   border-radius: 8px;
   overflow-x: auto;
   margin: 1.5rem 0;
+  /* Stated outright rather than left to the UA sheet, which applies the legacy
+     monospace font-size quirk and lands somewhere near 13px on its own. */
+  font-family: var(--font-mono);
+  font-size: var(--type-code);
+  line-height: var(--lh-code);
 }
 pre code {
   background: none;
   color: inherit;
   padding: 0;
+  /* pre already sized this; without the reset the 0.86em on `code` compounds. */
+  font-size: 1em;
 }
 .main-content ul,
 .main-content ol {
@@ -382,7 +515,7 @@ pre code {
   table-layout: fixed;
   border-collapse: collapse;
   margin: 1.5rem 0;
-  font-size: 0.95rem;
+  font-size: var(--type-small);
 }
 .main-content th,
 .main-content td {
@@ -393,7 +526,12 @@ pre code {
   word-break: break-word;
 }
 .main-content td code {
-  word-break: break-all;
+  /* Was `word-break: break-all`, which breaks at whatever character the line
+     happens to end on — so `Trigger` came out as `Trig` / `ger` even with a
+     whole empty line under it. `anywhere` only breaks a word that cannot fit
+     on a line of its own, which is the case this was reaching for: a long
+     dotted identifier in a narrow fixed-layout cell. */
+  overflow-wrap: anywhere;
 }
 .main-content th {
   background-color: var(--sidebar-bg);
