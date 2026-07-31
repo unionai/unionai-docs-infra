@@ -191,4 +191,29 @@ for tag in $ENUMERATED; do
   build_version "$tag" "$tag" "true"
 done
 
+# Cache policy for the runtime manifests (DOC-1330, defect 3).
+#
+# The whole point of /docs/<line>/versions.json is to be FRESHER than the baked
+# page, so a long edge TTL would defeat it -- a v1 cut would not be visible from a
+# v2 page until the cached copy expired, which is the bug it exists to fix.
+#
+# `cache: no-cache` on the fetch only governs the BROWSER cache; it cannot reach an
+# edge. So state the policy at the origin, where both layers can see it: Pages
+# honours dist/_headers, and the deploy is `wrangler pages deploy ./dist`.
+#
+# CAVEAT, and it is a real one: production sits behind CloudFront IN FRONT OF
+# Cloudflare. This header is what the origin says; whether CloudFront honours it
+# depends on that distribution's cache policy, which is not visible from here. If a
+# stale manifest is ever observed in production, check CloudFront before suspecting
+# this file. 60s is short enough to be timely and long enough to absorb a crawl.
+#
+# Appended, not overwritten, so this never clobbers an existing _headers.
+if [ "$DRY_RUN" != 1 ]; then
+  { echo "# Runtime version manifests (DOC-1330) -- must stay fresher than the baked page."
+    echo "/docs/*/versions.json"
+    echo "  Cache-Control: public, max-age=60, must-revalidate"
+  } >> "$DIST/_headers"
+  echo "  wrote  _headers (versions.json max-age=60)"
+fi
+
 echo "==> assembled: $(cd "$DIST/docs" 2>/dev/null && ls -d */ 2>/dev/null | tr '\n' ' ' || true)"
