@@ -162,6 +162,18 @@
   --weight-heading: 600;
   --weight-h1: 700;
 
+  /* -------------------------------------------------------------------------
+     RADIUS (Union V2) — DOC-1324, phase 3.
+
+     Named for the component that established each value, which is how Figma
+     names them, rather than by size. A component picks the token whose name
+     matches its role, so the family stays coherent when a value changes.
+     ------------------------------------------------------------------------- */
+  --radius-code-card: 14px;   /* code cards, tab groups — the big blocks */
+  --radius-dropdown: 12px;    /* link cards, disclosures */
+  --radius-search: 9px;
+  --radius-nav-item: 7px;
+
   /* vertical rhythm — the gaps between the Article frame's children. Headings
      carry all the space; the elements they introduce carry none on top. */
   --space-h1-below: 1.125rem;  /* 18 */
@@ -769,4 +781,57 @@ hr {
 
 .codeblock {
   margin-bottom: 1rem;
+}
+/* Disclosure ({{< dropdown >}}) — DOC-1324, phase 3a.
+
+   `sl-details` had no rules of ours, so it rendered in Shoelace's CDN theme.
+   Kept as Shoelace rather than swapped for native <details>: the native element
+   is also accessible, but switching would change the open/close animation and
+   the summary marker behaviour, which is a behavioural change rather than a
+   restyle. Worth revisiting on its own if we want the shadow boundary gone.
+
+   Figma's Disclosure:
+     border 0.5px --border · radius --radius-dropdown
+     Summary  padding 13/16, gap 10, chevron 9px
+              label Inter 600 13.5 --text-1 */
+.main-content sl-details::part(base) {
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-dropdown);
+}
+
+.main-content sl-details::part(header) {
+  padding: 13px 16px;
+  gap: 10px;
+  font-size: var(--type-small);        /* 13.5 */
+  font-weight: var(--weight-heading);
+  color: var(--text-1);
+}
+
+.main-content sl-details::part(header):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.main-content sl-details::part(summary-icon) {
+  font-size: 9px;
+  color: var(--text-2);
+}
+
+.main-content sl-details::part(content) {
+  padding: 0 16px 13px;
+  font-size: var(--type-small);
+  color: var(--text-1);
+}
+
+/* Code card ({{< code >}} and fenced blocks) — DOC-1324, phase 3a.
+
+   Figma's Code Card: bg --code-surface, border 0.5px --border,
+   radius --radius-code-card, body padding 12 top / 18 sides / 18 bottom.
+   Ours had the surface and the type (phase 2b) but an 8px radius and no
+   border, so it read as a flat slab rather than a card. */
+.main-content pre {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-code-card);
+  padding: 12px 18px 18px;
 }

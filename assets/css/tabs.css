@@ -61,3 +61,106 @@ body > .tabs .tabs-nav {
 .tab.disabled::after {
   background-color: red;
 }
+
+/* ---------------------------------------------------------------------------
+   CONTENT TAB GROUP (the {{< tabs >}} shortcode) — DOC-1324, phase 3a.
+
+   Everything above styles the SITE navigation tabs. This styles `sl-tab-group`,
+   which is a different component that happens to share the word. It previously
+   had no rules at all, so it rendered entirely in Shoelace's CDN theme.
+
+   Kept as Shoelace rather than rebuilt: sl-tab-group provides roving tabindex,
+   arrow-key navigation and the ARIA tab/tabpanel wiring, which is genuinely
+   fiddly to reimplement and easy to get subtly wrong. ::part() is the designed
+   extension point, so styling through it is not a workaround.
+
+   Figma's Tab Group:
+     border 0.5px --border · radius --radius-code-card · overflow hidden
+     TabList  bg --bg, border-bottom 0.5px --divider, gap 2, pad-left 10, pad-top 6
+     Tab      label Inter 600 12.5, padding 8/12/10
+              active   --text  + a 2px --accent bar beneath
+              inactive --text-3
+     Panel    bg --code-surface, padding 14 top / 18 sides / 18 bottom
+
+   This also settles DOC-1307's open question 1 — Figma uses an underline for
+   the active tab, not an accent background. --------------------------------- */
+
+.main-content sl-tab-group {
+  display: block;
+  margin: 1.5rem 0;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-code-card);
+  overflow: hidden;
+}
+
+.main-content sl-tab-group::part(nav) {
+  background: var(--bg);
+  border-bottom: 0.5px solid var(--divider);
+  padding: 6px 0 0 10px;
+}
+
+.main-content sl-tab-group::part(tabs) {
+  gap: 2px;
+  border-bottom: none;
+}
+
+/* Shoelace draws its own sliding indicator under the active tab. Figma wants a
+   square-topped 2px bar sitting flush on the tab, so ours is drawn on sl-tab
+   itself and Shoelace's is removed rather than restyled — two indicators would
+   otherwise animate against each other. */
+.main-content sl-tab-group::part(active-tab-indicator) {
+  display: none;
+}
+
+.main-content sl-tab::part(base) {
+  padding: 8px 12px 10px;
+  font-size: var(--type-crumb);        /* 12.5 */
+  font-weight: var(--weight-heading);
+  color: var(--text-3);
+  border-bottom: 2px solid transparent;
+  border-radius: 2px 2px 0 0;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.main-content sl-tab:hover::part(base) {
+  color: var(--text-1);
+}
+
+.main-content sl-tab[active]::part(base) {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.main-content sl-tab::part(base):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* DELIBERATE DIVERGENCE FROM FIGMA.
+
+   Figma paints the panel as a code surface (--code/code-bg) with the code sitting
+   flush to its edges. That works for the comp, whose example panel contains only
+   code — but our tab panels hold arbitrary Markdown, and several already mix
+   prose with code ("Or, if you have a configuration file:" between two blocks on
+   the authenticating page).
+
+   Painting the panel dark made that prose --text-color on a dark surface, i.e.
+   invisible. The design's INTENT is a bordered group with an underlined active
+   tab; the dark panel is an incidental property of its sample content, not a
+   rule about what a tab panel is. So the panel stays on the page surface and any
+   code block inside keeps the card treatment it has everywhere else. */
+.main-content sl-tab-panel::part(base) {
+  background: var(--bg);
+  padding: 14px 18px 18px;
+}
+
+/* A panel whose entire content is one code block gets Figma's flush look: no
+   double border, no nested rounding — the group's own border is the card. */
+.main-content sl-tab-panel > pre:only-child {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  /* cancel the panel padding so the surface reaches the group edges */
+  margin: -14px -18px -18px;
+  padding: 14px 18px 18px;
+}

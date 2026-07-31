@@ -1,13 +1,25 @@
+{{- /* Link card.
+
+       An <a>, not a div with an onclick (DOC-1325). The previous version put
+       `onclick="document.location = …"` on an <sl-card>, so the card was not
+       focusable, was not announced as a link, could not be cmd/middle-clicked,
+       and did not appear in the link graph at all — a large part of the site's
+       navigation was invisible to crawlers and to internal-link checking.
+
+       Dropping <sl-card> also removes a shadow boundary that was pulling the
+       card's appearance from Shoelace's CDN theme instead of our tokens
+       (DOC-1324). It was a div with a border; nothing was lost.
+
+       The icon is decorative — the title carries the meaning — so it is
+       aria-hidden and never focusable. */ -}}
 {{- $title := .Get "title" -}}
 {{- $target := .Get "target" -}}
 {{- $icon := .Get "icon" -}}
 
-<sl-card class="card-basic" onclick="document.location = '{{- $target | safeURL -}}';">
-    <div class="card-content">
-        <div class="card-header">
-            {{- $title -}}
-            <sl-icon-button name="{{- $icon -}}" label="{{- $title -}}"></sl-icon-button>
-        </div>
-        {{- .Page.RenderString .Inner -}}
-    </div>
-</sl-card>
+<a class="link-card" href="{{- $target | safeURL -}}">
+    {{- with $icon -}}
+    <sl-icon class="link-card-icon" name="{{- . -}}" aria-hidden="true"></sl-icon>
+    {{- end -}}
+    <span class="link-card-title">{{- $title -}}</span>
+    <span class="link-card-body">{{- $.Page.RenderString $.Inner -}}</span>
+</a>
