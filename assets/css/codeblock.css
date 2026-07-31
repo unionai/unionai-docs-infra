@@ -1,6 +1,17 @@
+/* Code card ({{< code >}}) — radii aligned to --radius-code-card in DOC-1324.
+
+   NOTE for phase 4: this component cannot fully match Figma's Code Card yet.
+   Figma's card sits on --code/code-bg, but `chroma.css` still hardcodes
+   Monokai's #272822 on `.chroma`, which wins over the `pre` background. So the
+   surface users actually see is Monokai's, not our --code-surface (#16181d).
+   The phase-2 token spec recorded chroma as "fully replaceable, 60 literals ->
+   7 tokens"; that work is scheduled for phase 4 and is the blocker for the last
+   step of Code Card fidelity. Radius and border are token-driven now; the
+   background follows when chroma does. */
+
 .codeblock {
     position: relative;
-    border-radius: 8px;
+    border-radius: var(--radius-code-card);
     overflow: hidden;
 }
 
@@ -69,12 +80,12 @@
 
 /* Ensure the code block integrates seamlessly */
 .codeblock .code {
-    border-radius: 0 0 8px 8px; /* Only round bottom corners */
+    border-radius: 0 0 var(--radius-code-card) var(--radius-code-card); /* header is square-bottomed above it */
     margin: 0;
 }
 
 .codeblock .code pre {
-    border-radius: 0 0 8px 8px; /* Only round bottom corners */
+    border-radius: 0 0 var(--radius-code-card) var(--radius-code-card); /* header is square-bottomed above it */
     margin: 0;
 }
 

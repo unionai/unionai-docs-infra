@@ -1,20 +1,76 @@
-sl-card::part(base) {
+/* Link card — DOC-1324 (phase 3a) + DOC-1325.
+
+   Was an <sl-card> with an onclick. Two problems in one element: it was not a
+   link (see the shortcode comment), and being shadow-DOM it took its border,
+   radius, padding and type from Shoelace's CDN theme. This file previously had
+   ZERO var() references — no colour of ours reached the card at all.
+
+   Figma's Link Card:
+     border 0.5px --border · radius --radius-dropdown · padding 16 · gap 7
+     CardIcon 18x18        on its own row, ABOVE the title
+     title  Inter 600 14/19    --text
+     body   Inter 400 12.5/20  --text-2
+
+   Ours previously put the icon inline AFTER the title and styled the title as
+   nothing but `font-weight: bold`. */
+
+.link-card {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Ensures the card itself stretches */
-  transition: all 0.1s ease-in-out; /* Smooth transition */
+  align-items: flex-start;
+  gap: 7px;
+  height: 100%;
+  padding: 16px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-dropdown);
+  background: var(--bg);
+  /* The card is a link, so opt out of the underline the content area puts on
+     every <a>; the box is the affordance. */
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-sl-card:hover::part(base) {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Elevation effect */
-  transform: translateY(-5px); /* Slight lift effect */
-  cursor: pointer;
+.main-content a.link-card {
+  text-decoration: none;
 }
 
-.card-content {
-  flex-grow: 1; /* Ensures content inside grows to fill */
+.link-card:hover {
+  border-color: var(--rule);
+  background: var(--bg-1);
 }
 
-.card-header {
-  font-weight: bold;
+/* Keyboard users get a real focus ring — the old card could not be focused at
+   all, so there was nothing to style. */
+.link-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.link-card-icon {
+  font-size: 18px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.link-card-title {
+  font-size: 0.875rem;      /* 14 */
+  font-weight: var(--weight-heading);
+  line-height: 1.36;        /* 19 / 14 */
+  color: var(--text);
+}
+
+.link-card-body {
+  font-size: var(--type-crumb);   /* 12.5 */
+  line-height: 1.6;               /* 20 / 12.5 */
+  color: var(--text-2);
+}
+
+/* The body is authored as Markdown, so it arrives wrapped in <p>. Those carry
+   the global paragraph margin, which would fight the 7px gap the flex column
+   already provides. */
+.link-card-body > p {
+  margin: 0;
+}
+.link-card-body > p + p {
+  margin-top: 0.5rem;
 }
