@@ -18,7 +18,7 @@
 }
 .flyte-banner-link {
     align-items: center;
-    background-color: var(--brand-union);
+    background-color: var(--brand);
     box-sizing: border-box;
     color: var(--on-brand);
     column-gap: 16px;

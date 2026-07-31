@@ -80,6 +80,17 @@
      The saturated dark-mode accents serve as the brand colours. */
   --brand-union: #FCB51D;
   --brand-flyte: #c084fc;
+  /* THE ACTIVE product's brand colour. --brand-union/-flyte above are each
+     product's own mark, used where both appear at once (the product toggle
+     shows both dots regardless of which variant you are reading). --brand is
+     the one belonging to the variant you are IN, and it is what filled brand
+     surfaces take: the promo banner and the signup CTA.
+
+     Those two were pinned to --brand-union, so the Flyte variant rendered
+     Union gold. Reported by Peeter. Declared per variant below rather than
+     aliased once, because an alias on :root is substituted against the union
+     value and would not follow the .variant-flyte override. */
+  --brand: var(--brand-union);
   /* Foreground for BRAND surfaces (banner, signup CTA). The brand gold is a
      filled surface, not text, so it takes near-black — white on gold is
      1.78:1 and fails WCAG, which is what production has been shipping. With
@@ -279,6 +290,8 @@ body.has-secondary-topnav {
 }
 
 :root .variant-flyte {
+  /* the active brand follows the variant — see --brand on :root */
+  --brand: var(--brand-flyte);
   /* Variant changes the ACCENT ONLY — neutrals are variant-invariant per the
      Union V2 spec. Light mode darkens the accent, as it does for Union. */
   --accent: #7c3aed;
@@ -358,6 +371,8 @@ body.has-secondary-topnav {
 }
 
 [data-theme="dark"] .variant-flyte {
+  /* the active brand follows the variant — see --brand on :root */
+  --brand: var(--brand-flyte);
   /* Accent only. The purple background cast (--bg #050310, --bg-1 #100e18 and
      the row tints) is deliberately gone: neutrals are variant-invariant, so
      Flyte dark now shares Union dark's surfaces. Decision locked 2026-07-30. */
