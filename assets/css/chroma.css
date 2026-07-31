@@ -1,3 +1,23 @@
+/* ---------------------------------------------------------------------------
+   HASH ROTATION, 2026-07-31 — deliberate, and the reason is worth keeping.
+
+   The deploy that first shipped this file produced a CACHED 404. A request
+   landed mid-deploy before chroma.<hash>.css had propagated; the edge cached
+   the 404 and held it. Cloudflare's copy purged cleanly, but the response
+   carried `x-cache: Error from cloudfront` — CloudFront sits IN FRONT of
+   Cloudflare, it had cached the error independently, and we hold no CloudFront
+   credentials. `ops/cf-purge.sh` cannot reach it.
+
+   The escape is the hashing itself: change the content, get a new hash, and the
+   poisoned URL is simply never requested again. This comment is that change.
+
+   Only /docs/latest/union was affected; the same hash under /docs/latest/flyte
+   and both /docs/v2 paths returned 200, because CloudFront caches per URL.
+
+   See DOC-1321 — a long TTL would make this far worse, and the Cache Rule there
+   must set `status_code_ttl` 0 for 4xx.
+   --------------------------------------------------------------------------- */
+
 /* Syntax highlighting — DOC-1324, phase 4.
 
    Was `hugo gen chromastyles --style=monokai`: 60 hardcoded literals across 12
