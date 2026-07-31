@@ -835,3 +835,151 @@ hr {
   border-radius: var(--radius-code-card);
   padding: 12px 18px 18px;
 }
+
+/* ---------------------------------------------------------------------------
+   INLINE COMPONENTS — DOC-1324, phase 3b.
+
+   Badge, button and download link. Like the boxed components in 3a, all three
+   were rendering in Shoelace's CDN theme with no rule of ours reaching them.
+   --------------------------------------------------------------------------- */
+
+/* Badge. Figma reuses the semantic tint trio the notices use — soft fill,
+   matching border, status hue for the label — so a badge and a notice of the
+   same kind read as the same family. Small caps-ish label: 10.5/600 with +3%
+   tracking. */
+.main-content sl-badge {
+  --badge-tint: var(--info-soft);
+  --badge-border: var(--info-border);
+  --badge-hue: var(--blue);
+}
+.main-content sl-badge[variant="success"] {
+  --badge-tint: var(--success-soft);
+  --badge-border: var(--success-border);
+  --badge-hue: var(--green);
+}
+.main-content sl-badge[variant="warning"] {
+  --badge-tint: var(--warning-soft);
+  --badge-border: var(--warning-border);
+  --badge-hue: var(--orange);
+}
+.main-content sl-badge[variant="danger"] {
+  --badge-tint: var(--danger-soft);
+  --badge-border: var(--danger-border);
+  --badge-hue: var(--red);
+}
+.main-content sl-badge[variant="neutral"] {
+  --badge-tint: var(--bg-2);
+  --badge-border: var(--border-2);
+  --badge-hue: var(--text-2);
+}
+
+.main-content sl-badge::part(base) {
+  background: var(--badge-tint);
+  border: 0.5px solid var(--badge-border);
+  border-radius: 6px;
+  padding: 0 8px;
+  font-family: var(--font-sans);
+  font-size: 0.65625rem;        /* 10.5 */
+  font-weight: var(--weight-heading);
+  letter-spacing: 0.03em;       /* Figma +0.315px at 10.5 = 3% */
+  line-height: 1.6;
+  color: var(--badge-hue);
+  box-shadow: none;
+}
+
+/* Button. A filled accent surface — the one place a solid accent block appears
+   in body content — so the label takes --on-accent, which already flips to
+   near-black in dark mode where the accent is bright. */
+.main-content sl-button::part(base) {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-search);      /* 9 */
+  padding: 0 16px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;                     /* 13 */
+  font-weight: var(--weight-heading);
+  color: var(--on-accent);
+  transition: filter 0.15s ease;
+}
+.main-content sl-button:hover::part(base) {
+  filter: brightness(1.08);
+}
+.main-content sl-button::part(base):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Download link. Figma renders it as a bordered card with everything on ONE
+   row — icon, filename in mono, description muted beside it. Ours stacked the
+   description under the link.
+
+   The CARD is the container, not the anchor. Putting the border on `div.download`
+   and laying it out as a flex row gets Figma's arrangement without moving the
+   description inside the <a>, which would have folded a sentence of prose into
+   the link text for every screen-reader user.
+
+   The inline (span) form is untouched — only the paragraph form is a card. */
+div.download {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 0.75rem 0;
+  padding: 13px 16px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-dropdown);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+div.download:hover {
+  border-color: var(--rule);
+  background: var(--bg-1);
+}
+
+/* The filename is a path, so it is set in mono like every other identifier. */
+div.download > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--type-crumb);   /* 12.5 */
+  color: var(--text-1);
+  flex-shrink: 0;
+}
+.main-content div.download > a {
+  text-decoration: none;
+}
+.main-content div.download > a:hover {
+  text-decoration: underline;
+}
+div.download > a sl-icon {
+  font-size: 17px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+div.download .description {
+  font-family: var(--font-sans);
+  font-size: var(--type-crumb);
+  color: var(--text-3);
+}
+
+/* The INLINE form is what content actually uses — every `{{< download >}}` in
+   the corpus is inline in a sentence ("Copy the public key here: …"), and
+   `display="paragraph"` appears nowhere. Figma only draws the card, so the
+   inline treatment is ours: the filename in mono like any other path, with the
+   icon in the muted tone so it reads as an affordance rather than punctuation. */
+span.download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+span.download > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+span.download sl-icon {
+  font-size: 1.1em;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
