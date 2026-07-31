@@ -7,6 +7,12 @@
 # its own line's trees (CloudFront routes across lines). Maintain it when either line
 # cuts a new version (rotate stable; move the outgoing stable into enumerated).
 #
+# KNOWN DEFECT (DOC-1330): that maintenance step is MANUAL and lives in a repo the cut
+# workflow cannot write to, so this file goes stale on every cut — the footer (from
+# data/version-manifest.json, which the cut DOES update) then disagrees with the selector.
+# First observed on the v2.5.16.1 cut, docs#1324. Until DOC-1330 derives this file from
+# both branches' versions.toml, every cut needs a companion edit here.
+#
 # If this file is absent, the selector falls back to the per-branch versions.toml (this
 # line only). Per line:
 #   latest      whether the line has a bleeding-edge build (only v2 -> /docs/latest.
@@ -18,8 +24,8 @@
 
 [v2]
 latest = true
-stable = "v2.5.16.0"
-enumerated = []          # older v2 tags, newest-first, once there are any
+stable = "v2.5.16.1"
+enumerated = ["v2.5.16.0"]   # older v2 tags, newest-first
 
 [v1]
 latest = false
