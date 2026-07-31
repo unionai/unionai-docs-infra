@@ -76,8 +76,14 @@
   /* brand marks — each product's own colour, independent of the ACTIVE variant
      (the product toggle shows both at once, so these must not follow --accent).
      The saturated dark-mode accents serve as the brand colours. */
-  --brand-union: #f5a623;
+  --brand-union: #FCB51D;
   --brand-flyte: #c084fc;
+  /* Foreground for BRAND surfaces (banner, signup CTA). The brand gold is a
+     filled surface, not text, so it takes near-black — white on gold is
+     1.78:1 and fails WCAG, which is what production has been shipping. With
+     #131108 it is 10.59:1. Mirrors how Figma pairs accent surfaces with
+     accent/on-accent in dark mode. */
+  --on-brand: #131108;
   /* decorative accent — landing-page cards. NOT covered by the Figma spec;
      left on the previous palette deliberately and tracked for the long-tail
      phase, rather than invented here. */

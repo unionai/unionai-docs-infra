@@ -55,7 +55,11 @@ EXPECTED = [
     ("--accent",    "#b45309", "#f5a623", "#7c3aed", "#c084fc"),
     ("--on-accent", "#ffffff", "#131108", "#ffffff", "#131108"),
     # brand marks — invariant across BOTH axes (the toggle shows both at once)
-    ("--brand-union", "#f5a623", "#f5a623", "#f5a623", "#f5a623"),
+    # Brand seed, per Figma `Union/source/seed` — the brand MARK colour, distinct
+    # from --dacc. Invariant across both axes: the toggle shows both products.
+    ("--brand-union", "#FCB51D", "#FCB51D", "#FCB51D", "#FCB51D"),
+    # Foreground on brand surfaces. White on gold is 1.78:1 and fails; this is 10.59:1.
+    ("--on-brand",    "#131108", "#131108", "#131108", "#131108"),
     ("--brand-flyte", "#c084fc", "#c084fc", "#c084fc", "#c084fc"),
     # component aliases that must track the primitives above
     ("--bg-color",     "#ffffff", "#0e0e11", "#ffffff", "#0e0e11"),

@@ -1,6 +1,6 @@
 .flyte-banner {
     align-items: center;
-    color: white;
+    color: var(--on-brand);
     box-sizing: border-box;
     display: flex;
     font-family: Inter,sans-serif;
@@ -14,13 +14,13 @@
     -webkit-font-smoothing: antialiased;
 }
 .flyte-banner a{
-    color: white;
+    color: var(--on-brand);
 }
 .flyte-banner-link {
     align-items: center;
-    background-color: var(--union-color);
+    background-color: var(--brand-union);
     box-sizing: border-box;
-    color: white;
+    color: var(--on-brand);
     column-gap: 16px;
     display: flex;
     height: 3rem;
@@ -32,20 +32,20 @@
     padding-left: .5rem;
     padding-right: .5rem;
     row-gap: .5rem;
-    text-decoration-color: var(--on-accent);
+    text-decoration-color: var(--on-brand);
     text-decoration-line: none;
     text-decoration-style: solid;
     text-decoration-thickness: auto;
     width: 100%;
 }
 a.flyte-banner-link:hover {
-    background-color: var(--union-color-dark);
-    color: white;
+    background-color: var(--accent-dark);
+    color: var(--on-brand);
 }
 .flyte-banner-button {
     align-items: center;
     background-color: #0000;
-    border-bottom-color: var(--on-accent);
+    border-bottom-color: var(--on-brand);
     border-bottom-left-radius: 0.5rem;
     border-bottom-right-radius: 0.5rem;
     border-bottom-style: solid;
@@ -55,18 +55,18 @@ a.flyte-banner-link:hover {
     border-image-slice: 100%;
     border-image-source: none;
     border-image-width: 1;
-    border-left-color: var(--on-accent);
+    border-left-color: var(--on-brand);
     border-left-style: solid;
     border-left-width: 1px;
-    border-right-color: var(--on-accent);
+    border-right-color: var(--on-brand);
     border-right-style: solid;
     border-right-width: 1px;
-    border-top-color: var(--on-accent);
+    border-top-color: var(--on-brand);
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
     border-top-style: solid;
     border-top-width: 1px;
-    color: white;
+    color: var(--on-brand);
     column-gap: 8px;
     display: block;
     font-size: .75rem;
