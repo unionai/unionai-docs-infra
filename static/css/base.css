@@ -526,7 +526,12 @@ pre code {
   word-break: break-word;
 }
 .main-content td code {
-  word-break: break-all;
+  /* Was `word-break: break-all`, which breaks at whatever character the line
+     happens to end on — so `Trigger` came out as `Trig` / `ger` even with a
+     whole empty line under it. `anywhere` only breaks a word that cannot fit
+     on a line of its own, which is the case this was reaching for: a long
+     dotted identifier in a narrow fixed-layout cell. */
+  overflow-wrap: anywhere;
 }
 .main-content th {
   background-color: var(--sidebar-bg);
