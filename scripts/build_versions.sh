@@ -172,8 +172,9 @@ items = []
 if has_latest:                      # global /docs/latest, owned by the primary line
     items.append({"seg": "latest", "num": "", "badge": "LATEST"})
 if stable:                          # /docs/<line> -- the moving stable pointer
-    items.append({"seg": line, "num": stable.lstrip("v"),
-                  "badge": "STABLE" if has_latest else ""})
+    # Unconditional STABLE, on both lines -- the badge is NOT tied to has_latest
+    # (DOC-1330). Must match run_hugo.sh; check-version-menu-parity.sh enforces it.
+    items.append({"seg": line, "num": stable.lstrip("v"), "badge": "STABLE"})
 for p in sorted({e for e in enum.split() if e}, key=vkey, reverse=True):
     items.append({"seg": p, "num": p.lstrip("v"), "badge": ""})
 
