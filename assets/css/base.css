@@ -210,7 +210,25 @@
   --text-color: var(--text);
   --text-color-light: var(--text-3);
   --bg-color: var(--bg);
-  --sidebar-bg: var(--bg-1);
+  /* SURFACE OFFSET — a surface that must read as distinct from the page.
+     Cards, the sidebar: anything that needs to be seen as its own plane.
+
+     This exists because THE RAMP RUNS THE OPPOSITE WAY IN THE TWO MODES.
+     --bg-1 is defined as a step DARKER than --bg, which is a visible offset
+     under a white page but hits a floor under a near-black one: in dark,
+     --bg-1 (#09090b) against --bg (#0e0e11) is 1.03:1, i.e. nothing. Reported
+     on the live site as "completely black, not nearly enough contrast on cards
+     and left nav".
+
+     So light steps DOWN the ramp and dark steps UP, and both land in the same
+     place perceptually:
+
+       light  --bg-1  1.07:1 against the page
+       dark   --bg-3  1.11:1 against the page
+
+     Do not replace this with a bare --bg-1: it is only correct in one mode. */
+  --surface-offset: var(--bg-1);
+  --sidebar-bg: var(--surface-offset);
   --border-color: var(--border);
   --separator: var(--border-2);
   --code-bg: var(--bg-2);
@@ -323,7 +341,9 @@ body.has-secondary-topnav {
   --text-color: var(--text);
   --text-color-light: var(--text-3);
   --bg-color: var(--bg);
-  --sidebar-bg: var(--bg-1);
+  --sidebar-bg: var(--surface-offset);
+  /* dark steps UP the ramp — see the note on --surface-offset above */
+  --surface-offset: var(--bg-3);
   --border-color: var(--border);
   --code-bg: var(--bg-2);
   --pre-bg: var(--code-surface);
@@ -360,7 +380,9 @@ body.has-secondary-topnav {
   --table-row-even: var(--row-alt);
   --table-row-hover: var(--row-hover);
   --bg-color: var(--bg);
-  --sidebar-bg: var(--bg-1);
+  --sidebar-bg: var(--surface-offset);
+  /* dark steps UP the ramp — see the note on --surface-offset above */
+  --surface-offset: var(--bg-3);
   --toc-bg: var(--bg);
 }
 
