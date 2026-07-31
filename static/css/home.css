@@ -1,5 +1,21 @@
+/* Served to the docs ROOT landing page (index.html.tmpl), which is NOT a Hugo
+   page: it is plain HTML with @@BASE@@/@@BUILD@@ placeholders substituted by the
+   Makefile. That page loads THIS FILE AND NOTHING ELSE — no base.css — so every
+   custom property below is undefined there.
+
+   Hence the literal fallback in each var(). Without them the page renders in the
+   browser default font with transparent decorations. That was already latent for
+   --decor/--decor-soft, and phase 2b added --font-sans to the list. It goes
+   unnoticed because a Cloudflare redirect currently shadows /docs/ and sends
+   visitors straight to the user guide — but this page is what shows if that
+   redirect ever goes away.
+
+   This file also stays in static/ rather than moving to assets/ with the rest of
+   the CSS (DOC-1316): content-hashing needs Hugo's resources.Get, and this file's
+   only consumer is outside Hugo entirely. It keeps the ?v= stamp. */
+
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif);
 }
 .container {
   position: absolute;
@@ -25,7 +41,7 @@ H1 {
 .target-link-text {
   display: inline-block;
   border: none;
-  background-color: var(--decor);
+  background-color: var(--decor, #d97706);
   color: white;
   padding: 0.5rem 1rem;
   text-transform: uppercase;
@@ -43,7 +59,7 @@ H1 {
 }
 
 .target-link-text:hover {
-  background-color: var(--decor-soft);
+  background-color: var(--decor-soft, #fea034);
 }
 
 .nav {
@@ -79,7 +95,7 @@ H1 {
 }
 
 .warn {
-  border: 1px solid var(--decor);
+  border: 1px solid var(--decor, #d97706);
   margin-bottom: 2rem;
   margin: 0 4rem;
 }
@@ -87,7 +103,7 @@ H1 {
 .warn .title {
   color: white;
   padding: 0.75rem;
-  background-image: linear-gradient(45deg, var(--decor-soft) 25%, var(--decor) 25%, var(--decor) 50%, var(--decor-soft) 50%, var(--decor-soft) 75%, var(--decor) 75%, var(--decor) 100%);
+  background-image: linear-gradient(45deg, var(--decor-soft, #fea034) 25%, var(--decor, #d97706) 25%, var(--decor, #d97706) 50%, var(--decor-soft, #fea034) 50%, var(--decor-soft, #fea034) 75%, var(--decor, #d97706) 75%, var(--decor, #d97706) 100%);
   background-size: 56.57px 56.57px;
 }
 
@@ -116,19 +132,19 @@ H1 {
 }
 
 .variant-flyte .target-link-text {
-  background-color: var(--decor);
+  background-color: var(--decor, #d97706);
 }
 
 .variant-flyte .target-link-text:hover {
-  background-color: var(--decor-soft);
+  background-color: var(--decor-soft, #fea034);
 }
 
 .variant-flyte .warn {
-  border: 1px solid var(--decor);
+  border: 1px solid var(--decor, #d97706);
 }
 
 .variant-flyte .warn .title {
-  background-image: linear-gradient(45deg, var(--decor) 25%, var(--decor-soft) 25%, var(--decor-soft) 50%, var(--decor) 50%, var(--decor) 75%, var(--decor-soft) 75%, var(--decor-soft) 100%);
+  background-image: linear-gradient(45deg, var(--decor, #d97706) 25%, var(--decor-soft, #fea034) 25%, var(--decor-soft, #fea034) 50%, var(--decor, #d97706) 50%, var(--decor, #d97706) 75%, var(--decor-soft, #fea034) 75%, var(--decor-soft, #fea034) 100%);
   background-size: 56.57px 56.57px;
 }
 

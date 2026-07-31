@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-links check-generated-content clean clean-generated
+.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-links check-generated-content clean clean-generated
 
 all: usage
 
@@ -133,6 +133,9 @@ check-generated-content:
 
 check-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --check
+
+check-asset-refs:
+	@unionai-docs-infra/scripts/check-asset-refs.sh
 
 check-llm-bundle-notes:
 	@$(UV) python unionai-docs-infra/tools/llms_generator/check_llm_bundle_notes.py
