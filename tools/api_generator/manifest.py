@@ -272,8 +272,21 @@ def compute_next_version(sdk_version: str) -> dict:
 # --------------------------------------------------------------------------- #
 # --promote: write the version intent into versions.toml
 # --------------------------------------------------------------------------- #
-def _emit_versions_toml(stable: str, enumerated: list[str]) -> str:
-    """Render versions.toml (kept minimal + deterministic so diffs are clean)."""
+def _emit_versions_toml(stable: str, enumerated: list[str],
+                        latest: bool | None = None) -> str:
+    """Render versions.toml (kept minimal + deterministic so diffs are clean).
+
+    ``latest`` must be carried through (DOC-1330). This function rebuilds the file
+    from scratch, so any key it cannot express is DESTROYED on every promote. It
+    previously could not express ``latest``, and the first v1 cut duly dropped
+    ``latest = false`` -- which flipped the v1 line to the primary-line default and
+    put a LATEST entry in v1's menu pointing at /docs/latest (a URL the edge routes
+    to v2), while also making the v1 build produce a whole /docs/latest tree it is
+    meant to skip.
+
+    Emitted only when False: absent means the default (True), so the primary line's
+    file stays byte-identical to what it was.
+    """
     def _key(tag: str):
         try:
             return Version(tag.lstrip("v"))
@@ -286,12 +299,16 @@ def _emit_versions_toml(stable: str, enumerated: list[str]) -> str:
         "# stable     = newest tag, served at /docs/<line> (the one indexed URL).",
         "# enumerated = OLDER tags only, served at /docs/<tag>. The newest is NEVER",
         "#              enumerated -- no byte-identical duplicate tree.",
+        "# latest     = whether this line owns the global /docs/latest URL. Only the",
+        "#              primary line does; a secondary line (v1) sets false.",
         f'stable = "{stable}"',
         "enumerated = [",
         *[f'  "{t}",' for t in ordered],
         "]",
-        "",
     ]
+    if latest is False:
+        lines.append("latest = false")
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -317,16 +334,23 @@ def promote_versions_toml(decision: dict, path: Path) -> None:
     tag = decision["tag"]
     enumerated: list[str] = []
     old_stable: str | None = None
+    latest: bool | None = None
     if path.exists():
         existing = tomllib.loads(path.read_text())
         enumerated = list(existing.get("enumerated", []))
         old_stable = existing.get("stable") or None
+        # Carry `latest` through (DOC-1330). A promote REWRITES this file, so any key
+        # not read here is silently lost -- which is exactly how the first v1 cut
+        # dropped `latest = false`. Read as-is rather than defaulting, so an absent
+        # key stays absent and the primary line's file does not churn.
+        latest = existing.get("latest")
     if old_stable and old_stable != tag:
         enumerated.append(old_stable)          # yesterday's stable becomes an older pin
     enumerated = [t for t in enumerated if t != tag]  # the new stable is NEVER enumerated
-    path.write_text(_emit_versions_toml(stable=tag, enumerated=enumerated))
+    path.write_text(_emit_versions_toml(stable=tag, enumerated=enumerated, latest=latest))
     print(f"promote: {path.name} stable={tag} (was {old_stable or 'none'}; "
-          f"{len(set(enumerated))} older pin(s))")
+          f"{len(set(enumerated))} older pin(s)"
+          + ("; latest=false preserved" if latest is False else "") + ")")
 
 
 # --------------------------------------------------------------------------- #
