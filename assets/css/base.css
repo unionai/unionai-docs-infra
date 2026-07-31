@@ -650,8 +650,75 @@ IMG {
   height: auto;
 }
 
+/* Notices (DOC-1315) -------------------------------------------------------
+   `sl-alert` is a shadow-DOM component, so until now it took its entire
+   appearance from Shoelace's CDN theme and none of ours: a white panel with a
+   3px #0284c7 top stripe and a 4px radius. In light mode that panel is
+   #ffffff on an #ffffff page — the callout had no box, just a hairline.
+
+   Meanwhile Phase 2a shipped the whole semantic tint scale (--info-soft,
+   --info-bar, --warning-*, --danger-*) and NOTHING consumed it. Ten of the
+   eleven tokens were dead. This wires them to the component they were
+   extracted for, which is what makes the callout a box again.
+
+   The Union V2 Notice is a tinted panel with a 2px status-coloured bar down
+   the left and the right corners rounded — not a top stripe. Styled through
+   ::part() because that is the only handle Shoelace exposes; the custom
+   properties below pierce the shadow boundary and do the variant switching. */
 sl-alert {
   margin: 1rem 0;
+
+  /* default = variant="primary", i.e. > [!NOTE] */
+  --notice-tint: var(--info-soft);
+  --notice-bar: var(--info-bar);
+  --notice-hue: var(--blue);
+  --notice-title-size: 0.75rem;   /* 12 — component-local, not part of the docs/* scale */
+}
+sl-alert[variant="warning"] {
+  --notice-tint: var(--warning-soft);
+  --notice-bar: var(--warning-bar);
+  --notice-hue: var(--orange);
+}
+sl-alert[variant="danger"] {
+  --notice-tint: var(--danger-soft);
+  --notice-bar: var(--danger-bar);
+  --notice-hue: var(--red);
+}
+sl-alert[variant="success"] {
+  --notice-tint: var(--success-soft);
+  /* The token set has no --success-bar; the spec stops at success-soft and
+     success-border. Reusing the border is the closest in-system value. */
+  --notice-bar: var(--success-border);
+  --notice-hue: var(--green);
+}
+
+sl-alert::part(base) {
+  background-color: var(--notice-tint);
+  border: none;
+  border-left: 2px solid var(--notice-bar);
+  border-radius: 0 10px 10px 0;
+  box-shadow: none;
+  padding: 13px 18px 13px 16px;
+  font-size: var(--type-small);
+  line-height: var(--lh-small);
+  /* Applies to bare text nodes only — the templates wrap body content in <p>,
+     and `p { color: var(--text-color) }` wins there. That divergence is
+     deliberate: Figma sets notice body in --text-2, but a warning that reads
+     quieter than the prose around it is the wrong trade for us. Left here so a
+     notice built without a <p> still lands in-system. */
+  color: var(--text-2);
+}
+
+/* Figma's Notice carries no icon — the coloured bar is the entire signal.
+   Hidden rather than removed from the four templates that emit it, so this is
+   one line to revert if we decide the icon earns its space. */
+sl-alert::part(icon) {
+  display: none;
+}
+
+/* base owns the padding now; otherwise Shoelace's own message padding stacks. */
+sl-alert::part(message) {
+  padding: 0;
 }
 
 sl-alert P {
@@ -659,7 +726,26 @@ sl-alert P {
 }
 
 sl-alert P + P {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
+}
+
+/* The title, when `> [!NOTE] Some title` supplies one. Figma sets it in the
+   status hue at 12/600 — the one place the hue appears as text rather than as
+   the bar, which is what tells you which kind of notice this is now that the
+   icon is gone. */
+sl-alert > strong:first-of-type {
+  display: block;
+  margin-bottom: 5px;
+  font-size: var(--notice-title-size);
+  font-weight: var(--weight-heading);
+  letter-spacing: 0.02em;
+  color: var(--notice-hue);
+}
+
+/* The templates emit `<strong>Title</strong><br />`, and the <br> before a
+   block-level title would add an empty line. */
+sl-alert > strong:first-of-type + br {
+  display: none;
 }
 
 span.download {
