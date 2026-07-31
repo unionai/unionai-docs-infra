@@ -478,10 +478,22 @@ header .toggle-sidebar {
   color: var(--on-brand);
 }
 
+/* Hover stays in the BRAND family. It used to jump to --accent-dark, which is
+   a different colour family and much darker, while keeping --on-brand text --
+   near-black chosen to sit on the light brand fills. The result failed WCAG AA
+   in both light variants:
+
+     resting  union #FCB51D  10.59:1     flyte #c084fc  7.15:1
+     hover    union #b45309   3.76:1     flyte #7c3aed  3.32:1
+
+   Flyte was worst, which is where Peeter spotted the text "disappearing", but
+   union light was already failing before the brand token existed.
+
+   Darkening the brand instead keeps the hue, keeps --on-brand correct, and
+   works for every variant/mode pair without a value table. Matches how the
+   `button-link` shortcode handles its hover (phase 3b). */
 .signup-button:hover {
-  background-color: var(--accent-dark);
-  border-color: var(--accent-dark);
-  color: var(--on-brand);
+  filter: brightness(0.93);
 }
 
 .old-version {
