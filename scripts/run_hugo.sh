@@ -65,23 +65,88 @@ echo "build_id = \"${BUILD:-$(date +%s)}\"" >> "$hugo_build_toml"
 # flat list) plus a flat `versions` for back-compat. Each line lists: latest (v2 only, a
 # LATEST badge), stable (the newest tag, served at /docs/<line>; number + a STABLE badge),
 # then the OLDER pins at /docs/<tag>. The newest tag is never a separate pin -- no dup tree.
-# SOURCE: the shared cross-line registry unionai-docs-infra/served-versions.toml when
-# present (so every build lists both lines); else the per-branch versions.toml (this line
-# only). No versions.toml (v1 single build / pre-go-live) -> hugo.ver.toml's static
-# ["v2","v1"] stands. Only for versioned builds (VERSION set).
+# SOURCE (DOC-1330): DERIVED from every line's own versions.toml -- this line's from the
+# working tree, the other lines' from origin. There is no hand-maintained cross-line
+# registry any more.
+#
+# There used to be one: unionai-docs-infra/served-versions.toml, a file restating both
+# lines' stable+enumerated so any page could list both. It was a cache with no
+# invalidation. The cut workflow runs in unionai-docs and cannot write to the infra repo,
+# so every cut needed a companion hand-edit over there, and the first cut after go-live
+# (v2.5.16.1, docs#1324) duly shipped a page whose footer said 2.5.16.1 while its selector
+# said 2.5.16.0 -- and whose freshly-pinned /docs/v2.5.16.0 tree was built but missing from
+# the menu, because `enumerated` had not been rotated either.
+#
+# The data was never actually missing: each branch's versions.toml is authoritative for its
+# own line and IS updated by the cut (that is why the footer was right). So read the
+# originals instead of a copy of them.
+#
+# No versions.toml (v1 single build / pre-go-live) -> hugo.ver.toml's static ["v2","v1"]
+# stands. Only for versioned builds (VERSION set).
 if [[ -n $VERSION && -f "${REPO_ROOT:-.}/versions.toml" ]]; then
-    _sel_src="${REPO_ROOT:-.}/unionai-docs-infra/served-versions.toml"
-    [[ -f "$_sel_src" ]] || _sel_src="${REPO_ROOT:-.}/versions.toml"
+    _sel_src="${REPO_ROOT:-.}/versions.toml"
+    # The other lines live on refs this checkout may not have -- CI checkouts are commonly
+    # shallow or single-branch, and build_versions.sh runs us inside a linked worktree. A
+    # linked worktree shares the superproject's object store, so a fetch here is visible to
+    # `git show` below. Best-effort: if it fails (offline, no remote), the derivation below
+    # degrades to listing only the lines it can actually see rather than failing the build.
+    git -C "${REPO_ROOT:-.}" fetch -q --no-tags origin main v1 2>/dev/null || true
     # Append the params straight from python's stdout (no command substitution --
     # a heredoc inside $() plus single quotes trips macOS bash 3.2).
-    python3 - "$_sel_src" >> "$hugo_build_toml" <<'PY'
-import sys, json
+    python3 - "$_sel_src" "${REPO_ROOT:-.}" >> "$hugo_build_toml" <<'PY'
+import sys, json, subprocess
 try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
-d = tomllib.load(open(sys.argv[1], "rb"))
 import re
+
+# ---------------------------------------------------------------------------
+# Build the cross-line registry (DOC-1330) instead of reading a hand-kept copy.
+#
+# `d` ends up in exactly the shape the old served-versions.toml provided --
+# {"v2": {latest, stable, enumerated}, "v1": {...}} -- so everything downstream
+# is untouched.
+# ---------------------------------------------------------------------------
+_local, _root = sys.argv[1], sys.argv[2]
+
+def _line_of(cfg):
+    """('v2', {...}) from a parsed versions.toml. The line is the stable tag's
+    prefix -- v2.5.16.1 -> v2 -- so there is no separate field to keep in sync."""
+    stable = cfg.get("stable", "")
+    return stable.split(".")[0], {
+        "latest": bool(cfg.get("latest", True)),
+        "stable": stable,
+        "enumerated": list(cfg.get("enumerated", [])),
+    }
+
+d = {}
+# THIS line comes from the WORKING TREE, and is inserted FIRST so the setdefault
+# below can never displace it. That ordering is load-bearing: during a cut PR the
+# working tree holds the new number (v2.5.16.1) while origin/main still holds the
+# old one (v2.5.16.0). Reading origin for the current line would overwrite the new
+# value with the stale one and reintroduce the very bug this replaced -- only now
+# automatically, on every cut, with no hand-edit left to blame.
+_ln, _cfg = _line_of(tomllib.load(open(_local, "rb")))
+if _ln:
+    d[_ln] = _cfg
+
+# The OTHER lines come from origin: they are separate branches, never checked out
+# here. Iterating both branches unconditionally is safe -- whichever one IS the
+# current line hits the setdefault and is skipped.
+for _br in ("main", "v1"):
+    try:
+        _raw = subprocess.run(
+            ["git", "-C", _root, "show", f"origin/{_br}:versions.toml"],
+            capture_output=True, text=True, check=True).stdout
+    except (subprocess.CalledProcessError, OSError):
+        continue          # ref absent (shallow clone / pre-go-live branch) -> skip
+    try:
+        _o_ln, _o_cfg = _line_of(tomllib.loads(_raw))
+    except Exception:
+        continue          # unparseable versions.toml on that branch -> skip
+    if _o_ln:
+        d.setdefault(_o_ln, _o_cfg)
 def vkey(t):  # numeric-tuple sort, no third-party deps
     try:
         return tuple(int(x) for x in t.lstrip("v").split("."))
@@ -92,30 +157,27 @@ def line_key(ln):  # "v2" -> 2, to order lines newest-major-first
         return int(ln[1:])
     except Exception:
         return 0
-# The line list AND which line owns /docs/latest are DERIVED, not hardcoded, so adding a
-# new major line (v3) is pure config: add a [v3] table to served-versions.toml with
-# latest=true and set the old primary's latest=false. No code change here. The latest
-# segment is always the global "/docs/latest", owned by whichever line has latest=true.
-_lines = [k for k in d if re.match(r"^v\d+$", k)]
-if _lines:
-    # Shared registry: explicit per-line [vN] tables (latest flag + stable tag +
-    # enumerated OLDER pins). Order newest-major-first (v3, v2, v1, ...).
-    LINE_ORDER = sorted(_lines, key=line_key, reverse=True)
-    def line_cfg(ln):
-        c = d.get(ln, {})
-        return bool(c.get("latest", False)), c.get("stable", ""), list(c.get("enumerated", []))
-else:
-    # Per-branch versions.toml fallback: only THIS line, derived from the stable tag's
-    # prefix; its own `latest` flag says whether it owns /docs/latest.
-    _stable = d.get("stable", "")
-    _line = _stable.split(".")[0] if _stable else ""
-    _lat = bool(d.get("latest", True))
-    _enum = list(d.get("enumerated", []))
-    LINE_ORDER = [_line] if _line else []
-    def line_cfg(ln):
-        if ln != _line:
-            return False, "", []
-        return _lat, _stable, _enum
+# The line list AND which line owns /docs/latest are DERIVED, not hardcoded. Adding a new
+# major line (v3) is: create the branch with its own versions.toml (latest=true) and set
+# the old primary's latest=false. Nothing here changes -- the loop above discovers it.
+#
+# One place still hardcodes the line list and is NOT derived: hugo.ver.toml's
+# `versions = ["v2","v1"]`, which `make dev` reads (the dev config chain bypasses this
+# script entirely, so nothing here overrides it there). Production builds override it via
+# $hugo_build_toml below. So a v3 line also needs adding there, or {{< docs_home v3 >}}
+# warns in local dev while production stays silent. Tracked in DOC-1330.
+#
+# The latest segment is always the global "/docs/latest", owned by whichever line has
+# latest=true.
+#
+# `d` is now always the per-line shape (built above), so there is no second code path: the
+# old "per-branch fallback" branch existed only for when served-versions.toml was absent
+# and `d` was a bare {stable, enumerated} table. That file is gone and `d` is constructed,
+# so the fallback was unreachable and has been removed.
+LINE_ORDER = sorted([k for k in d if re.match(r"^v\d+$", k)], key=line_key, reverse=True)
+def line_cfg(ln):
+    c = d.get(ln, {})
+    return bool(c.get("latest", False)), c.get("stable", ""), list(c.get("enumerated", []))
 menu, flat = [], []
 # Each item is {seg, num, badge}: `num` is the version number shown (empty for
 # latest); `badge` is a real badge label ("LATEST"/"STABLE") or "" (older pins +
