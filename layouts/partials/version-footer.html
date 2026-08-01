@@ -7,8 +7,16 @@ dev), so the same shared template is safe on every branch.
 */ -}}
 {{- $cur := .Site.Params.current_version -}}
 {{- /* hugo.Data (Hugo >= 0.156) — .Site.Data is deprecated and, with the build's
-       --panicOnWarning, fatal on the pinned Hugo 0.161.x. Do not switch back. */ -}}
-{{- $mf := index hugo.Data "version-manifest" -}}
+       --panicOnWarning, fatal on the pinned Hugo 0.161.x. Do not switch back on the
+       pinned build. The version guard keeps local dev on older Hugo (< 0.156, which
+       lacks hugo.Data) working: the unexecuted branch is never evaluated, so neither
+       the missing hugo.Data field (old) nor the .Site.Data deprecation (new) fires. */ -}}
+{{- $mf := "" -}}
+{{- if ge hugo.Version "0.156.0" -}}
+  {{- $mf = index hugo.Data "version-manifest" -}}
+{{- else -}}
+  {{- $mf = index .Site.Data "version-manifest" -}}
+{{- end -}}
 {{- if and $cur $mf -}}
   {{- $variant := .Site.Params.variant -}}
   {{- $c := index $mf.variants $variant -}}
