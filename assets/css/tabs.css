@@ -10,7 +10,7 @@ body > .tabs .tabs-nav {
   display: flex;
   align-items: center;
   gap: 2rem;
-  max-width: calc(var(--content-width) * 1.5);
+  max-width: calc(var(--content-width) * 2);
 }
 
 .tab {
@@ -32,6 +32,9 @@ body > .tabs .tabs-nav {
 .tab .text {
   padding: 0.25rem 0.5rem;
   color: var(--text-color) !important;
+  /* Keep each top-menu label on one line; without this the flex items shrink
+     and multi-word titles wrap when there are many tabs. */
+  white-space: nowrap;
 }
 
 .tab .text:hover {

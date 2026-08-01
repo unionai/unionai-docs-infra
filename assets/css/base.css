@@ -427,10 +427,14 @@ body {
 .main-content {
   box-sizing: border-box;
   width: 100%;
-  max-width: calc(var(--content-width) + 2 * var(--main-content-padding));
-  padding: 2rem var(--main-content-padding);
-  margin: 0 auto;
   min-width: 0;
+  /* Fill the whole grid column and center the content with symmetric padding
+     rather than max-width + `margin: 0 auto`. That keeps the scroll container
+     the full width of the column, so the negative space either side of the
+     content scrolls too (auto margins would sit outside the scroll area). The
+     `max()` floor keeps the base padding on narrow columns; when wide it grows
+     to `(column - content-width) / 2`, matching the old centered layout. */
+  padding: 2rem max(var(--main-content-padding), calc((100% - var(--content-width)) / 2));
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;

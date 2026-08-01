@@ -2,11 +2,11 @@
 <button id="runllm-trigger" title="Ask AI" class="header-ask-ai">
   <span class="runllm-sparkle" aria-hidden="true"></span>
   <span class="runllm-label">Ask AI</span>
-  <span class="runllm-keys"><kbd>&#x21E7;</kbd><kbd>&#x2318;</kbd><kbd>K</kbd></span>
+  <span class="runllm-keys"><kbd>&#x21E7;</kbd><kbd>&#x2318;</kbd><kbd>L</kbd></span>
 </button>
 <script>
 document.addEventListener('keydown', function(e) {
-  if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.key === 'k') {
+  if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.code === 'KeyL') {
     e.preventDefault();
     e.stopImmediatePropagation();
     if (window.runllm) window.runllm.open();
