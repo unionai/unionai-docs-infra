@@ -58,9 +58,12 @@ def check_all(config: dict) -> list[dict]:
         latest = get_pypi_latest(sdk["package"])
         output = REPO_ROOT / sdk["output_folder"]
         # classes can be a directory (no-flatten) or a single .md file (flatten)
-        classes_dir = output / "classes"
-        classes_file = output / "classes.md"
-        content_missing = not (output / "packages").is_dir() or not (classes_dir.is_dir() or classes_file.is_file())
+        # DOC-1335: the generated tree is hoisted -- no `packages/` or `classes/`
+        # wrappers. "Content present" = the landing page plus at least one other
+        # generated markdown file (a module dir or a class page).
+        landing = output / "_index.md"
+        others = [f for f in output.rglob("*.md") if f != landing] if output.is_dir() else []
+        content_missing = not landing.is_file() or not others
         results.append({
             "type": "sdk",
             "package": sdk["package"],

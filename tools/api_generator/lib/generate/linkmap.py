@@ -15,12 +15,19 @@ def generate_linkmap_metadata(
     api_name: str,
     include_short_names: bool = False,
     flatten: bool = False,
+    single_package_flat: bool = False,
 ):
-    # Skip the content root (remove first path component: content/a/b/c -> a/b/c)
+    # Skip the content root (remove first path component: content/a/b/c -> a/b/c).
+    # DOC-1335: pkg_root IS the section root now (the `packages/` wrapper is
+    # hoisted), so URLs come out as /api-reference/<section>/<module>/... — and in
+    # a single-package section the module segment goes too.
     site_root = "/".join(pkg_root.split("/")[1:])
 
+    def module_url(pkg_name: str) -> str:
+        return f"/{site_root}/" if single_package_flat else f"/{site_root}/{pkg_name}/"
+
     # Build packages metadata from the packages list
-    packages_dict = {pkg["name"]: f"/{site_root}/{pkg['name']}/" for pkg in packages}
+    packages_dict = {pkg["name"]: module_url(pkg["name"]) for pkg in packages}
 
     # Build methods metadata. Methods are only emitted under their fully
     # qualified name — short method names like `init`, `run`, `log` are too
@@ -28,7 +35,7 @@ def generate_linkmap_metadata(
     methods_dict = {}
     for pkg in packages:
         for m in pkg["methods"]:
-            url = f"/{site_root}/{pkg['name']}/#{m['name']}"
+            url = f"{module_url(pkg['name'])}#{m['name']}"
             methods_dict[f"{pkg['name']}.{m['name']}"] = url
 
     # Build identifiers metadata from classes. When emitting short names, a
@@ -42,6 +49,8 @@ def generate_linkmap_metadata(
         for clz in classes[pkg]:
             if flatten:
                 url = f"/{site_root}/{pkg}/#{generate_anchor_from_name(clz)}"
+            elif single_package_flat:
+                url = f"/{site_root}/{clz.split('.')[-1].lower()}/"
             else:
                 url = f"/{site_root}/{pkg}/{clz.split('.')[-1].lower()}/"
             identifiers_dict[clz] = url
