@@ -19,18 +19,24 @@ dev), so the same shared template is safe on every branch.
            git-SHA book-keeping keys. */ -}}
     {{- $sdk := $mf.sdk_label | default "flyte-sdk" -}}
     {{- $skip := slice "content" "infra" "examples" $sdk -}}
-    {{- /* Link + label scheme (DOC-1294; labels revised with Peeter 2026-08-02).
-           Grammar per leg: <code>identifier</code> (kind) <code>version</code>.
-           The IDENTIFIER is inline code -- the org/repo slug where a public
-           repo exists, the bare package name where the repo is closed
-           (flyteplugins-union, the v1 `union` SDK; their PyPI page is the
-           public home). The parenthetical kind -- (SDK) / (Backend) -- stays
-           plain text. Versions are inline code. Links: identifier -> home,
-           version -> that exact release (`pypi` is the PyPI project name; NB
-           the flyte-sdk PACKAGE is `flyte` on PyPI). The map lives
-           template-side, not in the manifest, so all of this applies
-           retroactively to every already-committed pin manifest; a component
-           key not in the map falls back to plain rendering. */ -}}
+    {{- /* Link + label scheme (DOC-1294; grouped-label revision, Peeter
+           2026-08-02). The footer is a set of TYPE GROUPS, each an italic
+           type label + colon followed by its components:
+
+             Docs: `unionai/unionai-docs` `2.5.16.1`
+             SDK: `flyteorg/flyte-sdk` `2.5.16` `flyteplugins-union` `0.5.2`
+             Backend: `flyteorg/flyte` `v2.0.31`     (flyte variant only)
+
+           ONE SDK label covers every SDK-kind package (v2: flyte-sdk +
+           flyteplugins-union; v1: flytekit + union). Identifiers are inline
+           code -- the org/repo slug where a public repo exists, the bare
+           package name where the repo is closed (their PyPI page is the
+           public home). Versions are inline code. Links unchanged:
+           identifier -> home, version -> that exact release (`pypi` is the
+           PyPI project name; NB the flyte-sdk PACKAGE is `flyte` on PyPI).
+           The map lives template-side, not in the manifest, so all of this
+           applies retroactively to every committed pin manifest; a component
+           key not in the map falls back to a plain trailing span. */ -}}
     {{- $linkmap := dict
           "flyte-sdk"          (dict "slug" "flyteorg/flyte-sdk" "kind" "SDK" "home" "https://github.com/flyteorg/flyte-sdk" "pypi" "flyte")
           "flytekit"           (dict "slug" "flyteorg/flytekit" "kind" "SDK" "home" "https://github.com/flyteorg/flytekit"  "pypi" "flytekit")
@@ -39,29 +45,35 @@ dev), so the same shared template is safe on every branch.
           "backend"            (dict "slug" "flyteorg/flyte" "kind" "Backend" "home" "https://github.com/flyteorg/flyte" "reltag" true)
     -}}
 <div class="docs-version-info" style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border-color,#e5e7eb);font-size:.8rem;color:var(--text-muted,#6b7280);display:flex;flex-wrap:wrap;gap:.4rem 1rem;">
-  {{- /* Docs leg: identifier = the content repo slug; number = the exact
+  {{- /* Docs group: identifier = the content repo slug; number = the exact
          content snapshot (the cut tag), or the main tip on /docs/latest. */ -}}
-  <span><a href="https://github.com/unionai/unionai-docs"><code>unionai/unionai-docs</code></a>
+  <span><em>Docs</em>: <a href="https://github.com/unionai/unionai-docs"><code>unionai/unionai-docs</code></a>
     {{- if eq $cur "latest" }} <a href="https://github.com/unionai/unionai-docs/tree/main"><code>latest (main)</code></a>
     {{- else }} <a href="https://github.com/unionai/unionai-docs/tree/v{{ $mf.docs_version }}"><code>{{ $mf.docs_version }}</code></a>
     {{- end -}}</span>
+  {{- /* SDK group: one label, then every SDK-kind package -- the lead SDK
+         (named by sdk_label) first, then the rest in key order. */ -}}
   {{- with index $c $sdk -}}
     {{- $l := index $linkmap $sdk -}}
     {{- if $l -}}
-    <span><a href="{{ $l.home }}"><code>{{ $l.slug }}</code></a> ({{ $l.kind }}) <a href="https://pypi.org/project/{{ $l.pypi }}/{{ . }}/"><code>{{ . }}</code></a></span>
+    <span><em>SDK</em>: <a href="{{ $l.home }}"><code>{{ $l.slug }}</code></a> <a href="https://pypi.org/project/{{ $l.pypi }}/{{ . }}/"><code>{{ . }}</code></a>
+      {{- range $k, $v := $c -}}
+        {{- $ol := index $linkmap $k -}}
+        {{- if and $v (not (in $skip $k)) $ol (eq ($ol.kind | default "") "SDK") }} <a href="{{ $ol.home }}"><code>{{ $ol.slug }}</code></a> <a href="https://pypi.org/project/{{ $ol.pypi }}/{{ $v }}/"><code>{{ $v }}</code></a>
+        {{- end -}}
+      {{- end -}}</span>
     {{- else -}}
-    <span>{{ $sdk }} <code>{{ . }}</code></span>
+    <span><em>SDK</em>: {{ $sdk }} <code>{{ . }}</code></span>
     {{- end -}}
   {{- end -}}
+  {{- /* Backend group (flyte variant only) + plain trailing spans for any
+         unmapped component. */ -}}
   {{- range $k, $v := $c -}}
     {{- if and $v (not (in $skip $k)) -}}
       {{- $l := index $linkmap $k -}}
-      {{- if $l -}}
-        <span><a href="{{ $l.home }}"><code>{{ $l.slug }}</code></a> ({{ $l.kind }})
-          {{- if $l.reltag }} <a href="{{ $l.home }}/releases/tag/{{ $v }}"><code>{{ $v }}</code></a>
-          {{- else }} <a href="https://pypi.org/project/{{ $l.pypi }}/{{ $v }}/"><code>{{ $v }}</code></a>
-          {{- end -}}</span>
-      {{- else -}}
+      {{- if and $l (eq ($l.kind | default "") "Backend") -}}
+        <span><em>Backend</em>: <a href="{{ $l.home }}"><code>{{ $l.slug }}</code></a> <a href="{{ $l.home }}/releases/tag/{{ $v }}"><code>{{ $v }}</code></a></span>
+      {{- else if not $l -}}
         <span>{{ $k }} <code>{{ $v }}</code></span>
       {{- end -}}
     {{- end -}}
