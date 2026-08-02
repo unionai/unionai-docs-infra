@@ -13,7 +13,8 @@ PackageTree = Dict[str, List[str]]
 
 
 def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str],
-                            single_package_flat: bool = False):
+                            single_package_flat: bool = False,
+                            flatten: bool = False):
     """Emit the landing page's directory as KIND-BASED tables (DOC-1335):
     Classes / Protocols / Functions / Packages.
 
@@ -74,6 +75,10 @@ def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str],
         return
 
     def class_target(cls: str, pkg_name: str) -> str:
+        if flatten:
+            # Flatten vintage (the v1 line): classes are sections ON the module
+            # page, not pages -- link to the anchor.
+            return f"{pkg_name.lower()}#{generate_anchor_from_name(cls)}"
         leaf = cls.split(".")[-1].lower()
         if single_package_flat:
             return leaf
@@ -81,6 +86,8 @@ def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str],
 
     def module_target(pkg_name: str) -> str:
         # On the landing page itself when the section is a single flat package.
+        if flatten:
+            return pkg_name.lower()
         return "" if single_package_flat else f"{pkg_name}/_index"
 
     output.write("## Directory\n\n")
@@ -109,8 +116,9 @@ def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str],
         output.write("|-|-|\n")
         for pkg_name, m in function_rows:
             anchor = generate_anchor_from_name(m["name"])
+            target = f"{pkg_name.lower()}#{anchor}" if flatten else f"{pkg_name}/_index#{anchor}"
             output.write(
-                f"| [`{pkg_name}.{m['name']}()`]({pkg_name}/_index#{anchor}) | {docstring_summary(m.get('doc', ''))} |\n"
+                f"| [`{pkg_name}.{m['name']}()`]({target}) | {docstring_summary(m.get('doc', ''))} |\n"
             )
         output.write("\n")
 
@@ -138,6 +146,7 @@ def generate_home(
     expanded: bool,
     ignore_types: List[str],
     single_package_flat: bool = False,
+    flatten: bool = False,
 ):
     with open(os.path.join(output_folder, "_index.md"), "w") as output:
         write_front_matter(title, output, {
@@ -152,7 +161,8 @@ def generate_home(
                 output.write("\n\n")
 
         generate_home_directory(source, output, ignore_types,
-                                single_package_flat=single_package_flat)
+                                single_package_flat=single_package_flat,
+                                flatten=flatten)
 
 def generate_site(
     title: str,
@@ -208,6 +218,7 @@ def generate_site(
         expanded=expanded,
         ignore_types=ignore_types,
         single_package_flat=single_package_flat,
+        flatten=flatten,
     )
 
     subpages_frontmatter_extra: FrontMatterExtra = {
