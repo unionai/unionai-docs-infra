@@ -264,7 +264,10 @@
   --toc-font-size: var(--type-crumb);
   --toc-header-height: 96px;
   --header-height: 64px;
-  --tabs-height: 64px;
+  /* IA restructure (DOC-1334): the top tabs row is retired -- all hierarchy
+     lives in the left sidebar tree. The variable stays (the layout calc and
+     404.css read it) at 0 so the content area reclaims the row. */
+  --tabs-height: 0px;
   --content-width: 720px;
   /* Kept at the measure. An image wider than the text it sits in breaks the
      left margin the eye is tracking down. */
@@ -282,11 +285,7 @@
   --old-version-border: 3px solid var(--union-color);
   --old-version-background: var(--bg-3);
   --banner-height: 48px;
-  --secondary-topnav-height: 0px;
-}
-
-body.has-secondary-topnav {
-  --secondary-topnav-height: 50px;
+  --secondary-topnav-height: 0px; /* band retired (DOC-1334); calc consumers keep the var */
 }
 
 :root .variant-flyte {

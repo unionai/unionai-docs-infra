@@ -35,17 +35,6 @@
     display: none;
   }
 
-  .secondary-topnav {
-    display: none;
-  }
-
-  body.has-secondary-topnav {
-    --secondary-topnav-height: 0px;
-  }
-
-  .sidebar .tabs-nav {
-    display: block;
-  }
 
   .sidebar .show-on-mobile {
     display: block;

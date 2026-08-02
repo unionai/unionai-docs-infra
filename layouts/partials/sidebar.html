@@ -9,33 +9,7 @@
       <div class="drawer-product-version-host"></div>
       {{- $current := . -}}
       <nav class="site-nav drawer-nav" role="navigation">
-        <ul>
-          {{- range .Site.Sections.ByWeight -}}
-            {{- $access := partial "page-allowed.html" . -}}
-            {{- if and $access.allowed .Params.top_menu -}}
-              {{- $isActive := eq $current.Section .Section -}}
-              <li>
-                <a href="{{- .RelPermalink -}}" class="section-title{{ if $isActive }} active{{ end }}">
-                  <div class="content">
-                    {{- if and .IsSection (gt (len .Pages) 0) -}}
-                    <span class="chevron{{ if not $isActive }} rotated{{ end }}" aria-hidden="true"></span>
-                    {{- else -}}
-                    <span class="chevron hidden" aria-hidden="true"></span>
-                    {{- end -}}
-                    <div style="flex: 1">{{- .Title -}}</div>
-                  </div>
-                </a>
-                {{- if .IsSection -}}
-                <ul class="section-pages{{ if not $isActive }} collapsed{{ end }}">
-                  {{- range .Pages.ByWeight -}}
-                    {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
-                  {{- end -}}
-                </ul>
-                {{- end -}}
-              </li>
-            {{- end -}}
-          {{- end -}}
-        </ul>
+        {{- template "full-tree-nav" $current -}}
       </nav>
     </div>
   </slot>
@@ -90,32 +64,13 @@
 {{ define "site-nav" }}
 <nav class="site-nav" role="navigation" aria-label="Site navigation" itemscope itemtype="https://schema.org/SiteNavigationElement">
   <span class="sr-only" itemprop="description">Documentation navigation for {{ .Site.Params.variant | humanize }} including user guides, tutorials, API references, and integration examples</span>
-  <ul>
-    {{- $current := . -}}
-    {{- $secondaryTopnavActive := partial "secondary-topnav-active.html" $current -}}
-    {{- range .Site.Sections -}}
-        {{- if eq $current.Section .Section -}}
-          {{- if $secondaryTopnavActive -}}
-            {{- /* Tier 2 active: find the active child and render only its subtree */ -}}
-            {{- $activeChild := false -}}
-            {{- range .Pages.ByWeight -}}
-              {{- if and (not $activeChild) (hasPrefix $current.RelPermalink .RelPermalink) -}}
-                {{- $activeChild = . -}}
-              {{- end -}}
-            {{- end -}}
-            {{- if and $activeChild $activeChild.IsSection -}}
-              {{- range $activeChild.Pages.ByWeight -}}
-                {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
-              {{- end -}}
-            {{- end -}}
-          {{- else -}}
-            {{- range .Pages.ByWeight -}}
-              {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
-            {{- end -}}
-          {{- end -}}
-        {{- end -}}
-    {{- end -}}
-  </ul>
+  {{- /* IA restructure (DOC-1334): ALL hierarchy lives in this one tree -- the
+         former top-menu sections are its collapsible roots, the active one
+         expanded. The SAME template renders the mobile drawer, so desktop and
+         mobile navigation are structurally identical by construction (one
+         definition, not two kept in sync). The retired top tabs and the
+         secondary topnav band collapsed into this. */ -}}
+  {{- template "full-tree-nav" . -}}
 
   <script>
     // Persist the user's collapse/expand choices across navigations (DOC-942).
@@ -293,4 +248,40 @@
             {{- end -}}
         </li>
     {{- end -}}
+{{- end -}}
+
+{{- define "full-tree-nav" -}}
+{{- /* The whole-site navigation tree (DOC-1334): every allowed `top_menu`
+       section is a collapsible root; the current page's root renders expanded,
+       the rest collapsed; each root's subtree comes from section-tree-nav.
+       Rendered by BOTH the desktop sidebar and the mobile drawer -- keep it the
+       only place this structure exists. */ -}}
+{{- $current := . -}}
+<ul>
+  {{- range .Site.Sections.ByWeight -}}
+    {{- $access := partial "page-allowed.html" . -}}
+    {{- if and $access.allowed .Params.top_menu -}}
+      {{- $isActive := eq $current.Section .Section -}}
+      <li>
+        <a href="{{- .RelPermalink -}}" class="section-title{{ if $isActive }} active{{ end }}">
+          <div class="content">
+            {{- if and .IsSection (gt (len .Pages) 0) -}}
+            <span class="chevron{{ if not $isActive }} rotated{{ end }}" aria-hidden="true"></span>
+            {{- else -}}
+            <span class="chevron hidden" aria-hidden="true"></span>
+            {{- end -}}
+            <div style="flex: 1">{{- .Title -}}</div>
+          </div>
+        </a>
+        {{- if .IsSection -}}
+        <ul class="section-pages{{ if not $isActive }} collapsed{{ end }}">
+          {{- range .Pages.ByWeight -}}
+            {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
+          {{- end -}}
+        </ul>
+        {{- end -}}
+      </li>
+    {{- end -}}
+  {{- end -}}
+</ul>
 {{- end -}}
