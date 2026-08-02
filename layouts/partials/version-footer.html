@@ -19,53 +19,50 @@ dev), so the same shared template is safe on every branch.
            git-SHA book-keeping keys. */ -}}
     {{- $sdk := $mf.sdk_label | default "flyte-sdk" -}}
     {{- $skip := slice "content" "infra" "examples" $sdk -}}
-    {{- /* Display relabels for otherwise-ambiguous component keys. The v1 `union`
-           component is the `union` Python package (a flytekit-1.x SDK addition), not
-           the Union product — label it "union (SDK)" so the footer isn't confusing. */ -}}
-    {{- $labels := dict "union" "union (SDK)" -}}
-    {{- /* Link scheme (DOC-1294, locked with Peeter 2026-08-02). Grammar: the
-           LABEL links to the component's home, the NUMBER to that exact
-           release. Homes are the public repo where one exists; for the
-           closed-source packages (flyteplugins-union, the v1 `union` SDK) the
-           PyPI project page IS the public home, so both halves go to PyPI.
-           `pypi` is the PyPI project name (NB: the flyte-sdk PACKAGE is
-           `flyte` on PyPI); `relfmt` renders the number's target from the
-           value. The map lives template-side, not in the manifest, so links
-           apply retroactively to every already-committed pin manifest; a
-           component key not in the map falls back to plain text exactly as
-           before. */ -}}
+    {{- /* Link + label scheme (DOC-1294; labels revised with Peeter 2026-08-02).
+           Grammar per leg: <code>identifier</code> (kind) <code>version</code>.
+           The IDENTIFIER is inline code -- the org/repo slug where a public
+           repo exists, the bare package name where the repo is closed
+           (flyteplugins-union, the v1 `union` SDK; their PyPI page is the
+           public home). The parenthetical kind -- (SDK) / (Backend) -- stays
+           plain text. Versions are inline code. Links: identifier -> home,
+           version -> that exact release (`pypi` is the PyPI project name; NB
+           the flyte-sdk PACKAGE is `flyte` on PyPI). The map lives
+           template-side, not in the manifest, so all of this applies
+           retroactively to every already-committed pin manifest; a component
+           key not in the map falls back to plain rendering. */ -}}
     {{- $linkmap := dict
-          "flyte-sdk"          (dict "home" "https://github.com/flyteorg/flyte-sdk" "pypi" "flyte")
-          "flytekit"           (dict "home" "https://github.com/flyteorg/flytekit"  "pypi" "flytekit")
-          "flyteplugins-union" (dict "home" "https://pypi.org/project/flyteplugins-union/" "pypi" "flyteplugins-union")
-          "union"              (dict "home" "https://pypi.org/project/union/" "pypi" "union")
-          "backend"            (dict "home" "https://github.com/flyteorg/flyte" "reltag" true)
+          "flyte-sdk"          (dict "slug" "flyteorg/flyte-sdk" "kind" "SDK" "home" "https://github.com/flyteorg/flyte-sdk" "pypi" "flyte")
+          "flytekit"           (dict "slug" "flyteorg/flytekit" "kind" "SDK" "home" "https://github.com/flyteorg/flytekit"  "pypi" "flytekit")
+          "flyteplugins-union" (dict "slug" "flyteplugins-union" "kind" "SDK" "home" "https://pypi.org/project/flyteplugins-union/" "pypi" "flyteplugins-union")
+          "union"              (dict "slug" "union" "kind" "SDK" "home" "https://pypi.org/project/union/" "pypi" "union")
+          "backend"            (dict "slug" "flyteorg/flyte" "kind" "Backend" "home" "https://github.com/flyteorg/flyte" "reltag" true)
     -}}
 <div class="docs-version-info" style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border-color,#e5e7eb);font-size:.8rem;color:var(--text-muted,#6b7280);display:flex;flex-wrap:wrap;gap:.4rem 1rem;">
-  {{- /* Docs version: label -> the content repo; number -> the exact content
-         snapshot (the cut tag), or the main tip on /docs/latest. */ -}}
-  <span><strong><a href="https://github.com/unionai/unionai-docs">Docs version</a></strong>
-    {{- if eq $cur "latest" }} <a href="https://github.com/unionai/unionai-docs/tree/main">latest (main)</a>
-    {{- else }} <a href="https://github.com/unionai/unionai-docs/tree/v{{ $mf.docs_version }}">{{ $mf.docs_version }}</a>
+  {{- /* Docs leg: identifier = the content repo slug; number = the exact
+         content snapshot (the cut tag), or the main tip on /docs/latest. */ -}}
+  <span><a href="https://github.com/unionai/unionai-docs"><code>unionai/unionai-docs</code></a>
+    {{- if eq $cur "latest" }} <a href="https://github.com/unionai/unionai-docs/tree/main"><code>latest (main)</code></a>
+    {{- else }} <a href="https://github.com/unionai/unionai-docs/tree/v{{ $mf.docs_version }}"><code>{{ $mf.docs_version }}</code></a>
     {{- end -}}</span>
   {{- with index $c $sdk -}}
     {{- $l := index $linkmap $sdk -}}
     {{- if $l -}}
-    <span><a href="{{ $l.home }}">{{ $sdk }}</a> <a href="https://pypi.org/project/{{ $l.pypi }}/{{ . }}/">{{ . }}</a></span>
+    <span><a href="{{ $l.home }}"><code>{{ $l.slug }}</code></a> ({{ $l.kind }}) <a href="https://pypi.org/project/{{ $l.pypi }}/{{ . }}/"><code>{{ . }}</code></a></span>
     {{- else -}}
-    <span>{{ $sdk }} {{ . }}</span>
+    <span>{{ $sdk }} <code>{{ . }}</code></span>
     {{- end -}}
   {{- end -}}
   {{- range $k, $v := $c -}}
     {{- if and $v (not (in $skip $k)) -}}
       {{- $l := index $linkmap $k -}}
       {{- if $l -}}
-        <span><a href="{{ $l.home }}">{{ index $labels $k | default $k }}</a>
-          {{- if $l.reltag }} <a href="{{ $l.home }}/releases/tag/{{ $v }}">{{ $v }}</a>
-          {{- else }} <a href="https://pypi.org/project/{{ $l.pypi }}/{{ $v }}/">{{ $v }}</a>
+        <span><a href="{{ $l.home }}"><code>{{ $l.slug }}</code></a> ({{ $l.kind }})
+          {{- if $l.reltag }} <a href="{{ $l.home }}/releases/tag/{{ $v }}"><code>{{ $v }}</code></a>
+          {{- else }} <a href="https://pypi.org/project/{{ $l.pypi }}/{{ $v }}/"><code>{{ $v }}</code></a>
           {{- end -}}</span>
       {{- else -}}
-        <span>{{ index $labels $k | default $k }} {{ $v }}</span>
+        <span>{{ $k }} <code>{{ $v }}</code></span>
       {{- end -}}
     {{- end -}}
   {{- end -}}
