@@ -164,11 +164,12 @@ After Cloudflare DNS resolution and any Cloudflare-level redirects, requests to 
 |------------|-------------|--------|----------|-------|----------------------|
 | 0 | `/docs/v1` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
 | 1 | `/docs/v1/*` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 2 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 3 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 4 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 2 | `/docs/v1.*` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 3 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 4 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 5 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
 
-> **Note (2026-07-24):** a former `/_static/*` → docs behavior (precedence 2) was **retired** when CloudFront `/_static/*` serving was removed (DOC-966 / cloud#16921); the table above reflects the current 5-behavior set.
+> **Note (2026-07-24):** a former `/_static/*` → docs behavior (precedence 2) was **retired** when CloudFront `/_static/*` serving was removed (DOC-966 / cloud#16921); the table above reflects the current behavior set.
 
 #### Staging Distribution: `E217EWC0JUDO1U`
 
@@ -198,11 +199,12 @@ After Cloudflare DNS resolution and any Cloudflare-level redirects, requests to 
 |------------|-------------|--------|----------|-------|----------------------|
 | 0 | `/docs/v1` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
 | 1 | `/docs/v1/*` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 2 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 3 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
-| 4 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 2 | `/docs/v1.*` | v1 | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 3 | `/docs/*` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 4 | `/docs` | docs | HTTPS only | Disabled | AllViewerExceptHostHeader |
+| 5 | `*` (default) | web | HTTPS only | Disabled | AllViewerExceptHostHeader |
 
-> **Note (2026-07-24):** a former `/_static/*` → docs behavior (precedence 2) was **retired** when CloudFront `/_static/*` serving was removed (DOC-966 / cloud#16921); the table above reflects the current 5-behavior set.
+> **Note (2026-07-24):** a former `/_static/*` → docs behavior (precedence 2) was **retired** when CloudFront `/_static/*` serving was removed (DOC-966 / cloud#16921); the table above reflects the current behavior set.
 
 #### How Both Distributions Work
 
@@ -220,8 +222,8 @@ The v1 docs origin is the same in both distributions — there is no separate st
 
 **How matching works**: CloudFront evaluates behaviors in precedence order. The first matching path pattern wins. Key points:
 
-- `/docs/v1` and `/docs/v1/*` (precedences 0-1) are checked before `/docs/*` (precedence 2), ensuring v1 docs requests go to the v1 origin, not the v2 docs origin.
-- `/docs` and `/docs/*` (precedences 2-3) catch all remaining docs traffic (v2 and anything else — including the versioned `/docs/latest`, `/docs/stable`, `/docs/v2.x.y.z` paths, see below) and route to the v2 docs origin.
+- `/docs/v1`, `/docs/v1/*` and `/docs/v1.*` (precedences 0-2) are checked before `/docs/*`, ensuring v1 docs requests go to the v1 origin, not the v2 docs origin. The `/docs/v1.*` row (added 2026-07-31, DOC-1331) catches the **pinned v1 versions** (`/docs/v1.16.26.0/...`): CloudFront path patterns treat `.` literally and `/docs/v1/*` requires a slash after `v1`, so before this row a dotted pin fell through to the v2 origin and served the landing stub — while the tree itself was built and live on the v1 deployment. The first v1 pin only came into existence with the `v1.16.26.1` cut, which is why the gap surfaced then.
+- `/docs` and `/docs/*` catch all remaining docs traffic (v2 and anything else — including the versioned `/docs/latest`, `/docs/stable`, `/docs/v2.x.y.z` paths, see below) and route to the v2 docs origin.
 - Everything else hits the default behavior and goes to Webflow.
 
 **AllViewerExceptHostHeader**: This origin request policy forwards all viewer request headers to the origin *except* the `Host` header. This is critical because the origins are on different domains — they need to receive their own domain as `Host` (e.g., `web-docs.union.ai`), not `www.union.ai`, or they would reject the request.
