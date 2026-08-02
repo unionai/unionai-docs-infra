@@ -24,8 +24,12 @@ Sub-parts and where each value is read (per prds §8 SSOT table):
 
   flyte-sdk (+ in-repo plugins, lockstep)  committed frontmatter version
   flyteplugins-union  (union only)         committed frontmatter version (own 0.x)
-  backend  (flyte variant)                 newest flyteorg/flyte v2.0.x release
-  backend  (union variant)                 manual-versions.toml (DOC-1276)
+  backend  (flyte variant ONLY)            newest flyteorg/flyte v2.0.x release
+                                           (the union variant has NO backend leg:
+                                           the control plane is continuously
+                                           deployed and deployment-dependent, so
+                                           no single version is true for every
+                                           reader -- decided in DOC-1276)
   unionai-examples                         submodule gitlink SHA
   unionai-docs content                     the cut commit (HEAD)
   unionai-docs-infra                       submodule gitlink SHA (recorded, not shown)
@@ -62,7 +66,6 @@ from _repo import get_repo_root
 
 REPO_ROOT = get_repo_root()
 CONFIG_FILE = REPO_ROOT / "api-packages.toml"
-MANUAL_VERSIONS_FILE = REPO_ROOT / "manual-versions.toml"
 # The served-versions intent file (DOC-1245): stable = the tag /docs/v2 serves;
 # enumerated = every tag also published as a pinned /docs/v2.x.y.z copy. `--promote`
 # writes it; build-and-deploy reads it and materializes any named-but-missing tag.
@@ -185,20 +188,6 @@ def resolve_flyte_backend(config: dict) -> str | None:
     return max(series, key=lambda t: t[0])[1]  # the tag_name, e.g. "v2.0.28"
 
 
-def resolve_union_backend() -> str | None:
-    """Union backend version -- hand-maintained (no reliable SSOT yet, DOC-1276)."""
-    if not MANUAL_VERSIONS_FILE.exists():
-        print(
-            f"  Warning: {MANUAL_VERSIONS_FILE.name} not found; union backend unknown "
-            "(see DOC-1276)",
-            file=sys.stderr,
-        )
-        return None
-    with open(MANUAL_VERSIONS_FILE, "rb") as f:
-        data = tomllib.load(f)
-    return data.get("backend", {}).get("union")
-
-
 # --------------------------------------------------------------------------- #
 # manifest assembly
 # --------------------------------------------------------------------------- #
@@ -210,7 +199,10 @@ def build_manifest(variant: str, config: dict) -> dict:
 
     if variant == "union":
         components[vc["passenger_label"]] = resolve_passenger(config)
-        components["backend"] = resolve_union_backend()
+        # Deliberately NO backend leg (DOC-1276): the Union control plane is
+        # continuously deployed and deployment-dependent, so no single version
+        # is true for every reader. Emit nothing rather than null -- absence is
+        # the design, not missing data.
     else:  # flyte
         components["backend"] = resolve_flyte_backend(config)
 

@@ -196,9 +196,9 @@ REPO_ROOT=<unionai-docs root> uv run tools/api_generator/manifest.py \
 
 Sub-part sources (per prds §8): `flyte-sdk` + `flyteplugins-union` from committed
 frontmatter (`api-packages.toml` registry); the flyte-variant backend from the
-newest `flyteorg/flyte` `v2.0.x` release; the union-variant backend from
-**`manual-versions.toml`** (see `manual-versions.toml.sample`; the real file lives
-at the `unionai-docs` root, content-side); `examples` / `infra` from submodule
+newest `flyteorg/flyte` `v2.0.x` release (the union variant has **no backend
+leg** — the control plane is continuously deployed and deployment-dependent,
+so no single version is true for every reader; DOC-1276); `examples` / `infra` from submodule
 gitlinks; `content` from `HEAD`. The in-repo `flyteplugins-*` are lockstep with
 `flyte`, so they share the SDK version and need no separate entry.
 
