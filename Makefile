@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-links check-generated-content clean clean-generated
+.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
 
 all: usage
 
@@ -136,6 +136,11 @@ check-api-docs:
 
 check-asset-refs:
 	@unionai-docs-infra/scripts/check-asset-refs.sh
+
+# The version selector's entries are built twice (baked by run_hugo.sh, published
+# per-line by build_versions.sh for sibling pages to fetch). Assert they agree.
+check-version-menu-parity:
+	@unionai-docs-infra/scripts/check-version-menu-parity.sh
 
 check-llm-bundle-notes:
 	@$(UV) python unionai-docs-infra/tools/llms_generator/check_llm_bundle_notes.py
