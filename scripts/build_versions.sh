@@ -134,7 +134,23 @@ fi
 
 # <line> = the stable tag, INDEXED (the one canonical surface); also emits the
 # top-level /docs landing pages (so a bare /docs lands on stable).
-build_version "$LINE" "$STABLE" "" "true"
+#
+# CUT-PR PREVIEWS (DOC-1335 rollout finding): on a cut PR the stable tag named
+# by versions.toml does NOT exist yet -- the one-merge model materializes it in
+# the push deploy's "Materialize stable tag" pre-step, which pull_request runs
+# never execute. Under the DOC-1333 conditional previews a cut PR selects
+# versions mode (it touches versions.toml), so this script must not die on the
+# not-yet-cut tag: build /docs/<line> from HEAD instead -- on a cut PR, HEAD is
+# exactly the content the tag will point at, so the preview shows the true
+# post-cut stable. Push deploys always materialize first and never take this
+# branch.
+if git rev-parse --verify --quiet "refs/tags/$STABLE" >/dev/null || \
+   git rev-parse --verify --quiet "$STABLE^{commit}" >/dev/null; then
+  build_version "$LINE" "$STABLE" "" "true"
+else
+  echo "  WARN   stable tag $STABLE not materialized (cut PR preview?) -> building /docs/$LINE from HEAD"
+  build_version "$LINE" "HEAD" "" "true"
+fi
 
 # ---------------------------------------------------------------------------
 # Per-line runtime manifest (DOC-1330, defect 3).
@@ -187,6 +203,10 @@ fi
 for tag in $ENUMERATED; do
   if [ "$DRY_RUN" != 1 ] && [ -d "$DIST/docs/$tag" ]; then
     echo "  skip   /docs/$tag (already built / cache hit)"
+    continue
+  fi
+  if ! git rev-parse --verify --quiet "$tag^{commit}" >/dev/null; then
+    echo "  WARN   pinned tag $tag missing from this checkout -> skipped (preview only; push deploys fetch all tags)"
     continue
   fi
   build_version "$tag" "$tag" "true"
