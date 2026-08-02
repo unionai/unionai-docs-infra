@@ -43,9 +43,13 @@ plugins:
 		PLUGIN=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i plugin); \
 		TITLE=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i title); \
 		NAME=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i name); \
-		echo "Generating plugin docs: $$NAME ($$PLUGIN)"; \
+		OF=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i output_folder 2>/dev/null); \
+		WT=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i weight 2>/dev/null); \
+		VAR=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i variants 2>/dev/null); \
+		echo "Generating plugin docs: $$NAME ($$PLUGIN)$${OF:+ -> $$OF}"; \
 		$(MAKE) -f unionai-docs-infra/Makefile.api.plugins \
 			PLUGIN="$$PLUGIN" TITLE="$$TITLE" NAME="$$NAME" \
+			$${OF:+OUTPUT_FOLDER="$$OF"} $${WT:+WEIGHT="$$WT"} $${VAR:+VARIANTS="$$VAR"} \
 			SKIP_VENV_SETUP=false; \
 	done
 
