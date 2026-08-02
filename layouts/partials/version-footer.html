@@ -22,12 +22,13 @@ dev), so the same shared template is safe on every branch.
     {{- /* Link + label scheme (DOC-1294; grouped-label revision, Peeter
            2026-08-02, rev 3). The footer is a set of TYPE GROUPS, each a
            PLAIN type label + colon followed by its components. Each component
-           is ONE continuous inline-code run, name and version joined by ": ";
-           multiple components in a group are separated by a plain space:
+           is ONE continuous inline-code run, name and version joined by a
+           space; multiple components in a group are separated by a plain
+           (non-monospace) space:
 
-             Docs: `unionai/unionai-docs: 2.5.16.1`
-             SDK: `flyteorg/flyte-sdk: 2.5.16` `flyteplugins-union: 0.5.2`
-             Backend: `flyteorg/flyte: v2.0.31`     (flyte variant only)
+             Docs: `unionai/unionai-docs 2.5.16.1`
+             SDK: `flyteorg/flyte-sdk 2.5.16` `flyteplugins-union 0.5.2`
+             Backend: `flyteorg/flyte v2.0.31`     (flyte variant only)
 
            ONE SDK label covers every SDK-kind package (v2: flyte-sdk +
            flyteplugins-union; v1: flytekit + union). Identifiers are inline
@@ -49,7 +50,7 @@ dev), so the same shared template is safe on every branch.
 <div class="docs-version-info" style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border-color,#e5e7eb);font-size:.8rem;color:var(--text-muted,#6b7280);display:flex;flex-wrap:wrap;gap:.4rem 1rem;">
   {{- /* Docs group: identifier = the content repo slug; number = the exact
          content snapshot (the cut tag), or the main tip on /docs/latest. */ -}}
-  <span>Docs: <code><a href="https://github.com/unionai/unionai-docs">unionai/unionai-docs</a>:
+  <span>Docs: <code><a href="https://github.com/unionai/unionai-docs">unionai/unionai-docs</a>
     {{- if eq $cur "latest" }} <a href="https://github.com/unionai/unionai-docs/tree/main">latest (main)</a>
     {{- else }} <a href="https://github.com/unionai/unionai-docs/tree/v{{ $mf.docs_version }}">{{ $mf.docs_version }}</a>
     {{- end -}}</code></span>
@@ -58,14 +59,14 @@ dev), so the same shared template is safe on every branch.
   {{- with index $c $sdk -}}
     {{- $l := index $linkmap $sdk -}}
     {{- if $l -}}
-    <span>SDK: <code><a href="{{ $l.home }}">{{ $l.slug }}</a>: <a href="https://pypi.org/project/{{ $l.pypi }}/{{ . }}/">{{ . }}</a></code>
+    <span>SDK: <code><a href="{{ $l.home }}">{{ $l.slug }}</a> <a href="https://pypi.org/project/{{ $l.pypi }}/{{ . }}/">{{ . }}</a></code>
       {{- range $k, $v := $c -}}
         {{- $ol := index $linkmap $k -}}
-        {{- if and $v (not (in $skip $k)) $ol (eq ($ol.kind | default "") "SDK") }} <code><a href="{{ $ol.home }}">{{ $ol.slug }}</a>: <a href="https://pypi.org/project/{{ $ol.pypi }}/{{ $v }}/">{{ $v }}</a></code>
+        {{- if and $v (not (in $skip $k)) $ol (eq ($ol.kind | default "") "SDK") }} <code><a href="{{ $ol.home }}">{{ $ol.slug }}</a> <a href="https://pypi.org/project/{{ $ol.pypi }}/{{ $v }}/">{{ $v }}</a></code>
         {{- end -}}
       {{- end -}}</span>
     {{- else -}}
-    <span>SDK: <code>{{ $sdk }}: {{ . }}</code></span>
+    <span>SDK: <code>{{ $sdk }} {{ . }}</code></span>
     {{- end -}}
   {{- end -}}
   {{- /* Backend group (flyte variant only) + plain trailing spans for any
@@ -74,9 +75,9 @@ dev), so the same shared template is safe on every branch.
     {{- if and $v (not (in $skip $k)) -}}
       {{- $l := index $linkmap $k -}}
       {{- if and $l (eq ($l.kind | default "") "Backend") -}}
-        <span>Backend: <code><a href="{{ $l.home }}">{{ $l.slug }}</a>: <a href="{{ $l.home }}/releases/tag/{{ $v }}">{{ $v }}</a></code></span>
+        <span>Backend: <code><a href="{{ $l.home }}">{{ $l.slug }}</a> <a href="{{ $l.home }}/releases/tag/{{ $v }}">{{ $v }}</a></code></span>
       {{- else if not $l -}}
-        <span><code>{{ $k }}: {{ $v }}</code></span>
+        <span><code>{{ $k }} {{ $v }}</code></span>
       {{- end -}}
     {{- end -}}
   {{- end -}}
