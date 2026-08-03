@@ -36,8 +36,6 @@ custom_css = [
   "plugin.css",
   "search.css",
   "sidebar.css",
-  "tabs.css",
-  "secondary-topnav.css",
   "toc.css",
 ]
 custom_js = [

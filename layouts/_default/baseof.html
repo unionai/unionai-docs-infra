@@ -14,7 +14,6 @@
 {{- $v := partialCached "build-version.html" . }}
 {{- $variant := .Site.Params.variant -}}
 {{- $access := partial "page-allowed.html" . -}}
-{{- $hasSecondaryTopnav := partial "secondary-topnav-active.html" . -}}
 {{- $hasSidebarItems := partial "sidebar-has-items.html" . -}}
 {{- if $access.allowed -}}
 <!DOCTYPE html>
@@ -124,7 +123,7 @@
     {{- end -}}
     {{- partial "reo.html" . -}}
   </head>
-  <body class="variant-{{ .Site.Params.variant }}{{- if $hasSecondaryTopnav }} has-secondary-topnav{{- end -}}{{- if not $hasSidebarItems }} no-sidebar{{- end -}}">
+  <body class="variant-{{ .Site.Params.variant }}{{- if not $hasSidebarItems }} no-sidebar{{- end -}}">
     <!-- Google Tag Manager (noscript) -->
     <noscript>
       <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MB6L88S" height="0" width="0" style="display:none;visibility:hidden"></iframe>
@@ -132,8 +131,8 @@
     <!-- End Google Tag Manager (noscript) -->
     {{- partial "flyte-banner.html" . -}}
     <header>{{- partial "header.html" . -}}</header>
-    <div class="tabs">{{- partial "tabs.html" (dict "page" .) -}}</div>
-    {{- partial "secondary-topnav.html" . -}}
+    {{- /* IA restructure (DOC-1334): the top tabs row and the secondary topnav
+           band are retired -- all hierarchy lives in the left sidebar tree. */ -}}
     <div class="container">
       <div class="sidebar">{{- partial "sidebar.html" . -}}</div>
       <main class="main-content">
