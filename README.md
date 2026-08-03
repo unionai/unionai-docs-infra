@@ -4,6 +4,14 @@ This document describes how the Union.ai documentation platform works, including
 
 ## Repository structure
 
+> **Role of this repo as a submodule:** `unionai-docs` (branches `main` and
+> `v1`) pins this repo by commit. That pin is a **promotion gate** — infra
+> merges reach production only when a docs branch bumps its pointer — and the
+> single source that lets one build system serve both content lines. It is
+> *not* a historical record: builds apply the branch tip's pin to every
+> version tree, old pins included ("content is versioned; chrome is
+> promoted" — VERSIONING.md, DOC-1329).
+
 The docs system is split across three repositories:
 
 - **[unionai-docs](https://github.com/unionai/unionai-docs)** — the parent repository containing version-specific content and configuration. Files that differ between `main` (v2) and `v1` branches live here: `content/`, `data/`, `linkmap/`, `include/`, `api-packages.toml`, `makefile.inc`, and CI workflows (`.github/`).

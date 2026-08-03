@@ -76,10 +76,15 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
     # so `make -f unionai-docs-infra/Makefile` then can't find the Makefile).
     # Try the normal init, then for any submodule that's still empty, populate it
     # from the superproject's already-checked-out copy (the checkout step's
-    # `submodules: recursive` guarantees those are present). All current cut tags
-    # pin the same infra, so the superproject copy is the right content; drop its
-    # .git so the build treats it as plain files (it only reads them, and the
-    # worktree's own git still resolves gitlink SHAs from the tree).
+    # `submodules: recursive` guarantees those are present).
+    #
+    # POLICY, not accident (DOC-1329, decided 2026-08-03): every version tree --
+    # latest, stable, and each pin -- builds with the SUPERPROJECT's infra, i.e.
+    # the branch tip's submodule pointer. "Content is versioned; chrome is
+    # promoted": a tag's own infra pin is provenance only and is deliberately
+    # not used. See VERSIONING.md. Drop the copied infra's .git so the build
+    # treats it as plain files (it only reads them, and the worktree's own git
+    # still resolves gitlink SHAs from the tree).
     git submodule update --init --recursive >/dev/null 2>&1 || true
     for sub in unionai-docs-infra unionai-examples; do
       if [ -z "$(ls -A "$sub" 2>/dev/null)" ] && [ -d "$REPO_ROOT/$sub" ]; then
