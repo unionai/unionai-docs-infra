@@ -648,6 +648,15 @@ pre code {
   text-transform: uppercase;
   color: var(--text-3);
 }
+/* The caps treatment (here and on h6) must not rewrite inline code — a header
+   cell like "Local (`--local`)" holds a literal CLI flag, and case is
+   meaningful in code. Caps tracking comes off with it: it's part of the same
+   treatment, and monospace at these sizes doesn't want it. */
+h6 code,
+.main-content th code {
+  text-transform: none;
+  letter-spacing: normal;
+}
 /* Zebra striping and row hover are dropped. Figma has neither, and with the
    grid borders gone they fight the horizontal rules for the same job — the
    rules already say where a row begins and ends. */
