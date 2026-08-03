@@ -19,6 +19,36 @@ maintainers. For the step-by-step of cutting a version see
 - A cut is **one merge**: merging the version-bump PR materializes the tag (inline, on the
   branch) and rebuilds. Nothing auto-merges — a human always reviews.
 
+
+## Content is versioned; chrome is promoted
+
+**Decided deliberately 2026-08-03 (DOC-1329), after shipping this way in practice.**
+
+A docs version (a cut tag) snapshots **content** against an SDK release. The build
+system, theme and layouts — the *chrome* — are **not** versioned with it:
+
+- Every build wraps **every tree** it assembles — `/docs/latest`, the stable
+  `/docs/<line>`, and each pinned `/docs/<tag>` — in the infra named by the
+  **branch tip's** `unionai-docs-infra` submodule pointer. Readers of any
+  version, however old, always get the current site UI. This is the correct
+  behaviour for a docs site: content is what has a version; the reading
+  experience should always be the best we have.
+- Consequently, **infra/theme changes never need a cut**. They ship to all
+  version surfaces at once through a submodule pointer bump on the docs
+  branch. Cutting for a chrome change would mint a content-identical tag and
+  waste a pinned tree against the serving file budget (DOC-1288).
+- The submodule pointer is therefore a **promotion gate, not an archival
+  record**: infra merges are inert until a docs-side bump — the bump PR is the
+  reviewable, previewable (DOC-1333), atomically-revertable deploy unit for
+  chrome. Reverting one pointer commit reverts the whole site's chrome.
+- The infra pointer recorded **inside** a cut tag is **provenance only** (it is
+  also captured as the `infra` component in `data/version-manifest.json`). The
+  build deliberately ignores it — `build_versions.sh` copies the superproject's
+  infra into every tag worktree.
+- The two docs branches (`main`, `v1`) each carry their own pointer, which is
+  how one shared infra serves two permanently-divergent content lines without
+  copy drift; the pointers are kept in lockstep by bumping both.
+
 ## Lines and branches
 
 | Line | Branch | Role | SDK (`api-packages.toml [docs_version]`) | `/docs/latest`? |

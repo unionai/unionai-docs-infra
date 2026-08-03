@@ -34,6 +34,12 @@ There are two ways a `versions.toml` bump gets proposed. Both end in a single hu
 
 ---
 
+> **Chrome never needs a cut.** A cut snapshots *content*; the theme/build
+> system (infra) is promoted separately via a submodule pointer bump and always
+> wraps every version surface, old pins included. If your change is layouts or
+> CSS, bump the pointer — do not cut. See VERSIONING.md § "Content is
+> versioned; chrome is promoted" (DOC-1329).
+
 ## The cast
 
 **People**
