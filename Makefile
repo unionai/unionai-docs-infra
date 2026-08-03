@@ -45,6 +45,9 @@ base:
 	mkdir -p dist/docs
 	cat unionai-docs-infra/index.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/index.html
 	cat unionai-docs-infra/index.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/docs/index.html
+	@# Root 404.html (DOC-1334 failure-surfaces): its presence switches CF Pages
+	@# from SPA-fallback (the 200-stub) to REAL 404s for unknown paths.
+	cat unionai-docs-infra/404-root.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/404.html
 
 dist:
 	@VARIANTS="$(VARIANTS)" PARALLEL_HUGO="$(PARALLEL_HUGO)" unionai-docs-infra/scripts/build_dist.sh

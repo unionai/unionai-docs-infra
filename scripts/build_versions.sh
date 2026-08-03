@@ -121,6 +121,9 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
   if [ "$landing" = "true" ]; then
     [ -f "$wt/dist/index.html" ]      && cp "$wt/dist/index.html"      "$DIST/index.html"
     [ -f "$wt/dist/docs/index.html" ] && cp "$wt/dist/docs/index.html" "$DIST/docs/index.html"
+    # Root 404.html rides with the landing pages (DOC-1334): its presence at the
+    # output root is what makes CF Pages serve real 404s instead of the 200-stub.
+    [ -f "$wt/dist/404.html" ]        && cp "$wt/dist/404.html"        "$DIST/404.html"
   fi
   git worktree remove --force "$wt"
 }
