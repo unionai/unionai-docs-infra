@@ -71,26 +71,28 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
   local wt; wt="$(mktemp -d)"
   git worktree add --detach "$wt" "$ref" >/dev/null
   ( cd "$wt"
-    # Submodules don't reliably init inside a linked git worktree (a known git
-    # worktree+submodule friction — it silently leaves the submodule dir empty,
-    # so `make -f unionai-docs-infra/Makefile` then can't find the Makefile).
-    # Try the normal init, then for any submodule that's still empty, populate it
-    # from the superproject's already-checked-out copy (the checkout step's
-    # `submodules: recursive` guarantees those are present).
+    # POLICY (DOC-1329, decided 2026-08-03): every version tree -- latest,
+    # stable, and each pin -- builds with the SUPERPROJECT's submodules, i.e.
+    # the branch tip's pointers. "Content is versioned; chrome is promoted": a
+    # tag's own pins are provenance only and deliberately not used. See
+    # VERSIONING.md.
     #
-    # POLICY, not accident (DOC-1329, decided 2026-08-03): every version tree --
-    # latest, stable, and each pin -- builds with the SUPERPROJECT's infra, i.e.
-    # the branch tip's submodule pointer. "Content is versioned; chrome is
-    # promoted": a tag's own infra pin is provenance only and is deliberately
-    # not used. See VERSIONING.md. Drop the copied infra's .git so the build
-    # treats it as plain files (it only reads them, and the worktree's own git
-    # still resolves gitlink SHAs from the tree).
-    git submodule update --init --recursive >/dev/null 2>&1 || true
+    # Historically this happened via an error-path fallback (submodule init
+    # fails inside linked worktrees, then a copy kicked in) -- invisible and
+    # fragile in a silent direction (a git fix would have flipped behaviour
+    # with no failed build). Now the copy is unconditional and logged: no
+    # submodule init is attempted in the worktree at all. The copied infra's
+    # .git is dropped so the build treats it as plain files (it only reads
+    # them; the worktree's own git still resolves gitlink SHAs from the tree).
     for sub in unionai-docs-infra unionai-examples; do
-      if [ -z "$(ls -A "$sub" 2>/dev/null)" ] && [ -d "$REPO_ROOT/$sub" ]; then
+      if [ -d "$REPO_ROOT/$sub" ]; then
         rm -rf "$sub"; cp -R "$REPO_ROOT/$sub" "$sub"; rm -rf "$sub/.git"
+      else
+        echo "ERROR: superproject has no $sub checkout to apply to /docs/$label" >&2
+        exit 1
       fi
     done
+    echo "  infra  /docs/$label <- superproject pin $(git -C "$REPO_ROOT" ls-tree HEAD unionai-docs-infra | awk '{print substr($3,1,7)}') (policy: chrome is promoted, DOC-1329)"
     # The version selector (run_hugo's version_menu injection) + the footer's
     # manifest-gen both gate on versions.toml being present in the build root. The
     # worktrees are checked out from main/tags that don't carry it, so copy the
