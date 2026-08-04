@@ -182,16 +182,19 @@
       // expanding then collapsing.
       init();
 
-      // Center the active page in the sidebar before the first paint. A single
-      // rAF scheduled during parse runs in the pre-paint rendering step with
-      // layout resolved, so the sidebar first appears already scrolled — no
-      // visible snap from the top. (`__centerActiveSidebarItem` is defined by
+      // Put the sidebar back where the reader left it, before the first paint.
+      // Called synchronously, like init() above: this script sits after the nav
+      // markup, and reading the geometry forces the layout it needs, so the
+      // sidebar first appears already positioned — no visible snap from the top.
+      //
+      // Deliberately NOT a requestAnimationFrame: rAF callbacks do not run while
+      // the tab is hidden, so a page opened in a background tab (cmd-click, open
+      // in new tab) would render its sidebar unpositioned and only jump into
+      // place once you looked at it. (`__restoreSidebarScroll` is defined by
       // sidebar.js, loaded in <head>; guard in case it failed to load.)
-      requestAnimationFrame(function () {
-        if (typeof window.__centerActiveSidebarItem === 'function') {
-          window.__centerActiveSidebarItem();
-        }
-      });
+      if (typeof window.__restoreSidebarScroll === 'function') {
+        window.__restoreSidebarScroll();
+      }
     })();
   </script>
 </nav>
