@@ -140,6 +140,27 @@
 
   window.__restoreSidebarScroll = restoreSidebarScroll;
 
+  // Bring the current page into view, but only if it is not already there: the
+  // breadcrumb's "where am I?" link should not shove a panel the reader is
+  // happy with. Centring is the same fallback a cold arrival uses.
+  window.__revealActiveSidebarItem = function () {
+    const el = panel();
+    if (!el) return;
+    const active = activeItem(el);
+    if (!active || visibleAt(el, active, el.scrollTop)) return;
+    el.scrollTop = clamp(el, centerOn(el, active));
+    appliedTop = el.scrollTop;
+    applied = true;
+  };
+
+  // Forget the remembered scroll position. Part of the logo's "start over"
+  // reset, so the next page is positioned from scratch rather than from an
+  // anchor recorded before the reset.
+  window.__forgetSidebarScroll = function () {
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+    appliedTop = null;
+  };
+
   // Record where a clicked link sits inside the panel, so the next page can put
   // it back in the same place. Capture phase: the collapse handler in
   // `sidebar.html` may expand a section on the way through, and this must be
