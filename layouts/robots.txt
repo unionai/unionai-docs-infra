@@ -1,8 +1,23 @@
+{{- /* robots.txt for this docs build.
+
+  Emitted at /docs/<version>/<variant>/robots.txt. Crawlers only read the robots.txt at the
+  HOST ROOT (https://www.union.ai/robots.txt), which is served by the Webflow corporate site,
+  not by this build — so the directives below are advisory documentation of intent, and the
+  root file is what actually governs crawling. The `Sitemap:` line here is still emitted
+  fully-qualified: a relative one is invalid per the robots.txt spec, and a correct value is
+  what gets copied into the root file or submitted to Search Console. (DOC-1320)
+
+  The build's baseURL is path-only, so prefix the host from partials/site-host.html unless a
+  local build already set an absolute baseURL.
+*/ -}}
+{{- $host := partial "site-host.html" . -}}
+{{- $sitemap := printf "%ssitemap.xml" .Site.BaseURL -}}
+{{- if not (hasPrefix $sitemap "http") -}}{{- $sitemap = printf "%s%s" $host $sitemap -}}{{- end -}}
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: {{ .Site.BaseURL }}sitemap.xml
+Sitemap: {{ $sitemap }}
 
 # Disallow admin and private areas
 Disallow: /admin/
