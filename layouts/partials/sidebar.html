@@ -73,33 +73,74 @@
   {{- template "full-tree-nav" . -}}
 
   <script>
-    // Persist the user's collapse/expand choices across navigations (DOC-942).
+    // Persist the user's collapse/expand choices across navigations (DOC-942),
+    // without letting open sections pile up (DOC-1352).
+    //
     // The server re-renders each section's `collapsed` class from the active
     // path on every load, which would otherwise re-expand sections the user
     // collapsed. We store per-section state in localStorage (keyed by the
     // section's stable href / RelPermalink) and re-apply it on load.
     //
+    // What we store is not "is it collapsed" but WHY it is in that state:
+    //
+    //   'auto'   — open because you are on that path
+    //   'pinned' — open because you asked (chevron)
+    //   'closed' — collapsed because you asked (chevron)
+    //
+    // The distinction is what stops the ratchet. Previously the resolved state
+    // was persisted as a bare boolean, so a section force-opened for the active
+    // item stayed open forever: visiting a section opened it permanently, a
+    // label click could only ever expand, and nothing but a chevron ever closed
+    // anything. Open sections accumulated for the whole session (measured: 1.6
+    // viewports lightly browsed, 4.6 with every root open, 23 fully expanded).
+    // Now an 'auto' section reverts once it leaves the active path, so ordinary
+    // browsing keeps roughly one root open, while an explicit 'pinned' or
+    // 'closed' choice still survives — an accordion's tidiness without an
+    // accordion silently discarding a choice you made.
+    //
     // Robustness:
     //  - The sidebar is rendered TWICE (desktop `.site-nav` + the mobile
     //    `.drawer-sidebar`), so every section has two `.section-title`s sharing
     //    one href. We apply each change to BOTH copies so they never disagree.
-    //  - On every toggle we snapshot the FULL set of sections (not just the one
-    //    clicked), so a section that was open only because it's on the active
-    //    path is persisted too and doesn't silently collapse when you navigate.
-    //  - The section containing the current page is always kept open.
+    //  - The section containing the current page is always kept open, even if
+    //    it was 'closed' — but it is recorded 'auto', so it reverts to the
+    //    reader's choice once they navigate away.
     //  - The chevron's `rotated` class is driven from the collapsed state (set,
     //    never blind-flipped), so the arrow can't drift out of sync.
     (function () {
       const STORAGE_KEY = 'sidebarCollapsedSections';
 
-      function load() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-        catch (e) { return {}; }
+      // Whether the section is open is derived from the reason, never stored
+      // separately, so the two can't disagree.
+      function isOpen(reason) {
+        return reason === 'auto' || reason === 'pinned';
       }
+
+      function load() {
+        let raw;
+        try { raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch (e) { return {}; }
+
+        // Migrate the previous format, which stored a `collapsed` boolean.
+        // An old `false` (open) becomes 'auto', so anything left open by the
+        // old ratchet cleans itself up on the next navigation; an old `true`
+        // was a deliberate collapse, so it becomes 'closed'.
+        const state = {};
+        Object.keys(raw).forEach(function (id) {
+          const v = raw[id];
+          if (v === true) state[id] = 'closed';
+          else if (v === false) state[id] = 'auto';
+          else if (v === 'auto' || v === 'pinned' || v === 'closed') state[id] = v;
+        });
+        return state;
+      }
+
       function save(state) {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
         catch (e) { /* private mode / quota — ignore */ }
       }
+
+      const state = load();
 
       function sectionOf(title) {
         const li = title.closest('li');
@@ -110,8 +151,17 @@
         };
       }
 
-      // Apply a collapsed bool to every copy (desktop + drawer) of a section.
-      function setCollapsed(id, collapsed) {
+      // Record a reason and apply it to every copy (desktop + drawer) of a
+      // section. A null reason means "no opinion": forget the section and leave
+      // it exactly as the server rendered it, so a `sidebar_expanded` page
+      // keeps its intended shape instead of us pinning a stale choice on it.
+      function setReason(id, reason) {
+        if (reason === null) {
+          delete state[id];
+          return;
+        }
+        state[id] = reason;
+        const collapsed = !isOpen(reason);
         document.querySelectorAll('.section-title').forEach(function (t) {
           if (t.getAttribute('href') !== id) return;
           const s = sectionOf(t);
@@ -120,43 +170,42 @@
         });
       }
 
-      // Record the current collapsed state of every section.
-      function snapshot() {
-        const state = {};
-        document.querySelectorAll('.section-title').forEach(function (t) {
-          const s = sectionOf(t);
-          if (s.id && s.pages) state[s.id] = s.pages.classList.contains('collapsed');
-        });
-        save(state);
-      }
-
       function init() {
-        const state = load();
         const titles = Array.prototype.slice.call(document.querySelectorAll('.section-title'));
 
-        // 1. Restore saved state; always keep the active section open.
+        // 1. Resolve every section from its recorded reason and the active path.
         titles.forEach(function (title) {
           const s = sectionOf(title);
           if (!s.pages || !s.id) return;
-          const containsActive = s.pages.querySelector('.active') !== null;
-          let collapsed;
-          if (containsActive) {
-            collapsed = false;                                          // never hide the active item
-          } else if (Object.prototype.hasOwnProperty.call(state, s.id)) {
-            collapsed = state[s.id];                                    // user's remembered choice
+          const recorded = state[s.id];
+          let reason;
+          if (s.pages.querySelector('.active') !== null) {
+            // On the active path: never hide the current page. A pinned section
+            // stays pinned; anything else is open only for as long as we are
+            // here.
+            reason = recorded === 'pinned' ? 'pinned' : 'auto';
+          } else if (recorded === 'pinned' || recorded === 'closed') {
+            reason = recorded;                                          // the reader's own choice
           } else {
-            collapsed = s.pages.classList.contains('collapsed');       // server default
+            // Either it was 'auto' and we have since left that path, or we
+            // never had an opinion. Both mean the same thing: drop the record
+            // and let the server's rendering stand, which collapses it unless
+            // the page asked for it expanded.
+            reason = null;
           }
-          s.pages.classList.toggle('collapsed', collapsed);
-          if (s.chevron) s.chevron.classList.toggle('rotated', collapsed);
+          setReason(s.id, reason);
         });
-        snapshot();                                                    // persist the resolved picture (incl. active-open)
+        save(state);
 
         // 2. Click behavior:
-        //    - chevron  → pure toggle in place, never navigates.
+        //    - chevron  → pure toggle in place, never navigates. This is the
+        //                 only way to pin a section open or force one shut.
         //    - label    → navigate; if the section is collapsed, expand it
         //                 first (NEVER collapse on a label click) and persist
-        //                 before the reload so it stays open on arrival.
+        //                 before the reload so it stays open on arrival. That
+        //                 expansion is 'auto', not 'pinned': you are going
+        //                 there, you are not asking for it to stay open after
+        //                 you leave.
         titles.forEach(function (title) {
           title.addEventListener('click', function (e) {
             const s = sectionOf(title);
@@ -164,11 +213,11 @@
             const onChevron = e.target.classList.contains('chevron') || e.target.closest('.chevron');
             if (onChevron) {
               e.preventDefault();                                      // toggle only — do not navigate
-              setCollapsed(s.id, !s.pages.classList.contains('collapsed'));
-              snapshot();
+              setReason(s.id, s.pages.classList.contains('collapsed') ? 'pinned' : 'closed');
+              save(state);
             } else if (s.pages.classList.contains('collapsed')) {
-              setCollapsed(s.id, false);                               // expand-only on label click
-              snapshot();                                              // persist synchronously before navigation
+              setReason(s.id, 'auto');                                 // expand-only on label click
+              save(state);                                             // persist synchronously before navigation
               // no preventDefault → the link navigates
             }
           });
