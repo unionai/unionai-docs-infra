@@ -1,8 +1,12 @@
+{{- /* `data-nav-reset`: going home via the logo is a "start over" gesture, so
+       it also clears the sidebar's remembered state (pinned sections + scroll
+       anchor). Handled by the inline script in sidebar.html; the navigation
+       itself is left alone. See DOC-1352. */ -}}
 <div class="logo-container">
-    <a href="{{ .Site.BaseURL }}">
+    <a href="{{ .Site.BaseURL }}" data-nav-reset>
         <img src="{{ printf "images/%s" (index .Site.Params.Key.logo .Site.Params.variant) | relURL }}" class="logo" alt="{{ index .Site.Params.Key.product_full_name .Site.Params.variant }} Docs logo" />
     </a>
-    <a href="{{ .Site.BaseURL }}" class="title">
+    <a href="{{ .Site.BaseURL }}" class="title" data-nav-reset>
         <div>{{ index .Site.Params.Key.product_full_name .Site.Params.variant }} Docs</div>
     </a>
 </div>

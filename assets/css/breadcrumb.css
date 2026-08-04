@@ -27,3 +27,15 @@
 .breadcrumb-item.active {
   color: var(--text-color);
 }
+/* The last crumb is a link, so it can reveal the current page in the sidebar
+   (DOC-1352). It is still where you ARE rather than somewhere to go, so it keeps
+   the surrounding text colour instead of the link colour, exactly as it looked
+   when it was a span. The underline on hover is the only hint that it does
+   anything. */
+.breadcrumb-item a.breadcrumb-current,
+.breadcrumb-item a.breadcrumb-current:hover {
+  color: inherit;
+}
+.breadcrumb-item a.breadcrumb-current:hover {
+  text-decoration: underline;
+}
