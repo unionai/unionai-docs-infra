@@ -143,7 +143,6 @@ class ShortcodeProcessor:
         # Then process leaf shortcodes
         content = self.process_code_shortcodes(content)
         content = self.process_note_shortcodes_recursive(content)
-        content = self.process_llm_bundle_note_shortcodes(content)
         content = self.process_warning_shortcodes_recursive(content)
         content = self.process_link_card_shortcodes_recursive(content)
         content = self.process_multiline_shortcodes(content)
@@ -208,16 +207,6 @@ class ShortcodeProcessor:
             return f"> **📝 {title}**\n>\n" + "\n".join(quoted_lines)
 
         return re.sub(pattern, replace_note, content, flags=re.DOTALL)
-
-    def process_llm_bundle_note_shortcodes(self, content: str) -> str:
-        """Process {{< llm-bundle-note >}} shortcodes."""
-        replacement = (
-            "> **📝 Note**\n"
-            ">\n"
-            "> An LLM-optimized bundle of this entire section is available at [`section.md`](section.md).\n"
-            "> This single file contains all pages in this section, optimized for AI coding agent context."
-        )
-        return re.sub(r'\{\{<\s*llm-bundle-note\s*>\}\}', replacement, content)
 
     def process_warning_shortcodes_recursive(self, content: str) -> str:
         """Process {{< warning >}} shortcodes with support for nested shortcodes."""
@@ -489,17 +478,20 @@ class ShortcodeProcessor:
         pattern = r'\{\{<\s*docs_home\s+([^>]*)\s*>\}\}'
 
         def replace_docs_home(match):
+            # Must match layouts/shortcodes/docs_home.html exactly: absolute host, and NO
+            # trailing slash. Content writes `{{< docs_home union v2 >}}/some/path`, so a
+            # trailing slash here yields `//some/path` in every page.md that uses it.
             args = match.group(1).strip().split()
+            base = "https://www.union.ai/docs"
             if len(args) >= 2:
-                variant = args[0]
-                version = args[1]
-                url = f"/docs/{version}/{variant}/"
+                variant, version = args[0], args[1]
             elif len(args) >= 1:
-                variant = args[0]
-                url = f"/docs/{self.version}/{variant}/"
+                variant, version = args[0], self.version
             else:
-                url = "/docs/"
-            return url
+                return base
+            if variant == "root":
+                return f"{base}/{version}"
+            return f"{base}/{version}/{variant}"
 
         return re.sub(pattern, replace_docs_home, content)
 
