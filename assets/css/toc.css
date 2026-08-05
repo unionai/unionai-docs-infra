@@ -66,37 +66,6 @@
   background-color: unset;
 }
 
-.container .toc-container .toc-llm-link {
-  margin-bottom: 0;
-  padding: 0 1rem;
-  color: var(--text-color);
-}
-
-.container .toc-container .toc-llm-link .toc-llm-header {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.container .toc-container .toc-llm-link .toc-llm-list {
-  border-left: 1px solid var(--blockquote-border-trans);
-  padding-left: 1rem;
-}
-
-.container .toc-container .toc-llm-link a {
-  display: block;
-  color: var(--text-color);
-  text-decoration: none;
-  font-weight: normal;
-}
-
-.container .toc-container .toc-llm-link .toc-llm-list a {
-  margin-top: 0.5rem;
-}
-
-.container .toc-container .toc-llm-link a:hover {
-  text-decoration: underline;
-}
-
 @media (max-width: 1100px) {
   .container {
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);

@@ -659,6 +659,14 @@ class LLMDocBuilder:
             lines.append(f"## {section['display_name']}")
             lines.append("")
 
+            # A top-level section can carry its own bundle. Without this the bundle is
+            # generated and served but never advertised here, so the index disagrees with
+            # the rest of the build (tutorials, integrations).
+            section_dir = section['path_key'].replace('/page.md', '').replace('page.md', '').strip('/')
+            if section_dir in self.bundle_sections:
+                lines.append(f"> Section bundle (all pages): {self.bundle_sections[section_dir]}")
+                lines.append("")
+
             if section['children']:
                 for child_title, child_url, child_key in section['children']:
                     # Strip section prefix from title
@@ -1002,6 +1010,63 @@ class LLMDocBuilder:
         if not self.quiet:
             print(f"Generated {bundle_count} section bundles for {variant}")
 
+    def render_readable_list(self, variant: str, version: str = None):
+        """Replace `{{< llm-readable-list >}}` in page.md files with a Markdown bundle list.
+
+        The Hugo shortcode of the same name walks the site's section tree, so it can only be
+        resolved once the tree is known. process_shortcodes.py (stage 1) runs too early and has
+        no handler for it, which left the literal shortcode in the LLM-facing output. Here in
+        stage 2 the bundles already exist, so the list is generated from what was actually built.
+
+        Must run after generate_bundles() (which populates self.bundle_sections).
+        """
+        version = version or self.version
+        variant_dir = self.base_path / 'dist' / 'docs' / version / variant
+        pattern = re.compile(r'\{\{<\s*llm-readable-list\s*>\}\}')
+
+        # Order bundles the way llms.txt orders pages (depth-first, Hugo weight order),
+        # grouping under the top-level section each one belongs to.
+        groups: dict[str, list[tuple[str, str, int]]] = {}
+        group_order: list[str] = []
+
+        for _title, _url, path_key in self.index_entries:
+            section_dir = path_key.replace('/page.md', '').replace('page.md', '').strip('/')
+            bundle_url = self.bundle_sections.get(section_dir)
+            if not bundle_url:
+                continue
+
+            top = section_dir.split('/')[0]
+            group_name = self._frontmatter_title(f"{top}/page.md") or top
+            if group_name not in groups:
+                groups[group_name] = []
+                group_order.append(group_name)
+
+            title = self._frontmatter_title(f"{section_dir}/page.md") or section_dir
+            bundle_file = variant_dir / section_dir / 'section.md'
+            tokens_k = max(1, bundle_file.stat().st_size // 4000) if bundle_file.exists() else 1
+            groups[group_name].append((title, bundle_url, tokens_k))
+
+        lines: list[str] = []
+        for group_name in group_order:
+            lines.append(f"**{group_name}:**")
+            lines.append("")
+            for title, bundle_url, tokens_k in groups[group_name]:
+                lines.append(f"* [`{title}`]({bundle_url}) (~{tokens_k}K tokens)")
+            lines.append("")
+        replacement = '\n'.join(lines).rstrip()
+
+        replaced = 0
+        for content_file in variant_dir.rglob('page.md'):
+            content = content_file.read_text(encoding='utf-8')
+            if not pattern.search(content):
+                continue
+            content_file.write_text(pattern.sub(replacement, content), encoding='utf-8')
+            replaced += 1
+
+        if not self.quiet:
+            print(f"Rendered llm-readable-list in {replaced} page(s) for {variant}"
+                  f" ({len(self.bundle_sections)} bundles)")
+
     def create_discovery_files(self, base_path: Path, variants: List[str]) -> None:
         """Create hierarchical discovery files for LLM documentation."""
 
@@ -1039,8 +1104,9 @@ class LLMDocBuilder:
             " for historical purposes or when explicitly asked about v1.",
             "",
             "## Versions",
-            f"v2 (current)|{base}/v2/llms.txt",
-            f"v1 (legacy)|{base}/v1/llms.txt",
+            "",
+            f"- [v2]({base}/v2/llms.txt): current documentation. Use this.",
+            f"- [v1]({base}/v1/llms.txt): legacy documentation. Historical reference only.",
             "",
         ]
         return '\n'.join(lines)
@@ -1059,9 +1125,15 @@ class LLMDocBuilder:
                 " For current documentation, see https://www.union.ai/docs/v2/llms.txt",
                 "",
             ])
-        lines.append("## Variants")
+        variant_descriptions = {
+            'union': 'Union.ai commercial product, covering both BYOC and Self-managed deployments.'
+                     ' The larger of the two; start here unless the question is Flyte-OSS-specific.',
+            'flyte': 'Flyte open-source orchestration platform.',
+        }
+        lines.extend(["## Variants", ""])
         for variant in sorted(variants):
-            lines.append(f"{variant}|{base}/{variant}/llms.txt")
+            description = variant_descriptions.get(variant, f'{variant} documentation.')
+            lines.append(f"- [{variant}]({base}/{variant}/llms.txt): {description}")
         lines.append("")
         return '\n'.join(lines)
 
@@ -1115,6 +1187,9 @@ def main():
 
             # Generate section bundles (before absolutize so subpage links are still relative)
             builder.generate_bundles(variant)
+
+            # Resolve {{< llm-readable-list >}} now that the bundle set is known
+            builder.render_readable_list(variant)
 
             # Convert relative links to absolute URLs
             builder.absolutize_links(variant)

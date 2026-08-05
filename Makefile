@@ -145,9 +145,6 @@ check-asset-refs:
 check-version-menu-parity:
 	@unionai-docs-infra/scripts/check-version-menu-parity.sh
 
-check-llm-bundle-notes:
-	@$(UV) python unionai-docs-infra/tools/llms_generator/check_llm_bundle_notes.py
-
 update-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --update
 
