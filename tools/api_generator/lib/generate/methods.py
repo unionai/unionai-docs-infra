@@ -7,6 +7,29 @@ from lib.generate.docstring import docstring_summary
 from lib.generate.helper import generate_anchor_from_name
 
 
+# An inline code span: a run of N backticks closed by a run of exactly N, on
+# one line. Its contents are code, so they must survive verbatim. Escaping a
+# `>` inside a span does not round-trip -- a markdown renderer leaves entities
+# alone inside code, so `->` written as `-&gt;` reaches the reader as literal
+# `-&gt;` (DOC-1323). Outside code the entity decodes back to `>`, so prose
+# escaping stays as it was.
+_INLINE_CODE_RE = re.compile(r"(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)")
+
+
+def _escape_outside_inline_code(line):
+    """Escape `<`/`>` in one line, leaving inline code spans untouched."""
+    result = []
+    pos = 0
+    for match in _INLINE_CODE_RE.finditer(line):
+        chunk = line[pos:match.start()]
+        result.append(chunk.replace("<", "&lt;").replace(">", "&gt;"))
+        result.append(match.group(0))
+        pos = match.end()
+    tail = line[pos:]
+    result.append(tail.replace("<", "&lt;").replace(">", "&gt;"))
+    return ''.join(result)
+
+
 def escape_html_preserve_code_blocks(text):
     """Escape HTML characters in text while preserving code blocks and blockquotes."""
     if not text:
@@ -32,12 +55,12 @@ def escape_html_preserve_code_blocks(text):
                     if bq_match:
                         bq_prefix = bq_match.group(1)
                         content = stripped[len(bq_prefix):]
-                        content = content.replace("<", "&lt;").replace(">", "&gt;")
+                        content = _escape_outside_inline_code(content)
                         escaped_lines.append(f"{prefix}{bq_prefix}{content}")
                     else:
-                        escaped_lines.append(line.replace("<", "&lt;").replace(">", "&gt;"))
+                        escaped_lines.append(_escape_outside_inline_code(line))
                 else:
-                    escaped_lines.append(line.replace("<", "&lt;").replace(">", "&gt;"))
+                    escaped_lines.append(_escape_outside_inline_code(line))
             result.append('\n'.join(escaped_lines))
         else:  # Code block - don't escape
             result.append(part)

@@ -1,11 +1,11 @@
 import io
 import os
-import re
 from typing import Dict, List, Tuple, Optional
 
 from lib.generate.docstring import docstring_summary
 from lib.generate.hugo import FrontMatterExtra, write_front_matter
 from lib.generate.methods import (
+    escape_html_preserve_code_blocks,
     generate_examples,
     generate_method,
     generate_method_decl,
@@ -22,26 +22,6 @@ from lib.generate.helper import generate_anchor_from_name
 PackageTree = Dict[str, List[str]]
 
 ProtocolBaseClass = "Protocol"
-
-
-def escape_html_preserve_code_blocks(text):
-    """Escape HTML characters in text while preserving code blocks."""
-    if not text:
-        return text
-    
-    # Split on code block delimiters (```)
-    parts = re.split(r'(```.*?```)', text, flags=re.DOTALL)
-    
-    result = []
-    for i, part in enumerate(parts):
-        # Even indices are regular text, odd indices are code blocks
-        if i % 2 == 0:  # Regular text - escape HTML
-            escaped_part = part.replace("<", "&lt;").replace(">", "&gt;")
-            result.append(escaped_part)
-        else:  # Code block - don't escape
-            result.append(part)
-    
-    return ''.join(result)
 
 
 def generate_class_filename(fullname: str, pkg_root: str,
