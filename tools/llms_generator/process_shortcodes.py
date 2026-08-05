@@ -143,6 +143,7 @@ class ShortcodeProcessor:
         # Then process leaf shortcodes
         content = self.process_code_shortcodes(content)
         content = self.process_note_shortcodes_recursive(content)
+        content = self.process_llm_bundle_note_shortcodes(content)
         content = self.process_warning_shortcodes_recursive(content)
         content = self.process_link_card_shortcodes_recursive(content)
         content = self.process_multiline_shortcodes(content)
@@ -207,6 +208,15 @@ class ShortcodeProcessor:
             return f"> **📝 {title}**\n>\n" + "\n".join(quoted_lines)
 
         return re.sub(pattern, replace_note, content, flags=re.DOTALL)
+
+    def process_llm_bundle_note_shortcodes(self, content: str) -> str:
+        """Strip {{< llm-bundle-note >}}. RETIRED (DOC-1358) — emits nothing.
+
+        Kept for the same reason as the Hugo template: already-cut tags still call it,
+        and every served version is processed by the branch tip's tooling. Without this
+        the raw shortcode would leak into page.md for those cuts.
+        """
+        return re.sub(r'\{\{<\s*llm-bundle-note\s*>\}\}\n?', '', content)
 
     def process_warning_shortcodes_recursive(self, content: str) -> str:
         """Process {{< warning >}} shortcodes with support for nested shortcodes."""
