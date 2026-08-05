@@ -109,6 +109,10 @@ def generate_method_decl(
                     output.write(
                         f": {format_type(param['name'], param['type'], code=True)}"
                     )
+                # A dropped default reads as "required" (DOC-1383). The parser
+                # already carries it; only `None` means there was none.
+                if param.get("default") is not None:
+                    output.write(f" = {param['default']}")
                 output.write(",\n")
 
             if not is_class and method["return_type"] and method["return_type"] != "None":
