@@ -124,6 +124,13 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
     # Root 404.html rides with the landing pages (DOC-1334): its presence at the
     # output root is what makes CF Pages serve real 404s instead of the 200-stub.
     [ -f "$wt/dist/404.html" ]        && cp "$wt/dist/404.html"        "$DIST/404.html"
+    # Root LLM discovery file (DOC-1358). build_llm_docs.py writes dist/docs/llms.txt
+    # inside every version's worktree, but this assembly lifts only the per-version
+    # subtree plus the named root files above - so without this it never reaches the
+    # deployed dist and /docs/llms.txt 404s. Its content is identical across version
+    # builds by construction (see create_root_discovery_content), so taking it from
+    # the landing build is safe.
+    [ -f "$wt/dist/docs/llms.txt" ]   && cp "$wt/dist/docs/llms.txt"   "$DIST/docs/llms.txt"
   fi
   git worktree remove --force "$wt"
 }
