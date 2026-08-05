@@ -13,7 +13,7 @@ def generate_props(props: List[PropertyInfo], output: io.TextIOWrapper):
     output.write("|-|-|-|\n")
 
     for prop in props:
-        propType = format_type(None, prop.get("type") or "", escape_or=True)
+        propType = format_type(prop.get("type") or "", escape_or=True)
         docs = prop["doc"] if "doc" in prop else ""
         # Clean up the doc string - replace newlines with spaces and escape markdown table characters and HTML
         if docs:

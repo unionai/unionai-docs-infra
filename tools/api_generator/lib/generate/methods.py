@@ -1,8 +1,8 @@
 import io
 import re
-from typing import List, Optional
+from typing import List
 
-from lib.ptypes import MethodInfo
+from lib.ptypes import MethodInfo, ParamInfo
 from lib.generate.docstring import docstring_summary
 from lib.generate.helper import generate_anchor_from_name
 
@@ -68,6 +68,25 @@ def escape_html_preserve_code_blocks(text):
     return ''.join(result)
 
 
+# inspect's kinds for `*args` / `**kwargs`.
+_VARARG_PREFIX = {"VAR_POSITIONAL": "*", "VAR_KEYWORD": "**"}
+
+
+def param_display_name(param: ParamInfo) -> str:
+    """`*args` / `**kwargs` -- the stars belong to the name, not the type."""
+    kind = param.get("kind")
+    if kind in _VARARG_PREFIX:
+        return f"{_VARARG_PREFIX[kind]}{param['name']}"
+    if kind is None:
+        # A param with no kind was synthesized rather than introspected; fall
+        # back to the conventional names.
+        if param["name"] == "kwargs":
+            return "**kwargs"
+        if param["name"] == "args":
+            return "*args"
+    return param["name"]
+
+
 def generate_method_decl(
     name: str,
     method: MethodInfo,
@@ -104,10 +123,10 @@ def generate_method_decl(
 
         if not is_protocol:
             for param in filtered_params:
-                output.write(f"    {param['name']}")
+                output.write(f"    {param_display_name(param)}")
                 if "type" in param and param["type"]:
                     output.write(
-                        f": {format_type(param['name'], param['type'], code=True)}"
+                        f": {format_type(param['type'], code=True)}"
                     )
                 # A dropped default reads as "required" (DOC-1383). The parser
                 # already carries it; only `None` means there was none.
@@ -117,7 +136,7 @@ def generate_method_decl(
 
             if not is_class and method["return_type"] and method["return_type"] != "None":
                 output.write(
-                    f") -> {format_type(None, method['return_type'], markdown=False)}\n"
+                    f") -> {format_type(method['return_type'], markdown=False)}\n"
                 )
             else:
                 output.write(")\n")
@@ -126,20 +145,13 @@ def generate_method_decl(
 
 
 def format_type(
-    name: Optional[str], type: str | None, code=False, escape_or=False, markdown=True
+    type: str | None, code=False, escape_or=False, markdown=True
 ) -> str:
     output = ""
-    if name is not None:
-        if name == "kwargs":
-            output = "**kwargs"
-        elif name == "args":
-            output = "*args"
-
-    if output == "":
-        if type and type.startswith("<class '") and type.endswith("'>"):
-            output = type[8:-2]
-        else:
-            output = type if type != "" else ""
+    if type and type.startswith("<class '") and type.endswith("'>"):
+        output = type[8:-2]
+    else:
+        output = type if type != "" else ""
 
     if output == "" or output is None:
         return ""
@@ -166,8 +178,9 @@ def generate_params(method: MethodInfo, output: io.TextIOWrapper):
     output.write("|-|-|-|\n")
     for param in filtered_params:
         typeOutput = format_type(
-            param["name"], param["type"] if "type" in param else "", escape_or=True
+            param["type"] if "type" in param else "", escape_or=True
         )
+        display_name = param_display_name(param)
 
         # Look for documentation in params_doc field first, then fallback to param doc
         doc = ""
@@ -185,9 +198,9 @@ def generate_params(method: MethodInfo, output: io.TextIOWrapper):
             # Remove redundant type information from the beginning of descriptions
             # Pattern: "(type) description..." where type matches what's already in the Type column
             doc = re.sub(r'^\([^)]+\)\s*', '', doc)
-            output.write(f"| `{param['name']}` | {typeOutput} | {doc} |\n")
+            output.write(f"| `{display_name}` | {typeOutput} | {doc} |\n")
         else:
-            output.write(f"| `{param['name']}` | {typeOutput} | |\n")
+            output.write(f"| `{display_name}` | {typeOutput} | |\n")
     output.write("\n")
 
 
