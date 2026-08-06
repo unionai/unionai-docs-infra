@@ -3,16 +3,14 @@
     "q": "secret",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/"
+        "/docs/v2/union/user-guide/tasks/task-configuration/secrets/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/"
-      ],
+      "tutorial": [],
       "other": [
-        "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/"
+        "/docs/v2/union/security/data-protection/secrets/"
       ]
     },
     "groups_with_candidate": 4,
@@ -147,21 +145,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "queue",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/cluster-workload-management/queues/"
+        "/docs/v2/union/user-guide/tasks/task-configuration/queues/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-cli/"
-      ],
+      "reference": [],
       "tutorial": [],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "other": []
     },
     "groups_with_candidate": 3,
     "candidates": {
@@ -255,7 +250,9 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "needs_human": "guide: task-configuration/queues vs cluster-workload-management/queues is editorial"
   },
   {
     "q": "cache",
@@ -266,12 +263,8 @@
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/cache/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/computer-vision/qwen-vl-finetuning/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -389,20 +382,19 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "image",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/project-patterns/bring-your-own-image/"
+        "/docs/v2/union/user-guide/tasks/task-configuration/container-images/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/image/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/geospatial/satellite_image_classification/"
-      ],
+      "tutorial": [],
       "other": [
         "/docs/v2/union/deployment/selfmanaged/configuration/image-builder/"
       ]
@@ -537,19 +529,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "deck",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/get-started/core-concepts/where-data-lives/"
+        "/docs/v2/union/user-guide/tasks/task-programming/reports/"
       ],
       "reference": [],
       "tutorial": [],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/"
-      ]
+      "other": []
     },
     "groups_with_candidate": 2,
     "candidates": {
@@ -607,23 +598,20 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "task",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/get-started/core-concepts/task-environment/"
+        "/docs/v2/union/user-guide/get-started/core-concepts/tasks/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/task/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/data-processing/micro-batching/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/interruptible-scheduling/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -756,23 +744,19 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "kept_earlier": "expansion pipeline ranked the task-configuration section index; kept core-concepts/tasks"
   },
   {
     "q": "dynamic",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/tasks/task-deployment/deployment-patterns/"
+        "/docs/v2/union/user-guide/migration/flyte-2/control-flow/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.extras/dynamicbatcher/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/computer-vision/multimodal-retrieval-evaluation/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "reference": [],
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -888,23 +872,22 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "needs_human": "@dynamic is gone in v2; mapped to the control-flow migration page",
+    "kept_earlier": "expansion ranked migration/overview 6/6; kept control-flow (title match, more specific)"
   },
   {
     "q": "remote",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/tasks/task-programming/remote-tasks/"
+        "/docs/v2/union/user-guide/get-started/run-modes/running-remote/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.errors/remotetasknotfounderror/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/autoresearch/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -1032,22 +1015,20 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "expansion-pipeline",
+    "needs_human": "reference: only error types offered; flyte.remote module index not in candidates"
   },
   {
     "q": "auth",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/"
+        "/docs/v2/union/user-guide/authenticating/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.app.extras/fastapipassthroughauthmiddleware/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/code-mode-agent/"
-      ],
+      "reference": [],
+      "tutorial": [],
       "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/authentication/"
+        "/docs/v2/union/security/identity-and-access/authentication/"
       ]
     },
     "groups_with_candidate": 4,
@@ -1177,7 +1158,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "expansion-pipeline"
   },
   {
     "q": "devbox",
@@ -1185,9 +1167,7 @@
       "guide": [
         "/docs/v2/union/user-guide/get-started/run-modes/running-devbox/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-cli/"
-      ],
+      "reference": [],
       "tutorial": [],
       "other": []
     },
@@ -1244,23 +1224,20 @@
       ],
       "tutorial": [],
       "other": []
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "secre",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/"
+        "/docs/v2/union/user-guide/tasks/task-configuration/secrets/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -1394,23 +1371,20 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "mcp",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/agents/build-mcp/flyte_mcp_server/"
+        "/docs/v2/union/user-guide/agents/build-mcp/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.mcp/flytemcpappenvironment/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.mcp/mcpappenvironment/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/code-mode-agent/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -1505,7 +1479,9 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "expansion-pipeline",
+    "needs_human": "guide: flyte_mcp_server vs mcp_server is editorial"
   },
   {
     "q": "workflow",
@@ -1513,15 +1489,9 @@
       "guide": [
         "/docs/v2/union/user-guide/migration/flyte-2/tasks-and-workflows/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/agent-plugins/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/data-processing/micro-batching/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/architecture/kubernetes-rbac/"
-      ]
+      "reference": [],
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -1645,7 +1615,9 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "kept_earlier": "expansion pipeline ranked sandboxing/scale pages; kept migration/tasks-and-workflows (v2 answer)"
   },
   {
     "q": "config",
@@ -1656,11 +1628,9 @@
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte.config/config/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/frontier-ai/distributed-pretraining/"
-      ],
+      "tutorial": [],
       "other": [
-        "/docs/v2/union/deployment/byoc/configuring-your-data-plane/"
+        "/docs/v2/union/deployment/selfmanaged/configuration/"
       ]
     },
     "groups_with_candidate": 4,
@@ -1795,7 +1765,9 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "expansion-pipeline",
+    "needs_human": "guide: only migration pages offered; a non-migration config guide may exist"
   },
   {
     "q": "api key",
@@ -1803,14 +1775,10 @@
       "guide": [
         "/docs/v2/union/user-guide/authenticating/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-cli/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/"
-      ],
+      "reference": [],
+      "tutorial": [],
       "other": [
-        "/docs/v2/union/deployment/terraform/management/"
+        "/docs/v2/union/security/identity-and-access/authentication/"
       ]
     },
     "groups_with_candidate": 4,
@@ -1924,7 +1892,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "expansion-pipeline"
   },
   {
     "q": "trace",
@@ -1932,15 +1901,9 @@
       "guide": [
         "/docs/v2/union/user-guide/tasks/task-programming/traces/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.errors/tracedoesnotallownestedtaskserror/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/data-processing/micro-batching/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/"
-      ]
+      "reference": [],
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -2058,23 +2021,21 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "expansion-pipeline",
+    "needs_human": "reference: only an error type offered; flyte/trace may exist"
   },
   {
     "q": "app",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/advanced-project/serving-app/"
+        "/docs/v2/union/user-guide/get-started/core-concepts/introducing-apps/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/app/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/inference/voice-customer-service/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/namespace-mapping/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -2207,7 +2168,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "apps",
@@ -2216,14 +2178,10 @@
         "/docs/v2/union/user-guide/get-started/core-concepts/introducing-apps/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-cli/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/app/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/inference/voice-customer-service/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -2342,7 +2300,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "trigger",
@@ -2353,12 +2312,8 @@
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/trigger/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/geospatial/climate-modeling/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -2463,7 +2418,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "timeout",
@@ -2474,12 +2430,8 @@
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/timeout/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/data-processing/micro-batching/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -2594,7 +2546,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "api",
@@ -2738,7 +2691,8 @@
           ]
         }
       ]
-    }
+    },
+    "needs_human": "too generic to label; needs your call"
   },
   {
     "q": "connector",
@@ -2747,12 +2701,10 @@
         "/docs/v2/union/user-guide/apps/build-apps/connector-app/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/connectorregistry/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/asyncconnector/"
       ],
       "tutorial": [],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/"
-      ]
+      "other": []
     },
     "groups_with_candidate": 3,
     "candidates": {
@@ -2848,7 +2800,9 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "needs_human": "reference: ConnectorRegistry vs AsyncConnector \u2014 picked the type per your rule, but check"
   },
   {
     "q": "ray",
@@ -2859,12 +2813,8 @@
       "reference": [
         "/docs/v2/union/api-reference/integrations/ray/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/reinforcement-learning/grpo-lora/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/plugins/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -2982,7 +2932,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "secrets",
@@ -2991,13 +2942,11 @@
         "/docs/v2/union/user-guide/tasks/task-configuration/secrets/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/autoresearch/"
-      ],
+      "tutorial": [],
       "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/"
+        "/docs/v2/union/security/data-protection/secrets/"
       ]
     },
     "groups_with_candidate": 4,
@@ -3123,7 +3072,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "map",
@@ -3131,15 +3081,9 @@
       "guide": [
         "/docs/v2/union/user-guide/tasks/task-programming/map/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/integrations/vllm/vllmappenvironment/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/parallelized-autoresearch-agent/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/namespace-mapping/"
-      ]
+      "reference": [],
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -3263,23 +3207,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "register",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/cluster-workload-management/clusters/"
+        "/docs/v2/union/user-guide/migration/flyte-2/cli-and-configuration/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.io.extend/dataframetransformerengine/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/code-mode-agent/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/byoc/single-sign-on-setup/microsoft-entra-id/"
-      ]
+      "reference": [],
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -3394,19 +3333,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "map_task",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/migration/flyte-2/parallelism/"
+        "/docs/v2/union/user-guide/tasks/task-programming/map/"
       ],
       "reference": [],
       "tutorial": [],
-      "other": [
-        "/docs/v2/union/community/contributing-docs/shortcodes/"
-      ]
+      "other": []
     },
     "groups_with_candidate": 2,
     "candidates": {
@@ -3449,21 +3387,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "flytectl",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/get-started/run-modes/running-remote/"
+        "/docs/v2/union/user-guide/migration/flyte-2/cli-and-configuration/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.config/"
-      ],
+      "reference": [],
       "tutorial": [],
-      "other": [
-        "/docs/v2/union/community/contributing-docs/shortcodes/"
-      ]
+      "other": []
     },
     "groups_with_candidate": 3,
     "candidates": {
@@ -3514,7 +3449,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "spark",
@@ -3525,12 +3461,8 @@
       "reference": [
         "/docs/v2/union/api-reference/integrations/spark/spark/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/financial-services/fraud-detection-feast/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -3635,19 +3567,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "flyteremote",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/migration/flyte-2/hybrid-pipelines/"
+        "/docs/v2/union/user-guide/tasks/task-programming/remote-tasks/"
       ],
       "reference": [],
       "tutorial": [],
-      "other": [
-        "/docs/v2/union/community/contributing-docs/shortcodes/"
-      ]
+      "other": []
     },
     "groups_with_candidate": 2,
     "candidates": {
@@ -3673,23 +3604,23 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "needs_human": "v1 API; mapped to Remote tasks \u2014 check this is the intended v2 answer"
   },
   {
     "q": "gpu",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/apps/build-apps/serving-graphs/"
+        "/docs/v2/union/user-guide/tasks/task-configuration/resources/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte/resources/"
       ],
       "tutorial": [
         "/docs/v2/union/tutorials/geospatial/climate-modeling/"
       ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -3807,7 +3738,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "expansion-pipeline"
   },
   {
     "q": "caching",
@@ -3816,14 +3748,10 @@
         "/docs/v2/union/user-guide/tasks/task-configuration/caching/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/agent-plugins/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte/cache/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/financial-services/trading-agents/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -3938,7 +3866,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "notification",
@@ -4015,7 +3944,8 @@
       ],
       "tutorial": [],
       "other": []
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "eager",
@@ -4102,7 +4032,8 @@
           ]
         }
       ]
-    }
+    },
+    "needs_human": "v1 term (eager workflows); no v2 equivalent found \u2014 left empty"
   },
   {
     "q": "volumes",
@@ -4110,9 +4041,7 @@
       "guide": [
         "/docs/v2/union/user-guide/tasks/task-programming/volumes/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte/podtemplate/"
-      ],
+      "reference": [],
       "tutorial": [],
       "other": [
         "/docs/v2/union/deployment/selfmanaged/configuration/volumes/"
@@ -4189,20 +4118,17 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "sso",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/tasks/task-deployment/deployment-patterns/"
+        "/docs/v2/union/user-guide/authenticating/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/trigger/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/context-engineering/text_to_sql/"
-      ],
+      "reference": [],
+      "tutorial": [],
       "other": [
         "/docs/v2/union/security/identity-and-access/authentication/"
       ]
@@ -4316,7 +4242,9 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "needs_human": "no SSO-specific page; mapped to authentication"
   },
   {
     "q": "retry",
@@ -4327,12 +4255,8 @@
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/retrystrategy/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/mle-bot/"
-      ],
-      "other": [
-        "/docs/v2/union/release-notes/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -4431,23 +4355,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "deploy",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/apps/serve-and-deploy-apps/how-app-deployment-works/"
+        "/docs/v2/union/user-guide/tasks/task-deployment/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.app/deployedappenvironment/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/inference/voice-customer-service/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/selfmanaged-crusoe/deploy-dataplane/"
-      ]
+      "reference": [],
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -4582,20 +4501,15 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "rbac",
     "ideal": {
-      "guide": [
-        "/docs/v2/union/user-guide/project-patterns/resource-management/"
-      ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-cli/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/geospatial/satellite_image_classification/"
-      ],
+      "guide": [],
+      "reference": [],
+      "tutorial": [],
       "other": [
         "/docs/v2/union/security/identity-and-access/rbac/"
       ]
@@ -4686,16 +4600,16 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages",
+    "needs_human": "only a security page; no user-guide equivalent"
   },
   {
     "q": "flytefile",
     "ideal": {
-      "guide": [
-        "/docs/v2/union/user-guide/migration/flyte-2/overview/"
-      ],
+      "guide": [],
       "reference": [
-        "/docs/v2/union/api-reference/agent-plugins/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte.io/file/"
       ],
       "tutorial": [],
       "other": []
@@ -4756,7 +4670,8 @@
       ],
       "tutorial": [],
       "other": []
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "quickstart",
@@ -4765,12 +4680,8 @@
         "/docs/v2/union/user-guide/get-started/quickstart/"
       ],
       "reference": [],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/"
-      ],
-      "other": [
-        "/docs/v2/union/community/contributing-docs/quick-start/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 3,
     "candidates": {
@@ -4858,23 +4769,18 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "flyte.io.File",
     "ideal": {
-      "guide": [
-        "/docs/v2/union/user-guide/apps/configure-apps/passing-parameters/"
-      ],
+      "guide": [],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.sandbox/"
+        "/docs/v2/union/api-reference/flyte-sdk/flyte.io/file/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/agents/mle-bot/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -4982,7 +4888,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "TaskEnvironment",
@@ -4993,12 +4900,8 @@
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/data-processing/micro-batching/"
-      ],
-      "other": [
-        "/docs/v2/union/community/contributing-docs/writing-guidelines/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -5118,7 +5021,8 @@
           ]
         }
       ]
-    }
+    },
+    "judged": "llm-read-pages"
   },
   {
     "q": "shelltask",
@@ -5134,7 +5038,8 @@
       "reference": [],
       "tutorial": [],
       "other": []
-    }
+    },
+    "needs_human": "v1 term; no v2 equivalent found \u2014 left empty"
   },
   {
     "q": "install cli",
@@ -5161,6 +5066,7 @@
       "reference": [],
       "tutorial": [],
       "other": []
-    }
+    },
+    "needs_human": "not yet judged"
   }
 ]

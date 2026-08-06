@@ -27,6 +27,24 @@ VARIANT = "union"
 VERSION = "v2"
 URL_PREFIX = f"/docs/{VERSION}/{VARIANT}"
 
+# Must mirror build_records.CATEGORY_MAP: the eval scores each result GROUP, so
+# a candidate is only a valid ideal for the group it will actually appear in.
+CATEGORY_MAP = {
+    "user-guide": "guide",
+    "api-reference": "reference",
+    "tutorials": "tutorial",
+    "deployment": "deployment",
+    "oss-deployment": "deployment",
+    "integrations": "guide",
+}
+# The UI merges deployment into the catch-all group.
+GROUPS = ["guide", "reference", "tutorial", "other"]
+
+
+def group_of(rel_parts):
+    cat = CATEGORY_MAP.get(rel_parts[0] if rel_parts else "", "other")
+    return "other" if cat == "deployment" else cat
+
 FM_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n", re.S)
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*$", re.M)
 FENCE_RE = re.compile(r"```.*?```", re.S)
@@ -70,7 +88,9 @@ def load_pages(content_root):
 
         body_nocode = FENCE_RE.sub(" ", body)
         headings = [h[1] for h in HEADING_RE.findall(body_nocode)]
+        rel_parts = list(path.relative_to(Path(content_root)).parts)
         pages.append({
+            "group": group_of(rel_parts),
             "url": url_for(path, Path(content_root)),
             "title": fm.get("title", "").strip('"\''),
             "headings": headings,
@@ -126,39 +146,33 @@ def main():
 
     out = []
     for q in queries:
-        scored = sorted(
-            ((score(q, p), p) for p in pages),
-            key=lambda t: -t[0][0],
-        )[:4]
-        scored = [(sc, why, p) for (sc, why), p in scored if sc > 0]
-        if not scored:
-            out.append({"q": q, "ideal": [], "confidence": "NONE",
-                        "note": "no content match — likely a genuine gap"})
-            continue
+        scored = sorted(((score(q, p), p) for p in pages), key=lambda t: -t[0][0])
+        by_group, cands = {}, {}
+        for (sc, why), p in scored:
+            if sc <= 0:
+                continue
+            g = p["group"]
+            if g not in by_group:
+                by_group[g] = p["url"]
+            cands.setdefault(g, []).append(
+                {"url": p["url"], "title": p["title"], "score": sc, "why": why})
 
-        top_score = scored[0][0]
-        runner = scored[1][0] if len(scored) > 1 else 0
-        # A clear winner is one that beats the runner-up decisively.
-        confidence = ("high" if top_score >= 55 and top_score >= runner * 1.8
-                      else "review")
-
+        ideal = {g: ([by_group[g]] if g in by_group else []) for g in GROUPS}
+        found = sum(1 for g in GROUPS if ideal[g])
         out.append({
             "q": q,
-            "ideal": [scored[0][2]["url"]],
-            "confidence": confidence,
-            "candidates": [
-                {"url": p["url"], "title": p["title"], "score": sc, "why": why}
-                for sc, why, p in scored
-            ],
+            "ideal": ideal,
+            "groups_with_candidate": found,
+            "candidates": {g: cands.get(g, [])[:8] for g in GROUPS},
         })
 
     Path(args.out).write_text(json.dumps(out, indent=2), encoding="utf-8")
 
-    hi = sum(1 for o in out if o["confidence"] == "high")
-    rev = sum(1 for o in out if o["confidence"] == "review")
-    none = sum(1 for o in out if o["confidence"] == "NONE")
     print(f"{len(pages)} union-visible pages scanned")
-    print(f"{len(out)} queries -> {hi} high-confidence, {rev} need review, {none} no match")
+    print(f"{len(out)} queries; proposed ideals per group:")
+    for g in GROUPS:
+        n = sum(1 for o in out if o["ideal"][g])
+        print(f"  {g:<12} {n:>3}/{len(out)} queries have a candidate")
     print(f"wrote {args.out}")
 
 
