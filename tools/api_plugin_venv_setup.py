@@ -63,7 +63,7 @@ def _local_plugin_index(plugins_dir: Path) -> dict[str, Path]:
 
     # Shallowest first, so a real source dir wins over any stale copy beneath it.
     for pyproject in sorted(plugins_dir.rglob("pyproject.toml"), key=lambda p: (len(p.parts), p)):
-        if SKIP_DIRS & set(pyproject.parts):
+        if SKIP_DIRS & set(pyproject.relative_to(plugins_dir).parts):
             continue
         try:
             with open(pyproject, "rb") as f:

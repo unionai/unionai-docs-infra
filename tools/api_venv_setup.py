@@ -50,40 +50,14 @@ def load_config() -> dict:
 def _substitute_local_flyte(packages: list, sdk_path: str) -> list:
     """Replace PyPI flyte and plugin packages with local paths, preserving extras.
 
-    When FLYTE_SDK_PATH points to a local flyte-sdk checkout, this substitutes:
-      - ``flyte[extras]`` -> ``<sdk_path>[extras]``
-      - ``flyteplugins-<name>[extras]`` -> ``<sdk_path>/plugins/<name>[extras]``
-        (only if the plugin directory exists locally)
+    Delegates to the plugin-venv implementation so both entry points resolve
+    plugins the same way. That one reads each plugin's pyproject.toml name
+    instead of guessing a directory from the distribution name, which is what
+    the nested layouts (plugins/agents/deepagents) require.
     """
-    sdk = Path(sdk_path)
-    plugins_dir = sdk / "plugins"
-    result = []
-    for pkg in packages:
-        if pkg == "flyte" or pkg.startswith("flyte["):
-            extras = pkg[len("flyte"):]  # e.g. "[connector,aiosqlite,tui]" or ""
-            local_spec = f"{sdk_path}{extras}"
-            print(f"  Using local flyte-sdk: {local_spec}")
-            result.append(local_spec)
-        elif pkg.startswith("flyteplugins-"):
-            # Extract plugin name and extras: "flyteplugins-vllm[extra]" -> ("vllm", "[extra]")
-            rest = pkg[len("flyteplugins-"):]
-            bracket = rest.find("[")
-            if bracket >= 0:
-                plugin_name = rest[:bracket]
-                extras = rest[bracket:]
-            else:
-                plugin_name = rest
-                extras = ""
-            local_plugin = plugins_dir / plugin_name
-            if local_plugin.is_dir():
-                local_spec = f"{local_plugin}{extras}"
-                print(f"  Using local plugin: {local_spec}")
-                result.append(local_spec)
-            else:
-                result.append(pkg)
-        else:
-            result.append(pkg)
-    return result
+    from api_plugin_venv_setup import _substitute_local_flyte as _shared
+
+    return _shared(packages, sdk_path)
 
 
 def _dedupe(packages: list[str]) -> list[str]:
