@@ -21,7 +21,14 @@ from typing import Optional
 # Namespace roots whose members belong in these docs. The documented class's
 # own root is always added, so this only needs to name the *other* first-party
 # namespaces a class might inherit from (a plugin subclassing an SDK base).
-FIRST_PARTY_ROOTS = frozenset({"flyte", "flyteplugins", "union", "unionai"})
+#
+# flytekit and flytekitplugins are the v1 SDK. The v1 docs line is built by this
+# same generator (unionai-docs@v1 pins this repo's main), and v1 classes inherit
+# heavily from it: union.remote.UnionRemote gets most of its 63 documented
+# methods from flytekit.remote.remote.FlyteRemote, and every flytekitplugins
+# task class inherits ~28 from PythonFunctionTask. Omitting these roots deletes
+# that surface from the v1 reference.
+FIRST_PARTY_ROOTS = frozenset({"flyte", "flyteplugins", "flytekit", "flytekitplugins", "union", "unionai"})
 
 
 def _root_package(module_name: Optional[str]) -> str:
@@ -101,6 +108,30 @@ def test_is_foreign_member():
 
     # A class documented from a third-party root keeps its own members.
     assert not is_foreign_member(ThirdPartyBase, "abatch")
+
+    # The v1 SDK is first-party. This generator also builds the v1 docs line,
+    # where union classes inherit most of their surface from flytekit and every
+    # flytekitplugins task class inherits from PythonFunctionTask. Dropping
+    # flytekit from FIRST_PARTY_ROOTS silently deletes that from the reference.
+    class FlyteRemote:
+        __module__ = "flytekit.remote.remote"
+
+        def fetch_task(self): ...
+
+    class UnionRemote(FlyteRemote):
+        __module__ = "union.remote"
+
+    assert not is_foreign_member(UnionRemote, "fetch_task")
+
+    class PythonFunctionTask:
+        __module__ = "flytekit.core.python_function_task"
+
+        def dispatch_execute(self): ...
+
+    class SparkTask(PythonFunctionTask):
+        __module__ = "flytekitplugins.spark.task"
+
+    assert not is_foreign_member(SparkTask, "dispatch_execute")
     print("test_is_foreign_member: ok")
 
 
