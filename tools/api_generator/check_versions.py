@@ -206,7 +206,7 @@ def regenerate(results: list[dict]) -> None:
             # A plugin may restrict which variants it appears in (e.g. union-plugin
             # is Union-only); defaults to "+flyte +union" in the Makefile otherwise.
             if r.get("variants"):
-                cmd.append(f"VARIANTS={r['variants']}")
+                cmd.append(f"PAGE_VARIANTS={r['variants']}")
             subprocess.run(cmd, cwd=REPO_ROOT, check=True)
 
     # Clean up shared venv
