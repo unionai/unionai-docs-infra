@@ -26,9 +26,21 @@ from typing import Optional
 # same generator (unionai-docs@v1 pins this repo's main), and v1 classes inherit
 # heavily from it: union.remote.UnionRemote gets most of its 63 documented
 # methods from flytekit.remote.remote.FlyteRemote, and every flytekitplugins
-# task class inherits ~28 from PythonFunctionTask. Omitting these roots deletes
+# task class inherits ~28 from PythonFunctionTask. flyteidl (v1) and flyteidl2
+# (v2) are the generated IDL packages, also first-party. Omitting these roots deletes
 # that surface from the v1 reference.
-FIRST_PARTY_ROOTS = frozenset({"flyte", "flyteplugins", "flytekit", "flytekitplugins", "union", "unionai"})
+FIRST_PARTY_ROOTS = frozenset(
+    {
+        "flyte",
+        "flyteplugins",
+        "flytekit",
+        "flytekitplugins",
+        "flyteidl",
+        "flyteidl2",
+        "union",
+        "unionai",
+    }
+)
 
 
 def _root_package(module_name: Optional[str]) -> str:
