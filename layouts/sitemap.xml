@@ -2,12 +2,26 @@
 {{- $pages = where $pages "Type" "!=" "page" -}}
 {{- $pages = where $pages "Params.noindex" "!=" true -}}
 {{- $pages = where $pages "Params.hidden" "!=" true -}}
+{{- /* Scheme+host for fully-qualified <loc> values. The build's baseURL is path-only (see
+       partials/site-host.html), so .Permalink on its own is a path — and the sitemaps.org
+       protocol requires absolute URLs, so a path-only <loc> makes the whole sitemap
+       unusable to crawlers (DOC-1320). */ -}}
+{{- $host := partial "site-host.html" . -}}
 {{- `<?xml version="1.0" encoding="utf-8" standalone="yes"?>` | safeHTML }}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   {{- range $pages -}}
+  {{- /* List only pages this variant actually publishes. A page whose front-matter
+         `variants` does not carry `+<variant>` is skipped by baseof.html, so the build
+         writes NO file for it — advertising it in the sitemap hands the crawler a 404.
+         This drops the `__docs_builder__` test scaffold (marked `-flyte -union`) and every
+         page gated to the other variant. It reuses the same gate the page templates use, so
+         the sitemap cannot drift from what is published. (DOC-1320) */ -}}
+  {{- if (partial "page-allowed.html" .).variant -}}
+  {{- $loc := .Permalink | absURL -}}
+  {{- if not (hasPrefix $loc "http") -}}{{- $loc = printf "%s%s" $host $loc -}}{{- end -}}
   <url>
-    <loc>{{ .Permalink | absURL }}</loc>
+    <loc>{{ $loc }}</loc>
     {{- if .Lastmod -}}
     <lastmod>{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}</lastmod>
     {{- else if .Date -}}
@@ -20,5 +34,6 @@
     {{- $pageType := partial "page-type.html" . -}}
     <priority>{{ if .Params.priority }}{{ .Params.priority }}{{ else if eq $pageType "reference" }}0.3{{ else }}{{ if eq .Kind "home" }}1.0{{ else if eq .Kind "section" }}0.8{{ else }}0.6{{ end }}{{ end }}</priority>
   </url>
+  {{- end -}}
   {{- end -}}
 </urlset>

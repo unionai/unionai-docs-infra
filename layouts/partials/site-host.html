@@ -1,0 +1,25 @@
+{{- /* site-host.html — the production scheme+host for this site, as a string.
+
+  Returns e.g. "https://www.union.ai".
+
+  Why this exists: the docs build runs with a PATH-ONLY baseURL (run_hugo.sh passes
+  `--baseURL /docs/<version>/<variant>/`), because the site is mounted as a subtree of the
+  corporate site and the same output has to work behind Cloudflare preview URLs, localhost
+  `make serve`, and production. A consequence is that `.Permalink` and `.Site.BaseURL` are
+  paths, not URLs — fine for in-page links, wrong anywhere a crawler needs a fully-qualified
+  URL (sitemap <loc>, robots.txt Sitemap:, canonical/OG tags, JSON-LD).
+
+  The host is derived from the absolute `docs_root` param in hugo.site.toml rather than
+  hardcoded, so there is one place to change it. This is the same derivation seo-meta.html
+  does inline for the logo URL (DOC-389); factored out here so the sitemap and robots.txt
+  templates share it (DOC-1320).
+
+  Usage:
+    {{- $host := partial "site-host.html" . -}}
+    {{- $abs := .Permalink -}}
+    {{- if not (hasPrefix $abs "http") -}}{{- $abs = printf "%s%s" $host $abs -}}{{- end -}}
+
+  Always guard with the hasPrefix check: a local dev build may set an absolute baseURL, in
+  which case .Permalink is already fully qualified and must not be prefixed twice.
+*/ -}}
+{{- return (replaceRE `^(https?://[^/]+).*$` "$1" site.Params.docs_root) -}}
