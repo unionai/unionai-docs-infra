@@ -137,6 +137,13 @@ check-generated-content:
 check-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --check
 
+# Advisory. Audits the GENERATED API reference for reader-visible defects
+# (literal RST, language-less code blocks, empty parameter descriptions, ...).
+# Set SDK_SOURCE to a flyte-sdk checkout to split empty descriptions into
+# "the generator dropped documented prose" vs "nothing in source to render".
+check-api-docs-rendered:
+	@$(UV) unionai-docs-infra/tools/check_generated_api_docs.py $(if $(SDK_SOURCE),--source $(SDK_SOURCE),)
+
 check-asset-refs:
 	@unionai-docs-infra/scripts/check-asset-refs.sh
 
