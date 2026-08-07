@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
+.PHONY: check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
 
 all: usage
 
@@ -48,6 +48,15 @@ base:
 	@# Root 404.html (DOC-1334 failure-surfaces): its presence switches CF Pages
 	@# from SPA-fallback (the 200-stub) to REAL 404s for unknown paths.
 	cat unionai-docs-infra/404-root.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/404.html
+
+# The search-quality benchmark's answer key references real content URLs. A PR
+# that renames or deletes a labelled page silently rots the benchmark, so the
+# next eval reports a "ranking regression" that is really labelling decay.
+# Fail loudly at PR time instead. Cheap: pure path existence, no network.
+check-search-labels:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/check_labels.py \
+		unionai-docs-infra/tools/algolia_indexer/queries.judged.json \
+		--content content
 
 dist:
 	@VARIANTS="$(VARIANTS)" PARALLEL_HUGO="$(PARALLEL_HUGO)" unionai-docs-infra/scripts/build_dist.sh
