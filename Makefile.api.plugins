@@ -32,7 +32,13 @@ WEIGHT_FLAG := $(if $(WEIGHT),--weight $(WEIGHT),)
 
 # Variant visibility for the generated pages. Defaults to both variants; a plugin
 # may override it from its api-packages.toml entry (e.g. union-plugin is Union-only).
-VARIANTS ?= +flyte +union
+#
+# NOT named VARIANTS. The parent Makefile does `export VARIANTS` from
+# makefile.inc, where it means the list of variants to BUILD and is
+# deliberately unsigned ("flyte union"). A `VARIANTS ?=` here loses to that
+# exported value, so this makefile silently generated `variants: flyte union`
+# -- unsigned, which gates every page out of every variant. (DOC-1394)
+PAGE_VARIANTS ?= +flyte +union
 
 .PHONY: all
 all: check_vars setup-venv parser generate clean-venv
@@ -76,7 +82,7 @@ ifeq ($(SKIP_VENV_SETUP),false)
 		$(NO_FLATTEN_FLAG) \
 		$(WEIGHT_FLAG) \
 		--short-names \
-		--variants "$(VARIANTS)" \
+		--variants "$(PAGE_VARIANTS)" \
 		--output_dir "${OUTPUT_FOLDER}"
 else
 	unionai-docs-infra/tools/api_generator/generate \
@@ -87,7 +93,7 @@ else
 		$(NO_FLATTEN_FLAG) \
 		$(WEIGHT_FLAG) \
 		--short-names \
-		--variants "$(VARIANTS)" \
+		--variants "$(PAGE_VARIANTS)" \
 		--output_dir "${OUTPUT_FOLDER}"
 endif
 
