@@ -1,0 +1,103 @@
+{
+  "_README": [
+    "Hand-seeded synonyms, to be merged with synonyms.draft.json (generated from",
+    "the migration tables) before pushing. Kept separate because these were found",
+    "by investigation rather than derived from a source we can regenerate -- if",
+    "the generator is re-run, these must not be lost.",
+    "",
+    "Three distinct classes turned up, and only the first is covered by the",
+    "migration guide's comparison tables:",
+    "",
+    "  1. API renames        pyflyte run -> flyte run. Generated; see",
+    "                        build_synonyms.py + synonyms.draft.json.",
+    "  2. CONCEPT renames    The idea survives under a new name, but no table row",
+    "                        maps them because it is not an API mapping. These are",
+    "                        invisible to the generator and must be hand-seeded.",
+    "  3. general <-> specific   Not a version thing at all. The canonical page is",
+    "                        titled with the general concept ('Resources',",
+    "                        'Accelerators') while users search the specific term",
+    "                        ('gpu'). Search has the same blind spot our own",
+    "                        lexical scorer had.",
+    "",
+    "Every entry below is evidenced by a real zero-result or badly-ranked query in",
+    "the Algolia analytics (de region, 90 days) unless marked speculative."
+  ],
+
+  "concept_renames": [
+    {
+      "objectID": "manual-shelltask",
+      "type": "oneWaySynonym",
+      "input": "shelltask",
+      "synonyms": ["container task", "container tasks", "raw container"],
+      "_evidence": "zero-result search. container-tasks.md ('Raw Container Tasks') is the v2 home: 'run code written in any language, execute shell scripts, or use pre-built containers'.",
+      "_found": "2026-08-07, Peeter recognised the mapping"
+    },
+    {
+      "objectID": "manual-eager",
+      "type": "oneWaySynonym",
+      "input": "eager",
+      "synonyms": ["async", "asyncio", "await"],
+      "_evidence": "v2 has no eager mode because the whole runtime is asyncio-based. migration/flyte-2/overview: 'the Flyte orchestrator acts as the event loop'.",
+      "_found": "2026-08-07, Peeter"
+    },
+    {
+      "objectID": "manual-deck",
+      "type": "oneWaySynonym",
+      "input": "deck",
+      "synonyms": ["report", "reports"],
+      "_evidence": "5th most-searched term (25 searches), returns nothing. Reports page states it is the Flyte 2 successor to Decks. Also generated from the migration table -- duplicated here for provenance.",
+      "_found": "2026-08-06, analytics no-results list"
+    },
+    {
+      "objectID": "manual-flytectl",
+      "type": "oneWaySynonym",
+      "input": "flytectl",
+      "synonyms": ["flyte cli", "uctl", "command line"],
+      "_evidence": "14 searches. v1 CLI; no migration-table row because it was replaced rather than renamed.",
+      "_found": "2026-08-06, analytics"
+    },
+    {
+      "objectID": "manual-flyteremote",
+      "type": "oneWaySynonym",
+      "input": "flyteremote",
+      "synonyms": ["flyte.remote", "remote task", "remote tasks"],
+      "_evidence": "13 searches. v1 programmatic API.",
+      "_found": "2026-08-06, analytics"
+    },
+    {
+      "objectID": "manual-map-task",
+      "type": "oneWaySynonym",
+      "input": "map_task",
+      "synonyms": ["map", "mapping", "flyte.map"],
+      "_evidence": "14 searches. The generator produced `maptask` but not the underscore form -- variants_of() needs underscore normalisation. Seeded here until that is fixed.",
+      "_found": "2026-08-06, coverage check"
+    }
+  ],
+
+  "general_to_specific": [
+    {
+      "objectID": "manual-gpu",
+      "type": "oneWaySynonym",
+      "input": "gpu",
+      "synonyms": ["accelerator", "accelerators", "device", "resources"],
+      "_evidence": "The canonical page is 'Resources' with an 'Accelerators' section; it never says 'gpu' in its title or headings. Our own lexical scorer ranked a climate-modelling tutorial above it for exactly this reason -- search will have the same blind spot.",
+      "_found": "2026-08-06, Peeter caught the missing page",
+      "_note": "Verify against the eval: if search already finds Resources for 'gpu', this synonym is unnecessary and adds noise."
+    }
+  ],
+
+  "content_gaps_NOT_synonyms": [
+    {
+      "query": "maxmessagesizebytes",
+      "_note": "zero hits unfiltered; no page covers it. A real content gap -- no synonym can fix a page that does not exist."
+    },
+    {
+      "query": "eventspublisher",
+      "_note": "zero hits unfiltered. Same."
+    },
+    {
+      "query": "shelltask (ranking, pre-synonym)",
+      "_note": "143 hits unfiltered but the top result was a v1 Slurm connector example, not the container-tasks page. Ranking problem as well as a vocabulary one; the synonym above should fix both."
+    }
+  ]
+}
