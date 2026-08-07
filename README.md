@@ -220,7 +220,7 @@ All build jobs use the same toolchain: `actions/checkout` with `submodules: recu
 
 **Workflow: `.github/workflows/build-and-deploy.yml`** (in the parent `unionai-docs` repo).
 
-Triggered on push to `main` (and `workflow_dispatch`). It runs `make dist`, then deploys with:
+Triggered on push to the branch's own production ref (`main` on the v2 line, `v1` on the v1 line) and on `workflow_dispatch`. It runs `make dist`, then deploys with:
 
 ```
 wrangler pages deploy ./dist --project-name=docs --branch=<sanitized-branch> --commit-dirty=true
@@ -228,12 +228,45 @@ wrangler pages deploy ./dist --project-name=docs --branch=<sanitized-branch> --c
 
 `--commit-dirty=true` is required because `make dist` regenerates tracked files (notebooks, API/Helm docs), so the tree is always dirty at deploy time. The deploy step has its own 10-minute timeout so a hung upload fails fast instead of eating the whole job budget (DOC-1229).
 
+This workflow is **production-only**. It never runs on `pull_request`; previews are the two-stage pipeline below.
+
 ### Pull request previews
 
 PR previews use a **two-stage, fork-safe pipeline** (DOC-1228), because GitHub does not expose repo secrets to `pull_request` runs from forks:
 
 1. **`build-pr.yml`** (`on: pull_request`) — builds `make dist` with **no secrets** and uploads the `dist/` + PR metadata as an artifact. Its check-run is named `Build and deploy docs` (preserved from the old single-stage workflow) so the branch-protection required status check keeps matching.
 2. **`deploy-pr-preview.yml`** (`on: workflow_run` after "Build PR" completes) — runs in the trusted base-repo context where secrets are available, downloads the prebuilt artifact, and deploys it to a per-branch CF Pages preview. It never checks out or executes untrusted PR code.
+
+**This applies to `v1` PRs exactly as it does to `main` PRs.** Both branches carry the same `build-pr.yml` + `deploy-pr-preview.yml` pair, and a PR based on `v1` gets a preview of the v1 tree in the same `docs` Pages project.
+
+#### Finding the preview URL
+
+Stage 2 runs as a **detached `workflow_run`**, so it does **not** appear in the PR's checks list, and its run is filed under the repo's default branch rather than the PR branch. The only check you see on the PR is stage 1, `Build and deploy docs`, whose last step is `Upload PR dist artifact`. That is the expected end of that job. It is not evidence that the deploy is missing.
+
+The preview surfaces instead as a **sticky PR comment** titled *GHA build & deploy preview*, posted by stage 2 roughly a minute after the build check goes green. It carries two links:
+
+- **Branch alias** — `https://pr-<num>-<sanitized-branch>.docs-dog.pages.dev`, stable for the life of the PR and always pointing at the latest push.
+- **This commit** — the immutable per-deployment URL for the exact commit.
+
+Append the line's path to reach content: `/docs/v2/<variant>/` on a `main` PR, `/docs/v1/<variant>/` on a `v1` PR.
+
+If the comment is not there yet, the deploy has not finished. Watch the **Deploy PR preview** workflow (filter Actions by that workflow name, not by your branch) rather than the PR's check list.
+
+Preview deployments are preview-class in Cloudflare Pages, so every one carries an `x-robots-tag: noindex` response header. That is by design and keeps previews out of search (see DOC-1332 for the same mechanism on the v1 production alias).
+
+#### Fallback: serve the CI artifact locally
+
+When a preview is not available (the deploy failed, the secrets are unavailable, or you want to inspect the built tree offline), download the artifact stage 1 already produced and serve it:
+
+```
+gh run download <build-pr-run-id> --repo unionai/unionai-docs --dir out
+cd out/pr-dist/dist && python3 -m http.server 8899
+# then open http://localhost:8899/docs/v1/<variant>/   (or /docs/v2/<variant>/)
+```
+
+Find the run id from the `Build and deploy docs` check on the PR, or with `gh run list --branch <pr-branch> --workflow build-pr.yml`.
+
+This exercises the same artifact CI built and deployed, which makes it a better check than a fresh local `hugo` build. What it cannot reproduce is anything the edge adds: redirects, headers, and CloudFront routing. For those, use the real preview.
 
 ### Build provenance
 
@@ -510,7 +543,7 @@ Then commit the changed files. This single command regenerates all generated con
 
 **What it does:** `build-pr.yml` builds the full site (`make dist`) for the PR and uploads it as an artifact; `deploy-pr-preview.yml` then deploys that artifact to a per-branch Cloudflare Pages preview (see [Pull request previews](#pull-request-previews)). The build half reports as the required `Build and deploy docs` status check.
 
-**How to use:** If the build check is green, the preview deployment comment/URL lets you view your changes as they'll appear on the live site.
+**How to use:** Once the build check is green, wait for the sticky *GHA build & deploy preview* comment and open its **Branch alias** link. The deploy half is a detached `workflow_run` and never shows up in the PR's checks list, so the build check ending at `Upload PR dist artifact` is normal and does not mean the deploy was skipped. Works the same on `v1` PRs. If no preview appears, fall back to [serving the CI artifact locally](#fallback-serve-the-ci-artifact-locally).
 
 ### Quick fix for most failures
 
