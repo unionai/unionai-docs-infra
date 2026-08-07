@@ -23,6 +23,120 @@ _GOOGLE_SECTIONS = {
 # Sphinx return-like directives
 _SPHINX_RETURNS = ["return", "rcode", "result", "rtype"]
 
+# A Google section header sitting alone on its line, at any indentation.
+_SECTION_HEADER_RE = re.compile(
+    r"^(?P<indent> *)(?:%s) *$" % "|".join(re.escape(k) for k in _GOOGLE_SECTIONS)
+)
+
+# Sphinx cross-reference roles, e.g. :class:`~pkg.mod.Name` or :func:`name`.
+_RST_ROLE_RE = re.compile(
+    r":(?:py:)?(?:class|func|meth|mod|attr|exc|obj|data|const|term|ref|doc):`([^`]+)`"
+)
+
+# An explicit RST role title: :class:`Some Title <pkg.mod.Name>`
+_RST_EXPLICIT_TITLE_RE = re.compile(r"^(?P<title>.*?)\s*<(?P<target>[^>]+)>$")
+
+# A MkDocs admonition marker: !!! type "optional title". The title is usually
+# quoted but not always, so take the rest of the line and unquote it.
+_ADMONITION_RE = re.compile(r"^ *!!!\s+(?P<kind>[\w-]+)\s*(?P<title>.*?)\s*$")
+
+# MkDocs admonition type -> the GitHub-style alert the docs theme renders.
+_ADMONITION_ALERTS = {
+    "warning": "WARNING",
+    "caution": "WARNING",
+    "danger": "WARNING",
+    "deprecated": "WARNING",
+    "failure": "WARNING",
+    "note": "NOTE",
+    "info": "NOTE",
+    "version-added": "NOTE",
+    "version-changed": "NOTE",
+    "abstract": "TIP",
+    "tip": "TIP",
+    "hint": "TIP",
+    "success": "TIP",
+}
+
+# Types whose body is normally a fenced code block. A blockquote would swallow
+# the fence, so these get a bold lead-in and keep the body as real Markdown.
+_ADMONITION_LEADINS = {
+    "example": "Example",
+    "quote": "Quote",
+}
+
+
+def dedent_nested_sections(docstring: str) -> str:
+    """
+    Re-align a docstring whose body sits one indentation level below its summary.
+
+    ``functools.wraps``-style wrappers build a docstring by prepending a summary
+    line to another function's ``__doc__``. The borrowed body keeps its original
+    source indentation on every line but the first, and ``inspect.cleandoc``
+    cannot strip it because that first line already sits at column 0. The Google
+    section headers then never appear at base indentation, so ``Args:`` and
+    ``Returns:`` are never parsed: the parameter table is emitted with empty
+    descriptions and the prose renders as an indented code block.
+
+    When every Google section header is indented, shift the indented block back
+    to the left by that amount. A docstring whose headers already sit at base
+    indentation is returned unchanged.
+    """
+    lines = docstring.split("\n")
+    indents = [
+        len(m.group("indent"))
+        for m in (_SECTION_HEADER_RE.match(line) for line in lines)
+        if m
+    ]
+    if not indents:
+        return docstring
+
+    shift = min(indents)
+    if shift <= 0:
+        return docstring
+
+    prefix = " " * shift
+    return "\n".join(
+        line[shift:] if line.startswith(prefix) else line for line in lines
+    )
+
+
+def convert_rst_roles(text: str) -> str:
+    """
+    Turn Sphinx cross-reference roles into plain Markdown code spans.
+
+    Docstrings written for Sphinx reference other objects with roles such as
+    ``:class:`~pkg.mod.Name```. Nothing downstream understands them, so they
+    reach the site verbatim and render as the literal text ``:class:`Name```.
+    A code span is the right target: the docs site autolinks backticked
+    identifiers to their API reference using the generated linkmaps.
+
+    RST display semantics are preserved -- a leading ``~`` means "show only the
+    last dotted component", and an explicit ``Title <target>`` wins over the
+    target. Code fences are left alone.
+    """
+    def replace(match: re.Match) -> str:
+        target = match.group(1).strip()
+
+        explicit = _RST_EXPLICIT_TITLE_RE.match(target)
+        if explicit:
+            return f"`{explicit.group('title').strip()}`"
+
+        if target.startswith("~"):
+            target = target.lstrip("~").split(".")[-1]
+        return f"`{target}`"
+
+    out = []
+    in_fence = False
+    for line in text.split("\n"):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            out.append(line)
+        elif in_fence:
+            out.append(line)
+        else:
+            out.append(_RST_ROLE_RE.sub(replace, line))
+    return "\n".join(out)
+
 
 class DocstringInfo(TypedDict):
     docstring: str
@@ -51,9 +165,17 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
     # the same line as """ (no indent) but continuation lines are indented.
     docstring = inspect.cleandoc(docstring)
 
+    # Pull a wrapper-borrowed body back to the base indentation so its
+    # Args:/Returns: sections are visible to the section parser below.
+    docstring = dedent_nested_sections(docstring)
+
     # Convert RST-style "Example::" to Google-style "Example:" so the
     # section parser picks it up. Also handles "Examples::".
     docstring = re.sub(r'^(\s*Examples?)::', r'\1:', docstring, flags=re.MULTILINE)
+
+    # Turn Sphinx cross-reference roles into Markdown code spans. Runs before
+    # the admonition pass, while code fences are still at the line start.
+    docstring = convert_rst_roles(docstring)
 
     # Removes the special !!!! notes
     docstring = format_three_exclamation_notes(docstring)
@@ -426,6 +548,8 @@ def convert_pydantic_links(text: str) -> str:
 
 def format_three_exclamation_notes(docstring: str) -> str:
     """
+    Convert MkDocs admonitions into the alert syntax the docs theme renders.
+
     Receives a docstring that contains lines like:
 
         !!! warning "Deprecated"
@@ -436,52 +560,217 @@ def format_three_exclamation_notes(docstring: str) -> str:
         > [!WARNING] Deprecated
         > This method is now deprecated; use `model_copy` instead.
 
-    Also handles !!! abstract and !!! note admonitions, and converts
-    relative pydantic documentation links to absolute URLs.
+    Two body layouts occur in the wild. Pydantic writes the body flush against
+    the marker (as above); mkdocstrings indents it by four spaces, which is also
+    how it carries fenced code blocks. Indented bodies are dedented rather than
+    stripped, so their fences survive as real Markdown instead of collapsing
+    into blockquote prose.
+
+    Types whose body is normally a code block (``example``, ``quote``) become a
+    bold lead-in instead of an alert, because a blockquote would swallow the
+    fence. Unknown types keep their body and lose only the marker -- emitting
+    ``!!! whatever`` verbatim just puts unrenderable syntax on the page.
+
+    Also converts relative pydantic documentation links to absolute URLs.
     """
     # First convert any pydantic-relative links to absolute URLs
     docstring = convert_pydantic_links(docstring)
 
     lines = docstring.split("\n")
     result = []
-    converting = False
-    for line in lines:
-        stripped = line.strip()  # Check stripped version to handle leading whitespace
-        if stripped.startswith("!!! warning"):
-            parts = stripped.split(" ")
-            if len(parts) < 3:
-                continue
-            title = parts[2].replace('"', '')
-            result.append(f"> [!WARNING] {title}")
-            converting = True
-        elif stripped.startswith("!!! note"):
-            result.append("> [!NOTE]")
-            converting = True
-        elif stripped.startswith("!!! abstract"):
-            # Extract title from !!! abstract "Title"
-            parts = stripped.split('"')
-            title = parts[1] if len(parts) >= 2 else "Note"
-            # Add clarification for pydantic inherited method documentation
-            if title == "Usage Documentation":
-                title = "Usage Documentation (external docs for inherited method)"
-            result.append(f"> [!TIP] {title}")
-            converting = True
-        elif converting:
-            if len(stripped) > 0:
-                result.append(f"> {stripped}")
-            else:
-                result.append("")
-                converting = False
+    i = 0
+
+    while i < len(lines):
+        match = _ADMONITION_RE.match(lines[i])
+        if not match:
+            result.append(lines[i])
+            i += 1
+            continue
+
+        kind = match.group("kind").lower()
+        title = (match.group("title") or "").strip()
+        if len(title) >= 2 and title[0] == '"' and title[-1] == '"':
+            title = title[1:-1].strip()
+        i += 1
+
+        body, i = _collect_admonition_body(lines, i)
+
+        if kind in _ADMONITION_LEADINS:
+            lead = _ADMONITION_LEADINS[kind]
+            result.append(f"**{lead} — {title}**" if title else f"**{lead}**")
+            result.append("")
+            result.extend(body)
+        elif kind in _ADMONITION_ALERTS:
+            heading, lead_in = _admonition_heading(kind, title)
+            if lead_in:
+                body = [lead_in, ""] + body if body else [lead_in]
+            result.append(f"> [!{_ADMONITION_ALERTS[kind]}] {heading}".rstrip())
+            result.extend(f"> {line}" if line.strip() else ">" for line in body)
         else:
-            converting = False
-            result.append(line)
+            # Unknown admonition type: keep the content, drop the marker.
+            if title:
+                result.append(f"**{title}**")
+                result.append("")
+            result.extend(body)
+
+        result.append("")
+
     return "\n".join(result)
+
+
+def _collect_admonition_body(lines: list, i: int) -> tuple:
+    """
+    Return (body_lines, next_index) for the admonition starting at line ``i``.
+
+    An indented block (mkdocstrings) is consumed whole and dedented by four, so
+    blank lines and fenced code inside it are preserved. An unindented body
+    (pydantic) runs to the first blank line, matching the original behaviour.
+    """
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+
+    if i >= len(lines):
+        return [], i
+
+    if lines[i].startswith("    "):
+        body, pending_blanks = [], []
+        while i < len(lines):
+            line = lines[i]
+            if not line.strip():
+                pending_blanks.append("")
+                i += 1
+            elif line.startswith("    "):
+                body.extend(pending_blanks)
+                pending_blanks = []
+                body.append(line[4:])
+                i += 1
+            else:
+                break
+        return body, i
+
+    body = []
+    while i < len(lines) and lines[i].strip():
+        body.append(lines[i].strip())
+        i += 1
+    return body, i
+
+
+def _admonition_heading(kind: str, title: str) -> tuple:
+    """
+    Return (heading, lead_in) for an alert-style admonition.
+
+    mkdocstrings packs the whole message into the title for ``deprecated``
+    (e.g. ``"1.4.2 Use asdict instead."``), which is too long for a heading, so
+    it moves into the body instead.
+    """
+    if kind == "deprecated":
+        return "Deprecated", title
+    if kind in ("version-added", "version-changed"):
+        default = "Added in a later version" if kind == "version-added" else "Changed"
+        return title or default, ""
+    # Pydantic points at its own site for methods inherited from BaseModel.
+    if title == "Usage Documentation":
+        return "Usage Documentation (external docs for inherited method)", ""
+    return title, ""
+
+
+def test_convert_rst_roles():
+    assert convert_rst_roles(":func:`tool` does a thing") == "`tool` does a thing"
+    # A leading ~ means "display the last component only".
+    assert convert_rst_roles(":class:`~pkg.mod.Name`") == "`Name`"
+    assert convert_rst_roles(":class:`pkg.mod.Name`") == "`pkg.mod.Name`"
+    # An explicit title wins over the target.
+    assert convert_rst_roles(":meth:`the resolver <pkg.Thing.run>`") == "`the resolver`"
+    assert convert_rst_roles(":mod:`pkg.testing` — helpers") == "`pkg.testing` — helpers"
+    # Two roles on one line.
+    assert convert_rst_roles(":func:`a` / :func:`b`") == "`a` / `b`"
+    # Code fences are left alone.
+    fenced = "```python\nx = ':class:`Foo`'\n```"
+    assert convert_rst_roles(fenced) == fenced
+    print("test_convert_rst_roles: ok")
+
+
+def test_dedent_nested_sections():
+    # A sync wrapper prepends its own summary to the wrapped __doc__, leaving
+    # the borrowed body indented and its sections invisible to the parser.
+    doc = (
+        "Synchronous variant of run_agent.\n"
+        "\n"
+        "Run the agent and return the final text.\n"
+        "\n"
+        "    Call this from inside a task.\n"
+        "\n"
+        "    Args:\n"
+        "        prompt: The user prompt.\n"
+        "\n"
+        "    Returns:\n"
+        "        The final answer.\n"
+    )
+    fixed = dedent_nested_sections(doc)
+    assert "\nArgs:\n" in fixed
+    assert "\n    prompt: The user prompt.\n" in fixed
+    assert "\nCall this from inside a task.\n" in fixed
+
+    # A well-formed docstring is untouched.
+    ok = "Do a thing.\n\nArgs:\n    x: A value.\n"
+    assert dedent_nested_sections(ok) == ok
+
+    # No sections at all: untouched.
+    plain = "Just a sentence.\n\n    indented example\n"
+    assert dedent_nested_sections(plain) == plain
+    print("test_dedent_nested_sections: ok")
+
+
+def test_format_three_exclamation_notes():
+    # Pydantic style: body flush against the marker, ends at the blank line.
+    out = format_three_exclamation_notes(
+        '!!! warning "Deprecated"\nUse `model_copy` instead.\n\nOther text.'
+    )
+    assert "> [!WARNING] Deprecated" in out
+    assert "> Use `model_copy` instead." in out
+    assert "\nOther text." in out
+
+    # A multi-word title survives (the old split(" ")[2] kept only "Deprecated").
+    out = format_three_exclamation_notes('!!! warning "Deprecated since 1.0"\nGone soon.')
+    assert "> [!WARNING] Deprecated since 1.0" in out
+
+    # A bare marker keeps its body (the old code dropped the line entirely).
+    out = format_three_exclamation_notes("!!! warning\nSomething to watch out for.")
+    assert "> [!WARNING]" in out
+    assert "> Something to watch out for." in out
+
+    # mkdocstrings style: an indented code block must come out as real Markdown.
+    out = format_three_exclamation_notes(
+        '!!! example "`str` input"\n\n    ```python\n    f("b")\n    ```\n'
+    )
+    assert "**Example — `str` input**" in out
+    assert "\n```python\n" in out
+    assert '\nf("b")\n' in out
+    assert "!!!" not in out
+
+    # deprecated packs the message into the title; it belongs in the body.
+    out = format_three_exclamation_notes('!!! deprecated "1.4.2 Use `asdict` instead."')
+    assert "> [!WARNING] Deprecated" in out
+    assert "> 1.4.2 Use `asdict` instead." in out
+
+    out = format_three_exclamation_notes('!!! version-added "Added in `x` 0.3.0"')
+    assert "> [!NOTE] Added in `x` 0.3.0" in out
+
+    # Unknown types lose the marker but keep the content.
+    out = format_three_exclamation_notes('!!! newthing "A Title"\n\n    body text\n')
+    assert "!!!" not in out
+    assert "**A Title**" in out
+    assert "body text" in out
+    print("test_format_three_exclamation_notes: ok")
 
 
 def main():
     test_parse_params()
     test_parse_args()
     test_parse_google_sections()
+    test_convert_rst_roles()
+    test_dedent_nested_sections()
+    test_format_three_exclamation_notes()
 
 
 if __name__ == "__main__":
