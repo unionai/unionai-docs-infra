@@ -12,6 +12,7 @@ from lib.parser.packages import get_package, should_include
 from lib.ptypes import ClassDetails, PackageInfo
 from lib.parser.methods import parse_method, parse_property, parse_variable
 from lib.parser.pydantic_utils import get_pydantic_excluded_members, is_pydantic_model
+from lib.parser.inheritance import is_foreign_member
 
 
 def isclass(member: Any) -> bool:
@@ -97,6 +98,11 @@ def get_class_details(class_path: str) -> Optional[ClassDetails]:
 
             # Skip Pydantic built-in members (model_validate, model_dump, model_extra, etc.)
             if name in pydantic_excluded:
+                continue
+
+            # Skip members that only reach this class through a third-party base.
+            # __init__ is exempt: it backs the class's Parameters section.
+            if name != "__init__" and is_foreign_member(cls, name):
                 continue
 
             # Methods
