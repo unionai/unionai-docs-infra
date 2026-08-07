@@ -14,8 +14,7 @@ for q in wanted:
         by.setdefault(p["group"], []).append(p)
     print(f"\n### {q!r}  [{', '.join(terms)}]")
     for g in ("guide", "reference", "tutorial", "other"):
-        for p in by.get(g, [])[:2]:
+        for p in by.get(g, [])[:3]:
             marks = "+".join(sorted(p["where"])) or "body"
-            print(f"  {g:<9} {p['url'].replace(fc.URL_PREFIX,''):<52} "
-                  f"{p['breadth']}/{len(terms)}t {p['total']:>3}h {marks}")
-            print(f"            \"{p['title']}\"")
+            print(f"  {g:<9} {p['url'].replace(fc.URL_PREFIX,''):<50} "
+                  f"{p['breadth']}/{len(terms)} {p['total']:>3}h {marks:<13} \"{p['title']}\"")
