@@ -53,7 +53,7 @@ def get_pydantic_init_fields(cls: type) -> list[dict[str, Any]]:
 
     Returns a list of dicts with keys: name, type, default, description.
     """
-    from lib.parser.methods import _sanitize_type_str
+    from lib.parser.methods import _sanitize_type_str, format_default
 
     fields = []
     for field_name, field_info in cls.model_fields.items():
@@ -61,16 +61,17 @@ def get_pydantic_init_fields(cls: type) -> list[dict[str, Any]]:
         if field_info.annotation is not None:
             field_type = _sanitize_type_str(str(field_info.annotation))
 
-        default = None
         try:
             from pydantic_core import PydanticUndefined
-            if field_info.default is not None and field_info.default is not PydanticUndefined:
-                default = str(field_info.default)
-            elif field_info.default_factory is not None:
-                default = f"{field_info.default_factory.__name__}()"
         except ImportError:
-            if field_info.default is not None:
-                default = str(field_info.default)
+            PydanticUndefined = None
+
+        default = None
+        if field_info.default_factory is not None:
+            default = f"{field_info.default_factory.__name__}()"
+        elif field_info.default is not PydanticUndefined:
+            # `None` is a real default here, not the absence of one.
+            default = format_default(field_info.default)
 
         fields.append({
             "name": field_name,
