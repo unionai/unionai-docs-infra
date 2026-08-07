@@ -2588,17 +2588,15 @@
     "q": "api",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/apps/native-app-integrations/fastapi-app/"
+        "/docs/v2/union/user-guide/authenticating/"
       ],
       "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.app.extras/fastapipassthroughauthmiddleware/"
+        "/docs/v2/union/api-reference/flyte-sdk/",
+        "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+        "/docs/v2/union/api-reference/flyte-cli/"
       ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/financial-services/financial-research-agent/"
-      ],
-      "other": [
-        "/docs/v2/union/community/contributing-docs/api-docs/"
-      ]
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -2727,7 +2725,7 @@
         }
       ]
     },
-    "needs_human": "too generic to label; needs your call"
+    "judged": "expansion+multi-ideal (peeter-directed)"
   },
   {
     "q": "connector",
@@ -4007,17 +4005,12 @@
     "q": "eager",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/tasks/task-programming/remote-tasks/"
+        "/docs/v2/union/user-guide/migration/flyte-2/overview/",
+        "/docs/v2/union/user-guide/migration/flyte-2/control-flow/"
       ],
-      "reference": [
-        "/docs/v2/union/api-reference/flyte-sdk/flyte.io/dataframe/"
-      ],
-      "tutorial": [
-        "/docs/v2/union/tutorials/geospatial/climate-modeling/"
-      ],
-      "other": [
-        "/docs/v2/union/deployment/selfmanaged/configuration/authentication/"
-      ]
+      "reference": [],
+      "tutorial": [],
+      "other": []
     },
     "groups_with_candidate": 4,
     "candidates": {
@@ -4089,7 +4082,7 @@
         }
       ]
     },
-    "needs_human": "v1 term (eager workflows); no v2 equivalent found \u2014 left empty"
+    "judged": "expansion+multi-ideal (peeter-directed)"
   },
   {
     "q": "volumes",
@@ -5093,7 +5086,9 @@
   {
     "q": "shelltask",
     "ideal": {
-      "guide": [],
+      "guide": [
+        "/docs/v2/union/user-guide/tasks/task-programming/container-tasks/"
+      ],
       "reference": [],
       "tutorial": [],
       "other": []
@@ -5105,7 +5100,7 @@
       "tutorial": [],
       "other": []
     },
-    "needs_human": "v1 term; no v2 equivalent found \u2014 left empty"
+    "judged": "expansion+multi-ideal (peeter-directed)"
   },
   {
     "q": "install cli",
