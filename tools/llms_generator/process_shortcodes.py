@@ -469,11 +469,18 @@ class ShortcodeProcessor:
         return re.sub(pattern, replace_multiline, content, flags=re.DOTALL)
 
     def process_key_shortcodes(self, content: str) -> str:
-        """Process {{< key >}} shortcodes by replacing them with variant-specific values."""
-        pattern = r'\{\{<\s*key\s+([^>]*)\s*>\}\}'
+        """Process key shortcodes by replacing them with variant-specific values.
+
+        Both Hugo delimiter forms are handled: `{{< key x >}}` and `{{% key x %}}`.
+        Headings use the percent form on purpose (DOC-1357) -- Hugo resolves it
+        before goldmark computes the heading id, which is what keeps the anchor
+        stable across builds. Missing that form here would leave raw shortcode
+        text in the generated page.md / llms-full.txt output.
+        """
+        pattern = r'\{\{(?:<\s*key\s+([^>]*?)\s*>|%\s*key\s+([^%]*?)\s*%)\}\}'
 
         def replace_key(match):
-            key_name = match.group(1).strip()
+            key_name = (match.group(1) or match.group(2)).strip()
 
             # Get the mapping for the current variant from dynamically loaded config
             variant_mappings = self.key_mappings.get(self.variant, {})
