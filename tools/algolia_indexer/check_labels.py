@@ -22,7 +22,8 @@ C = Path(a.content)
 exists = lambda u: (C / u.replace(P, "").strip("/") / "_index.md").is_file() \
                 or (C / (u.replace(P, "").strip("/") + ".md")).is_file()
 
-data = json.loads(Path(a.labels).read_text())
+raw = json.loads(Path(a.labels).read_text())
+data = raw.get("queries", raw) if isinstance(raw, dict) else raw
 errs, labelled, empty_groups, pending = [], 0, 0, []
 
 for i, item in enumerate(data):
