@@ -43,11 +43,32 @@ PAGE_VARIANTS ?= +flyte +union
 .PHONY: all
 all: check_vars setup-venv parser generate clean-venv
 
+# A frozen plugin's pages are committed content, not regenerable output, so this
+# refuses to run on one. `generate` opens with `rm -rf $(OUTPUT_FOLDER)`, and for
+# flyteplugins-{anthropic,gemini,openai} that folder holds hand-written deprecation
+# notices pointing at the flyteplugins-agents-* replacements. Regenerating installs
+# the last published version from PyPI -- all three are still there, unyanked, at
+# 2.5.8 -- and silently rewrites the pages without them. Verified by doing it: the
+# notice went 1 -> 0 and make exited 0.
+#
+# This is the second door. Makefile.api.sdk's `plugins` loop now skips frozen
+# entries, but this makefile is documented for direct per-plugin use, so it needs
+# its own guard. ALLOW_FROZEN=true is the deliberate override, for the case where
+# a frozen page really is meant to be rebuilt. (DOC-1404.)
+ALLOW_FROZEN ?= false
+
 .PHONY: check_vars
 check_vars:
 	@if [ -z "${PLUGIN}" ]; then echo "ERROR: PLUGIN is not set"; exit 1; fi
 	@if [ -z "${TITLE}" ]; then echo "ERROR: TITLE is not set"; exit 1; fi
 	@if [ -z "${NAME}" ]; then echo "ERROR: NAME is not set"; exit 1; fi
+	@if [ "$(ALLOW_FROZEN)" != "true" ] && \
+	    [ "$$($(UV) unionai-docs-infra/tools/api_config.py plugin_by_name '${NAME}' frozen 2>/dev/null)" = "true" ]; then \
+		echo "ERROR: '${NAME}' is frozen in api-packages.toml -- its pages are committed content."; \
+		echo "       Regenerating would overwrite them (including any hand-written deprecation notice)."; \
+		echo "       Pass ALLOW_FROZEN=true if you really mean to rebuild it."; \
+		exit 1; \
+	fi
 
 .PHONY: setup-venv
 setup-venv: check_vars
