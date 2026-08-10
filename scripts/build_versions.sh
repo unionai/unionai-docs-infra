@@ -31,6 +31,9 @@ DRY_RUN=0
 REPO_ROOT="${REPO_ROOT:-$(git rev-parse --show-toplevel)}"
 VERSIONS_FILE="${REPO_ROOT}/versions.toml"
 DIST="${REPO_ROOT}/dist"
+# Labels of every tree built noindex, accumulated by build_version and turned into
+# X-Robots-Tag rules in _headers at the end. See the "noindex trees" block below.
+NOINDEX_LABELS=""
 VARIANTS="${VARIANTS:-flyte union}"
 
 [ -f "$VERSIONS_FILE" ] || { echo "ERROR: $VERSIONS_FILE not found (see unionai-docs-infra/versions.toml.sample)" >&2; exit 1; }
@@ -48,6 +51,11 @@ print("STABLE=" + d.get("stable", ""))
 print('ENUMERATED="' + " ".join(d.get("enumerated", [])) + '"')
 # latest defaults on; a secondary line (v1) sets `latest = false` (/docs/latest is v2's global URL).
 print("BUILD_LATEST=" + ("0" if d.get("latest") is False else "1"))
+# `indexed` defaults on. A line that sets `indexed = false` has its STABLE tree
+# built noindex too -- i.e. the whole line is withheld from search. Deliberately
+# a separate key from `latest`: "does not own /docs/latest" and "is not indexed"
+# are different claims, and conflating them would surprise the next reader.
+print("LINE_INDEXED=" + ("0" if d.get("indexed") is False else "1"))
 PY
 source "$_plan"
 rm -f "$_plan"
@@ -63,6 +71,10 @@ LINE="${STABLE%%.*}"
 # Build one version into dist/docs/<label>/ from a git ref, in an isolated worktree.
 build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=landing(true/"")
   local label="$1" ref="$2" noindex="$3" landing="${4:-}"
+  # Record every tree built noindex so the _headers block below can be generated
+  # from what was ACTUALLY built rather than from a hand-kept list that drifts.
+  # Accumulated before the dry-run return so a dry run reports the same set.
+  [ "$noindex" = "true" ] && NOINDEX_LABELS="${NOINDEX_LABELS}${label} "
   if [ "$DRY_RUN" = 1 ]; then
     printf '  build  /docs/%-11s from %-11s noindex=%-5s landing=%s\n' \
       "$label" "$ref" "${noindex:-false}" "${landing:-false}"
@@ -152,6 +164,13 @@ fi
 # <line> = the stable tag, INDEXED (the one canonical surface); also emits the
 # top-level /docs landing pages (so a bare /docs lands on stable).
 #
+# The line's stable tree is normally the ONE indexed surface. A line that sets
+# `indexed = false` in versions.toml (v1) is withheld from search entirely, so
+# its stable tree is built noindex like latest and the pinned snapshots. Computed
+# once here because the cut-PR fallback below builds the same tree from HEAD and
+# must not disagree about indexability.
+if [ "$LINE_INDEXED" = 1 ]; then STABLE_NOINDEX=""; else STABLE_NOINDEX="true"; fi
+
 # CUT-PR PREVIEWS (DOC-1335 rollout finding): on a cut PR the stable tag named
 # by versions.toml does NOT exist yet -- the one-merge model materializes it in
 # the push deploy's "Materialize stable tag" pre-step, which pull_request runs
@@ -163,10 +182,10 @@ fi
 # branch.
 if git rev-parse --verify --quiet "refs/tags/$STABLE" >/dev/null || \
    git rev-parse --verify --quiet "$STABLE^{commit}" >/dev/null; then
-  build_version "$LINE" "$STABLE" "" "true"
+  build_version "$LINE" "$STABLE" "$STABLE_NOINDEX" "true"
 else
   echo "  WARN   stable tag $STABLE not materialized (cut PR preview?) -> building /docs/$LINE from HEAD"
-  build_version "$LINE" "HEAD" "" "true"
+  build_version "$LINE" "HEAD" "$STABLE_NOINDEX" "true"
 fi
 
 # ---------------------------------------------------------------------------
@@ -252,6 +271,38 @@ if [ "$DRY_RUN" != 1 ]; then
     echo "  Cache-Control: public, max-age=60, must-revalidate"
   } >> "$DIST/_headers"
   echo "  wrote  _headers (versions.json max-age=60)"
+fi
+
+# X-Robots-Tag for every noindex tree.
+#
+# The `noindex = true` build param makes Hugo emit <meta name="robots"> into each
+# PAGE, which is all a meta tag can ever cover. But these trees also serve files
+# that have no HTML to put a meta tag in -- llms.txt, llms-full.txt, sitemap.xml,
+# and a page.md / section.md beside every page. Those were fully indexable:
+# probed live 2026-08-10, /docs/latest/union/llms.txt and
+# /docs/v2.5.16.3/union/llms.txt both returned 200 with no X-Robots-Tag at all.
+# Only a header can withhold a non-HTML file, so the two mechanisms are not
+# redundant -- they cover different file classes.
+#
+# /docs/v1 currently gets this header by accident, from the Pages preview-alias
+# behaviour recorded in DOC-1332. Nothing in this repo asked for it, so it could
+# vanish without warning. Emitting it here replaces an accident with a rule that
+# is version-controlled and reviewable.
+#
+# Generated from NOINDEX_LABELS, i.e. from the trees this run actually built, so
+# a newly enumerated pin cannot be forgotten.
+#
+# Same CloudFront caveat as the block above: this is what the origin says.
+if [ "$DRY_RUN" != 1 ] && [ -n "$NOINDEX_LABELS" ]; then
+  { echo ""
+    echo "# Withhold non-indexed trees from search (DOC-1291 / DOC-1332). The meta"
+    echo "# robots tag covers HTML; this covers llms.txt, sitemap.xml, page.md, etc."
+    for _label in $NOINDEX_LABELS; do
+      echo "/docs/${_label}/*"
+      echo "  X-Robots-Tag: noindex"
+    done
+  } >> "$DIST/_headers"
+  echo "  wrote  _headers (X-Robots-Tag: noindex for: ${NOINDEX_LABELS%% })"
 fi
 
 echo "==> assembled: $(cd "$DIST/docs" 2>/dev/null && ls -d */ 2>/dev/null | tr '\n' ' ' || true)"
