@@ -8681,3 +8681,17 @@ docs.union.ai/byoc/api/sdk/artifacts.onartifact.html,https://www.union.ai/docs/v
 docs.union.ai/byoc/api/unionremote/entities.html,https://www.union.ai/docs/v2/union/api-reference/,302,TRUE,TRUE,TRUE,FALSE
 docs.union.ai/data-plane-setup/configuring-your-data-plane.html,https://www.union.ai/docs/v2/union/deployment/configuring-your-data-plane/,301,TRUE,TRUE,TRUE,FALSE
 docs.union.ai/byoc/guide/data-plane-setup/single-sign-on-setup/index.html,https://www.union.ai/docs/v2/union/deployment/single-sign-on-setup/,301,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/administration/user-management,https://www.union.ai/docs/v2/union/user-guide/user-management/,301,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/byoc/api/uctl-cli/uctl-register/uctl-register-examples,https://www.union.ai/docs/v2/union/api-reference/uctl-cli/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/api/uctl-cli/uctl-create/uctl-create-policy,https://www.union.ai/docs/v2/union/api-reference/uctl-cli/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/api/uctl-cli/uctl-register/uctl-register-examples,https://www.union.ai/docs/v2/union/api-reference/uctl-cli/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/api/uctl-cli/uctl-update/uctl-update-project,https://www.union.ai/docs/v2/union/api-reference/uctl-cli/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/api/flytekit-sdk/index.html,https://www.union.ai/docs/v2/union/api-reference/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/byoc/guide/core-concepts/tasks/task-hardware-environment/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/resources/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/core-concepts/tasks/task-hardware-environment/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/resources/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/guide/core-concepts/tasks/task-hardware-environment/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/resources/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/core-concepts/tasks/task-hardware-environment/accelerators,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/resources/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/guide/core-concepts/launch-plans,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/byoc/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/guide/core-concepts/artifacts/viewing-artifacts,https://www.union.ai/docs/v2/union/user-guide/,302,TRUE,TRUE,TRUE,FALSE
