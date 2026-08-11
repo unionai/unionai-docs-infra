@@ -91,11 +91,11 @@ per-line rather than shared (DOC-1330).
 **Consequence:** the index can only list trees *that line* built. If a secondary line is ever
 made indexable, adding it here is a deliberate change, not an automatic one.
 
-### Required: a Cloudflare exclusion
+### Required: a Cloudflare exclusion (applied 2026-08-11)
 
-**A file at the `/docs` root is not reachable without one.** A catch-all redirect rule sweeps
-the `/docs/*` path space to the v2 user guide, and it runs at the CDN **above** Pages, so the
-origin file is never consulted. Measured 2026-08-11:
+**A file at the `/docs` root is not reachable without one.** The **F3: docs-root fallback**
+redirect rule sweeps the `/docs/*` path space to the v2 user guide, and it runs at the CDN
+**above** Pages, so the origin file is never consulted. Measured before the fix:
 
 ```
 /docs/sitemap.xml          302 -> /docs/v2/union/user-guide/
@@ -104,8 +104,22 @@ origin file is never consulted. Measured 2026-08-11:
 /docs/v2/versions.json     200                                 (explicitly excluded)
 ```
 
-`versions.json` returns 200 only because DOC-1330 added an exclusion for it. `/docs/sitemap.xml`
-needs the same treatment before it is visible in production.
+`versions.json` returns 200 only because DOC-1330 added an exclusion for it; `/docs/llms.txt`
+likewise from DOC-1358. `/docs/sitemap.xml` now has the same clause, added to F3 in the
+`union.ai` zone's dynamic-redirect ruleset (v62 -> v63):
+
+```
+and not (http.request.uri.path eq "/docs/sitemap.xml")
+```
+
+Verified live: `/docs/sitemap.xml` returns **404** rather than a 302, which is the correct
+pre-merge state (the request reaches Pages, which has no file there yet) and becomes 200 once
+the build ships one. `/docs/zzz-unknown.xml` still redirects, confirming the exclusion is exact
+rather than a blanket `.xml` passthrough.
+
+**Any future file added at the `/docs` root needs its own clause.** There are now three
+(`versions.json`, `llms.txt`, `sitemap.xml`); the pattern is one `and not (... eq "<path>")`
+per file.
 
 > **Trap: the PR preview cannot detect this.** Previews are served from
 > `*.docs-dog.pages.dev`, where the `www.union.ai` zone rules do not apply. The index will
