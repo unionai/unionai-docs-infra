@@ -44,9 +44,39 @@
 {{- if lt (len $description) 10 -}}
   {{- $description = "Union.ai documentation for AI workflow orchestration and machine learning pipelines." -}}
 {{- end -}}
+{{- /* The homepage is a redirect stub, so its front matter carries `description: Redirect to
+       User guide` — which was surfacing as the site's meta description AND as
+       WebSite.description in the JSON-LD. Prefer an explicit site-level description there
+       (DOC-1287). */ -}}
+{{- if .IsHome -}}
+  {{- with .Site.Params.site_description -}}{{- $description = . -}}{{- end -}}
+{{- end -}}
 {{- $variant := .Site.Params.variant -}}
 {{- $title := .Title | default .Site.Title -}}
+{{- /* Scheme+host for every fully-qualified URL below. The build runs with a path-only
+       baseURL, so .Permalink and .Site.BaseURL are paths (see partials/site-host.html). */ -}}
+{{- $host := partial "site-host.html" . -}}
+{{- /* The canonical MUST be absolute (DOC-1287).
+
+       A path-only canonical resolves against whatever host served the page, so every
+       alternate host self-canonicalises and Google gets no signal to consolidate them.
+       Measured 2026-08-11: the same v2 docs pages were independently indexed on
+       www.union.ai, www-new.union.ai AND web-docs.union.ai, ~146 duplicates in a 1,000-row
+       sample. That splits ranking signals between copies and works directly against
+       DOC-1291 (noindex v1 to concentrate on v2) and DOC-1320 (one sitemap index).
+
+       This value also feeds og:url, twitter:url, and the JSON-LD url/@id, so all five were
+       relative. Guarded so a local build with an absolute baseURL is not double-prefixed. */ -}}
 {{- $canonical := .Permalink | absURL -}}
+{{- if not (hasPrefix $canonical "http") -}}
+  {{- $canonical = printf "%s%s" $host $canonical -}}
+{{- end -}}
+{{- /* Same treatment for the site root, used by the homepage WebSite entity and the
+       SearchAction target. schema.org wants absolute url/@id/target (DOC-1287). */ -}}
+{{- $siteURL := .Site.BaseURL -}}
+{{- if not (hasPrefix $siteURL "http") -}}
+  {{- $siteURL = printf "%s%s" $host $siteURL -}}
+{{- end -}}
 {{- $product_full_name := index .Site.Params.key.product_full_name $variant -}}
 {{- $image := "" -}}
 {{- if eq $product_full_name "Flyte OSS" -}}
@@ -56,10 +86,9 @@
 {{- end -}}
 {{- /* Crawlers (Google logo structured data, Open Graph, Twitter) require a FULLY-QUALIFIED
        absolute image URL, but .Site.BaseURL is a relative path (e.g. /docs/v2/union/) in
-       production, so $image above is relative. Derive the scheme+host from the absolute
-       `docs_root` param and prepend it to build an absolute logo URL (DOC-389). Leave it
-       untouched if $image is already absolute (local dev may set an absolute baseURL). */ -}}
-{{- $host := replaceRE `^(https?://[^/]+).*$` "$1" .Site.Params.docs_root -}}
+       production, so $image above is relative. $host (above) supplies the scheme+host
+       (DOC-389). Leave it untouched if $image is already absolute (local dev may set an
+       absolute baseURL). */ -}}
 {{- $logo := $image -}}
 {{- if not (hasPrefix $image "http") -}}
   {{- $logo = printf "%s%s" $host $image -}}
@@ -117,7 +146,7 @@
       "@type": "WebSite",
       "name": "{{ .Site.Title }}",
       "description": "{{ $description }}",
-      "url": "{{ .Site.BaseURL }}",
+      "url": "{{ $siteURL }}",
       "publisher": {
         "@type": "Organization",
         "name": "{{ $product_full_name }}",
@@ -125,7 +154,7 @@
       },
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "{{ .Site.BaseURL }}search?q={search_term_string}",
+        "target": "{{ $siteURL }}search?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }

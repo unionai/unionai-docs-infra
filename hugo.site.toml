@@ -16,6 +16,10 @@ title = 'Union.ai Docs'
 _merge = "deep"
 signup_link = "https://www.union.ai/pricing"
 docs_root = "https://www.union.ai/docs"
+# Site-level description for the homepage's structured data and meta tags. The homepage is a
+# redirect stub, so its front-matter description is "Redirect to User guide" — which was
+# leaking into WebSite.description in the JSON-LD (DOC-1287).
+site_description = "Documentation for Union.ai and Flyte: build, deploy and run AI and machine-learning workflows at scale."
 
 custom_css = [
   "404.css",
