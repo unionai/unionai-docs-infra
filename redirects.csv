@@ -1872,7 +1872,6 @@ www.union.ai/docs/byoc/user-guide/integrations/agents/snowflake-agent,https://ww
 www.union.ai/docs/byoc/user-guide/integrations/agents/snowflake-agent/snowflake-agent-example,https://www.union.ai/docs/v2/union/user-guide/apps/build-apps/connector-app,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/byoc/user-guide/integrations/agents/snowflake-agent/snowflake-connector-example,https://www.union.ai/docs/v2/union/user-guide/apps/build-apps/connector-app,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/byoc/user-guide/integrations/enabling-aws-resources,https://www.union.ai/docs/v2/union/deployment/byoc/enabling-aws-resources,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/byoc/user-guide/integrations/enabling-aws-resources/enabling-aws-ecr,https://www.union.ai/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-ecr/,302,TRUE,TRUE,TRUE,FALSE
 www.union.ai/docs/byoc/user-guide/integrations/enabling-aws-resources/enabling-aws-s3,https://www.union.ai/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-s3,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/byoc/user-guide/integrations/enabling-aws-resources/enabling-aws-secrets-manager,https://www.union.ai/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/byoc/user-guide/integrations/enabling-azure-resources,https://www.union.ai/docs/v2/union/deployment/byoc/enabling-azure-resources,302,TRUE,FALSE,TRUE,TRUE
@@ -8695,9 +8694,6 @@ docs.union.ai/serverless/guide/core-concepts/launch-plans,https://www.union.ai/d
 docs.union.ai/byoc/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
 docs.union.ai/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
 docs.union.ai/serverless/guide/core-concepts/artifacts/viewing-artifacts,https://www.union.ai/docs/v2/union/user-guide/,302,TRUE,TRUE,TRUE,FALSE
-www.union.ai/docs/byoc/user-guide/integrations/enabling-azure-resources/,https://www.union.ai/docs/v2/union/deployment/byoc/enabling-azure-resources/,302,TRUE,TRUE,TRUE,FALSE
-www.union.ai/docs/byoc/user-guide/integrations/platform-architecture,https://www.union.ai/docs/v2/union/deployment/byoc/platform-architecture/,302,TRUE,TRUE,TRUE,FALSE
-www.union.ai/docs/byoc/user-guide/deployment,https://www.union.ai/docs/v2/union/deployment/,302,TRUE,TRUE,TRUE,FALSE
 www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte.io/dataframedecoder/,https://www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/flyte.io.extend/dataframedecoder/,301,TRUE,TRUE,TRUE,FALSE
 www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte.io/dataframeencoder,https://www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/flyte.io.extend/dataframeencoder/,301,TRUE,TRUE,TRUE,FALSE
 www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte.io/dataframeencoder/,https://www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/flyte.io.extend/dataframeencoder/,301,TRUE,TRUE,TRUE,FALSE
