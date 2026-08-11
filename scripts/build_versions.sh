@@ -347,20 +347,35 @@ fi
 if [ "$DRY_RUN" != 1 ] && [ "$BUILD_LATEST" = 1 ] && [ -n "$INDEXED_LABELS" ]; then
   # Host from the absolute docs_root param, the same single source the Hugo templates use
   # via partials/site-host.html -- not hardcoded here, so there is one place to change it.
+  #
+  # hugo.site.toml lives in THIS repo (the infra submodule), not in the superproject that
+  # REPO_ROOT points at. Locate it from the script's own path so it is found whether the
+  # build runs from the superproject, from a version worktree, or from a checkout of infra
+  # alone. (Reading it from REPO_ROOT silently skipped the whole block in CI.)
+  #
   # python3 rather than sed: `\?` is a GNU extension BSD sed does not honour, so a sed
   # version would behave differently on a maintainer's macOS than in Linux CI.
-  _host=$(python3 - "${REPO_ROOT}/hugo.site.toml" <<'PY'
+  _infra_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+  _site_toml="${_infra_root}/hugo.site.toml"
+  _host=$(python3 - "$_site_toml" <<'PY'
 import re, sys
 try:
     src = open(sys.argv[1], encoding="utf-8").read()
 except OSError:
-    sys.exit(0)
+    print("ERR_NO_FILE")
+    raise SystemExit
 m = re.search(r'^\s*docs_root\s*=\s*"(https?://[^/"]+)', src, re.M)
-print(m.group(1) if m else "")
+print(m.group(1) if m else "ERR_NO_PARAM")
 PY
 )
+  # Distinguish the two failure modes: a missing file and a missing param want different
+  # fixes, and collapsing them into one message cost a CI round-trip.
+  case "$_host" in
+    ERR_NO_FILE)  echo "  WARN   $_site_toml not found -> skipping /docs/sitemap.xml" >&2; _host="" ;;
+    ERR_NO_PARAM) echo "  WARN   docs_root not set in $_site_toml -> skipping /docs/sitemap.xml" >&2; _host="" ;;
+  esac
   if [ -z "$_host" ]; then
-    echo "  WARN   docs_root not found in hugo.site.toml -> skipping /docs/sitemap.xml" >&2
+    :  # already reported above with the specific reason
   else
     _smi="$DIST/docs/sitemap.xml"
     _n=0
