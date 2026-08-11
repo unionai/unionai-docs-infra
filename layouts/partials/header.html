@@ -88,6 +88,30 @@ function handleVersionChange(event) {
         newTarget.pathname = `/${newVersion}/${currentVariant}/${newTarget.pathname}`;
     }
 
+    // Record the switch so the 404 walk-up can say "Page not in <version>"
+    // instead of "Page not found" (DOC-1351). A version switch is a deliberate,
+    // valid choice from a menu we rendered, so a miss is our limitation, not the
+    // reader's mistake.
+    //
+    // Unlike handleVariantChange we cannot know in advance whether the target
+    // exists: variants are gated by front-matter within ONE build (`data-allowed`),
+    // whereas versions are separate builds from different content refs. So stash on
+    // every switch and let 404.js show the notice only when `?404=` proves a
+    // walk-up actually happened.
+    //
+    // sessionStorage only, deliberately no query params: a successful switch is the
+    // common case and should not carry switch bookkeeping in its URL.
+    try {
+        sessionStorage.setItem('versionSwitch', JSON.stringify({
+            fromVersion: "{{- .Site.Params.current_version -}}",
+            targetVersion: newVersion,
+            originalUrl: document.location.toString(),
+            ts: Date.now()
+        }));
+    } catch (e) {
+        // sessionStorage may be unavailable (e.g. private browsing)
+    }
+
     // Update selected state visually
     const menu = btn.closest('.version-menu');
     menu.querySelectorAll('.version-item').forEach(b => b.classList.remove('selected'));

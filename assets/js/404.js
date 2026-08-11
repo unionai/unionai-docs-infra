@@ -12,9 +12,18 @@
 // redirects (e.g. the home-page redirect shortcode) that may drop the query
 // string. The sessionStorage entry is cleared after we display the banner.
 //
+// Version switches work differently (DOC-1351). A variant switch knows in advance
+// whether the page exists in the target (front-matter `variants`, surfaced as
+// `data-allowed`), so it only signals when it knows the page is missing. Versions
+// are SEPARATE BUILDS from different content refs, so nothing can know that at
+// click time -- handleVersionChange stashes `versionSwitch` in sessionStorage on
+// every switch (no query params, so a successful switch keeps a clean URL) and we
+// show the notice only when `?404=` proves the walk-up ran.
+//
 // If targetVariant is set (via either source), show the cross-variant-switch
-// banner. Otherwise show the default "we brought you to the closest page"
-// banner.
+// banner; else if a fresh versionSwitch is stashed, show the cross-version one;
+// otherwise show the default "we brought you to the closest page" banner. Both
+// switch cases drop the "404" badge -- they are valid choices, not errors.
 
 const VARIANT_SWITCH_TTL_MS = 60 * 1000;
 
@@ -28,6 +37,39 @@ function variantDisplayName(slug) {
 
 function isSafeVariant(v) {
     return typeof v === 'string' && /^[a-zA-Z0-9-]{1,32}$/.test(v);
+}
+
+// Version segments are `latest`, a line (`v1`, `v2`), or a pinned tag
+// (`v2.5.16.3`) -- see VERSIONING.md.
+function isSafeVersion(v) {
+    return typeof v === 'string' && /^[a-zA-Z0-9.-]{1,32}$/.test(v);
+}
+
+function versionDisplayName(seg) {
+    if (!seg) return '';
+    // "Page not in latest" reads as a typo; the others are already how the
+    // version selector labels them.
+    return seg === 'latest' ? 'the latest version' : seg;
+}
+
+function readVersionSwitchFromStorage() {
+    try {
+        const raw = sessionStorage.getItem('versionSwitch');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (parsed.ts && Date.now() - parsed.ts > VARIANT_SWITCH_TTL_MS) {
+            sessionStorage.removeItem('versionSwitch');
+            return null;
+        }
+        return parsed;
+    } catch (e) {
+        return null;
+    }
+}
+
+function clearVersionSwitchFromStorage() {
+    try { sessionStorage.removeItem('versionSwitch'); } catch (e) { /* noop */ }
 }
 
 function readVariantSwitchFromStorage() {
@@ -142,6 +184,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const isVariantSwitch = isSafeVariant(fromVariant) && isSafeVariant(toVariant);
 
+    // Version switches (DOC-1351). Unlike variants, the switcher cannot know in
+    // advance whether the page exists in the target -- versions are separate
+    // builds -- so it stashes on EVERY switch and we gate on `?404=`, which only
+    // appears when the walk-up actually ran. Storage-only, so a successful switch
+    // keeps a clean URL.
+    let toVersion = '';
+    if (originalUrl) {
+        const stashedVersion = readVersionSwitchFromStorage();
+        if (stashedVersion && isSafeVersion(stashedVersion.targetVersion)) {
+            toVersion = stashedVersion.targetVersion;
+        }
+    }
+    const isVersionSwitch = !isVariantSwitch && !!toVersion;
+
     if (!originalUrl && !isVariantSwitch) return;
 
     // Resolve the missing pathname for display (strip protocol/host/query/fragment).
@@ -156,15 +212,31 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // Title: "Page not found" by default; "Page not in <Variant>" on a
-    // cross-variant switch (works for either direction).
+    // cross-variant switch and "Page not in <version>" on a cross-version one
+    // (both work in either direction).
     const titleEl = notice.querySelector('.four-notice-title');
     if (titleEl) {
-        titleEl.textContent = isVariantSwitch
-            ? `Page not in ${variantDisplayName(toVariant)}`
-            : 'Page not found';
+        if (isVariantSwitch) {
+            titleEl.textContent = `Page not in ${variantDisplayName(toVariant)}`;
+        } else if (isVersionSwitch) {
+            titleEl.textContent = `Page not in ${versionDisplayName(toVersion)}`;
+        } else {
+            titleEl.textContent = 'Page not found';
+        }
     }
 
+    // Drop the "404" badge when the reader got here by switching variant or
+    // version (DOC-1351). Those are deliberate, valid choices from a menu we
+    // rendered, so a miss is our limitation, not their mistake -- an error code
+    // frames it as the latter. A genuinely dead link still gets the badge.
+    // `is-switch` collapses the toast grid from `auto 1fr auto` to `1fr auto`.
+    const isSwitch = isVariantSwitch || isVersionSwitch;
+    const badgeEl = notice.querySelector('.four-notice-badge');
+    if (badgeEl && isSwitch) badgeEl.hidden = true;
+    if (isSwitch) notice.classList.add('is-switch');
+
     if (isVariantSwitch) clearVariantSwitchFromStorage();
+    if (isVersionSwitch) clearVersionSwitchFromStorage();
 
     // Path line: hidden when we have no original URL; otherwise plain monospace
     // text, abbreviated to PATH_MAX_CHARS via natural separators.
