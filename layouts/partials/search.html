@@ -12,8 +12,39 @@
   <span class="search-keys"><kbd>&#x2318;</kbd><kbd>K</kbd></span>
 </button>
 
+{{- /*
+DOC-1408: map each served version segment to one the search index actually carries.
+
+The index is faceted by `version` x `variant`, where `version` is the first path segment
+under /docs/. Not every served segment is indexed: the Algolia crawler excludes the pinned
+version trees (each is a near-complete copy of the corpus, ~37k records apiece), so
+filtering on a pin's own segment matches zero records and the search box comes back empty
+-- which is what /docs/latest did until the crawler stopped excluding it.
+
+Rather than hardcode a second list that can drift from the crawler config, derive it from
+the version menu: badged entries (LATEST / STABLE) are the built-and-indexed trees, bare
+numbered entries are the pins. A pin falls back to its own line's stable, so a reader on a
+pinned tree gets that line's results instead of nothing.
+*/ -}}
+{{- $searchVersions := dict -}}
+{{- with site.Params.version_menu -}}
+  {{- range $g := (. | transform.Unmarshal) -}}
+    {{- range $it := $g.items -}}
+      {{- if $it.badge -}}
+        {{- $searchVersions = merge $searchVersions (dict $it.seg $it.seg) -}}
+      {{- else -}}
+        {{- $searchVersions = merge $searchVersions (dict $it.seg $g.line) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@3"></script>
 <script>
+    // seg -> the `version` facet value to filter on. Empty on an unversioned build
+    // (local dev, pre-go-live), where the raw segment is used exactly as before.
+    const SEARCH_VERSIONS = {{ $searchVersions | jsonify | safeJS }};
+
     const pathParts = window.location.pathname.split('/').filter(Boolean);
 
     // Expected: ['docs', 'v2', 'union', ...]
@@ -21,8 +52,20 @@
     let variant = null;
 
     if (pathParts.length >= 3 && pathParts[0] === 'docs') {
-        version = pathParts[1];
+        const seg = pathParts[1];
         variant = pathParts[2];
+
+        if (Object.keys(SEARCH_VERSIONS).length === 0) {
+            version = seg;                      // unversioned build: previous behaviour
+        } else if (SEARCH_VERSIONS[seg]) {
+            version = SEARCH_VERSIONS[seg];     // indexed tree, or a pin -> its line's stable
+        } else {
+            version = null;                     // unknown segment: drop the version filter
+        }                                       // rather than match zero records
+
+        if (version !== seg) {
+            console.log(`Search: ${seg} is not an indexed tree; filtering on ${version || 'all versions'}`);
+        }
         console.log(`Search version ${version}, variant ${variant}`)
     }
 

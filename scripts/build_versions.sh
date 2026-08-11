@@ -34,6 +34,10 @@ DIST="${REPO_ROOT}/dist"
 # Labels of every tree built noindex, accumulated by build_version and turned into
 # X-Robots-Tag rules in _headers at the end. See the "noindex trees" block below.
 NOINDEX_LABELS=""
+# The complement: labels built INDEXED, used to generate the /docs sitemap index at the
+# end. Accumulated the same way, from what was actually built, so the index cannot list a
+# tree this run did not produce. See the "sitemap index" block below (DOC-1320).
+INDEXED_LABELS=""
 VARIANTS="${VARIANTS:-flyte union}"
 
 [ -f "$VERSIONS_FILE" ] || { echo "ERROR: $VERSIONS_FILE not found (see unionai-docs-infra/versions.toml.sample)" >&2; exit 1; }
@@ -74,7 +78,11 @@ build_version() {  # $1=label(dist path)  $2=git-ref  $3=noindex(true/"")  $4=la
   # Record every tree built noindex so the _headers block below can be generated
   # from what was ACTUALLY built rather than from a hand-kept list that drifts.
   # Accumulated before the dry-run return so a dry run reports the same set.
-  [ "$noindex" = "true" ] && NOINDEX_LABELS="${NOINDEX_LABELS}${label} "
+  if [ "$noindex" = "true" ]; then
+    NOINDEX_LABELS="${NOINDEX_LABELS}${label} "
+  else
+    INDEXED_LABELS="${INDEXED_LABELS}${label} "
+  fi
   if [ "$DRY_RUN" = 1 ]; then
     printf '  build  /docs/%-11s from %-11s noindex=%-5s landing=%s\n' \
       "$label" "$ref" "${noindex:-false}" "${landing:-false}"
@@ -303,6 +311,75 @@ if [ "$DRY_RUN" != 1 ] && [ -n "$NOINDEX_LABELS" ]; then
     done
   } >> "$DIST/_headers"
   echo "  wrote  _headers (X-Robots-Tag: noindex for: ${NOINDEX_LABELS%% })"
+fi
+
+# Sitemap index for the docs subtree (DOC-1320).
+#
+# Every variant build emits its own dist/docs/<label>/<variant>/sitemap.xml, and after
+# DOC-1320 those are valid -- but nothing referenced any of them. robots.txt at the host
+# root is marketing-owned and advertises only union.ai/sitemap.xml; the robots.txt this
+# build emits sits at /docs/<version>/<variant>/robots.txt, a path no crawler ever reads.
+# So the generated sitemaps were correct and invisible, while Google's only view of the
+# docs was a hand-maintained list on the marketing site that had drifted 94% stale
+# (DOC-1355).
+#
+# This writes ONE index at /docs/sitemap.xml. Marketing then adds a single line to the root
+# robots.txt -- once -- and which trees sit behind that URL stays ours to change. Handing
+# them the per-variant sitemaps directly would instead put a ticket on another team at every
+# cut, new variant, or line retirement; that standing coupling is precisely what let their
+# list rot in the first place.
+#
+# Only INDEXED trees are listed. latest and the pins are noindex by the DOC-1245 design, and
+# v1 by the DOC-1291 decision. Advertising a noindex page in a sitemap is what makes Search
+# Console report "Submitted URL marked 'noindex'", so listing them would manufacture errors
+# for pages we deliberately withhold.
+#
+# WRITER: only the line that owns /docs/latest -- the primary line, which also emits the
+# top-level /docs landing pages. The two lines deploy separately, so a shared file at the
+# /docs root needs exactly one writer or the deploys race; this is the same constraint that
+# made the version manifests per-line rather than shared (DOC-1330). CONSEQUENCE: the index
+# can only list trees THIS line built. If a secondary line is ever made indexable, adding it
+# here is a deliberate change, not an automatic one.
+#
+# No <lastmod>: it is optional in the sitemap-index schema, and anything derived from the
+# clock would make two builds of identical content differ, which is exactly what the
+# check-determinism workflow asserts against (DOC-1357).
+if [ "$DRY_RUN" != 1 ] && [ "$BUILD_LATEST" = 1 ] && [ -n "$INDEXED_LABELS" ]; then
+  # Host from the absolute docs_root param, the same single source the Hugo templates use
+  # via partials/site-host.html -- not hardcoded here, so there is one place to change it.
+  # python3 rather than sed: `\?` is a GNU extension BSD sed does not honour, so a sed
+  # version would behave differently on a maintainer's macOS than in Linux CI.
+  _host=$(python3 - "${REPO_ROOT}/hugo.site.toml" <<'PY'
+import re, sys
+try:
+    src = open(sys.argv[1], encoding="utf-8").read()
+except OSError:
+    sys.exit(0)
+m = re.search(r'^\s*docs_root\s*=\s*"(https?://[^/"]+)', src, re.M)
+print(m.group(1) if m else "")
+PY
+)
+  if [ -z "$_host" ]; then
+    echo "  WARN   docs_root not found in hugo.site.toml -> skipping /docs/sitemap.xml" >&2
+  else
+    _smi="$DIST/docs/sitemap.xml"
+    _n=0
+    {
+      echo '<?xml version="1.0" encoding="UTF-8"?>'
+      echo '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    } > "$_smi"
+    for _label in $INDEXED_LABELS; do
+      for _variant in $VARIANTS; do
+        # Only advertise a sitemap this run actually produced.
+        if [ -f "$DIST/docs/${_label}/${_variant}/sitemap.xml" ]; then
+          echo "  <sitemap><loc>${_host}/docs/${_label}/${_variant}/sitemap.xml</loc></sitemap>" >> "$_smi"
+          _n=$((_n + 1))
+        fi
+      done
+    done
+    echo '</sitemapindex>' >> "$_smi"
+    echo "  wrote  /docs/sitemap.xml ($_n sitemaps: ${INDEXED_LABELS%% } x ${VARIANTS})"
+  fi
 fi
 
 echo "==> assembled: $(cd "$DIST/docs" 2>/dev/null && ls -d */ 2>/dev/null | tr '\n' ' ' || true)"
