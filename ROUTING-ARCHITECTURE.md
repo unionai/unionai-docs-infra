@@ -251,13 +251,28 @@ All rules below filter on `http.host in {"docs.flyte.org" "docs-legacy.flyte.org
 | 1 | `slack.flyte.org/` (different host) | 302 → Slack invite link | Community Slack shortcut |
 | 2 | `/en/v*/*` | rewrite to `/en/latest/${2}` (same host) | Collapse main-project version → latest |
 | 3 | `/projects/*/en/v*/*` | rewrite to `/projects/${1}/en/latest/${3}` (same host) | Collapse subproject version → latest |
-| 4 | `*/index.html` | strip `/index.html` (same host) | Normalize section-index URLs |
-| 5 | `*.html` | strip `.html` (same host) | Normalize extension |
-| 6 | (catch-all on host) | rewrite to `https://www.union.ai/_r_/flyte{path}` | Send normalized path to bulk redirects |
+| 4 | `/en/stable/*` | rewrite to `/en/latest/${1}` (same host) | Collapse main-project `stable` → latest |
+| 5 | `/projects/*/en/stable/*` | rewrite to `/projects/${1}/en/latest/${2}` (same host) | Collapse subproject `stable` → latest |
+| 6 | `*/index.html` | strip `/index.html` (same host) | Normalize section-index URLs |
+| 7 | `*.html` | strip `.html` (same host) | Normalize extension |
+| 8 | (catch-all on host) | rewrite to `https://www.union.ai/_r_/flyte{path}` | Send normalized path to bulk redirects |
 
-Rules 2–5 normalize the URL (collapse versions, strip extensions) so the catch-all forwards a clean canonical path to the bulk-redirect lookup. Each rule uses Cloudflare's `wildcard_replace` (the `regex_replace` function is a Pro+ feature; the flyte.org zone is on Free).
+Rules 2–7 normalize the URL (collapse versions, strip extensions) so the catch-all forwards a clean canonical path to the bulk-redirect lookup. Each rule uses Cloudflare's `wildcard_replace` (the `regex_replace` function is a Pro+ feature; the flyte.org zone is on Free).
 
-**The catch-all mechanism (rule 6)**: After the normalization rules have had a chance to fire, any remaining request to either hostname is rewritten to `https://www.union.ai/_r_/flyte{path}`. The `_r_/flyte` prefix is a routing convention — these URLs match entries in the Union account's bulk redirect list, which maps them to specific `https://www.union.ai/docs/v2/flyte/<v2-path>` destinations.
+> **Why `stable` needs its own pair of rules (rules 4–5, added 2026-08-11, DOC-1410).** ReadTheDocs served the same content under both `/en/latest/` and `/en/stable/`, and Google indexed both. Rules 2–3 only match `v*`, so `stable` was never collapsed — and the bulk-redirect list has ~1,465 entries for `en/latest` and **zero** for `en/stable`. Unmatched requests fell through to the catch-all, which blindly prepends the v2 prefix and leaves the RTD version token embedded in the path:
+>
+> ```
+> docs.flyte.org/en/stable/deployment/gcp/manual.html
+>   → www.union.ai/_r_/flyte/en/stable/deployment/gcp/manual/
+>   → www.union.ai/docs/v2/flyte/stable/deployment/gcp/manual/   404
+>                               ^^^^^^ never normalized away
+> ```
+>
+> Adding the two `stable` twins fixed **78 of the 112** live 404s on these hosts, with **no regression** among the 202 that already worked (measured before and after). Two rules were preferred over duplicating ~1,465 CSV rows: the rule covers the entire `en/stable` family, including URLs beyond Search Console's 1,000-row export cap.
+>
+> **Generalise this before adding another alias:** any RTD alias that is not literally `v*` or `latest` has the same gap. If a `/en/<alias>/` form ever appears in the 404 report, it needs its own twin here — the catch-all will otherwise emit a plausible-looking but permanently broken URL rather than failing loudly.
+
+**The catch-all mechanism (rule 8)**: After the normalization rules have had a chance to fire, any remaining request to either hostname is rewritten to `https://www.union.ai/_r_/flyte{path}`. The `_r_/flyte` prefix is a routing convention — these URLs match entries in the Union account's bulk redirect list, which maps them to specific `https://www.union.ai/docs/v2/flyte/<v2-path>` destinations.
 
 **Why dual-host as a single rule set**: `docs.flyte.org` is the legacy public-facing Flyte docs hostname (Google-indexed since 2020). `docs-legacy.flyte.org` is the same RTD project's secondary custom domain (added later, also Google-indexed). Both served the same Sphinx content. After the v2 migration, both are now intercepted by the same Cloudflare rule chain and redirected to v2. A single shared rule set keeps the configuration in sync — flipping one hostname's behavior automatically flips the other.
 
