@@ -321,6 +321,26 @@ Each row in `redirects.csv` has seven columns:
 | 6      | Preserve query string (TRUE/FALSE) |
 | 7      | Preserve path suffix (TRUE/FALSE) |
 
+#### Choosing 301 vs 302
+
+A **301 is cached by the browser and is effectively permanent** — it keeps being honoured
+after the rule is changed or removed, and there is no clean way to take it back. Use it only
+where the target is certain.
+
+- **301** when the target *is* the content the old URL described (a page that moved, or a
+  path that only needed a suffix corrected). There is nothing better to point at later, so
+  permanence costs nothing.
+- **302** when the target is a *judgment call* — typically a retired page with no equivalent,
+  landing on the nearest sensible ancestor so it stops 404ing. A better target may appear, and
+  a 302 keeps that correction reachable for readers who already followed it.
+
+The SEO difference is small for retired content (Search Console moves the URL out of
+"Not found" either way); the reversibility difference is not.
+
+Existing populations follow this: the 308 `docs.union.ai` rows are 301 (a retired host, the
+move is permanent), while the ~2,130 v1 variant-consolidation rows are 302 (a living
+structure that may change again). **Do not normalise these to a single code.**
+
 ### Automatic redirect detection
 
 The `detect_moved_pages.py` script scans git history for file renames under `content/` and generates redirect entries for both variants. Run it with:
