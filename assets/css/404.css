@@ -95,6 +95,13 @@
     align-self: center;
 }
 
+/* A deliberate variant or version switch is not an error, so the toast drops the
+   "404" badge (DOC-1351). Without this the grid keeps three columns and the body
+   would sit in the badge's slot, sized `auto` instead of `1fr`. */
+.four-notice.is-switch {
+    grid-template-columns: 1fr auto;
+}
+
 .four-notice-body {
     min-width: 0;
 }
