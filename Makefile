@@ -9,8 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
-
+.PHONY: index-search index-search-settings check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
 all: usage
 
 usage:
@@ -74,6 +73,14 @@ index-search:
 index-search-settings:
 	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
 		--index union --settings unionai-docs-infra/tools/algolia_indexer/settings.json
+# The search-quality benchmark's answer key references real content URLs. A PR
+# that renames or deletes a labelled page silently rots the benchmark, so the
+# next eval reports a "ranking regression" that is really labelling decay.
+# Fail loudly at PR time instead. Cheap: pure path existence, no network.
+check-search-labels:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/check_labels.py \
+		unionai-docs-infra/tools/algolia_indexer/queries.judged.json \
+		--content content
 
 dist:
 	@VARIANTS="$(VARIANTS)" PARALLEL_HUGO="$(PARALLEL_HUGO)" unionai-docs-infra/scripts/build_dist.sh
