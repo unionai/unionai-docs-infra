@@ -71,12 +71,6 @@ def main():
     ap.add_argument("--index", default="union")
     ap.add_argument("--settings", help="apply index settings from this JSON file")
     ap.add_argument("--synonyms", help="apply one-way synonyms from this JSON file")
-    ap.add_argument("--only-version", nargs="*",
-                    help="push only these versions (e.g. v2). Used to build the "
-                         "Ask AI index, which must never see v1: the SDK was "
-                         "rewritten, so v1 content is not stale for a v2 reader, "
-                         "it is wrong. Agent Studio exposes no facet filter, so "
-                         "the scoping has to happen at the index boundary.")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -115,12 +109,6 @@ def main():
         return 0
 
     records = json.loads(Path(args.records).read_text())
-    if args.only_version:
-        keep = set(args.only_version)
-        before = len(records)
-        records = [r for r in records if r["version"] in keep]
-        print(f"filtered to version(s) {sorted(keep)}: "
-              f"{before} -> {len(records)} records\n")
     by_slice = defaultdict(list)
     for r in records:
         by_slice[(r["version"], r["variant"])].append(r)
