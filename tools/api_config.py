@@ -40,6 +40,19 @@ def load_config() -> dict:
         return tomllib.load(f)
 
 
+def emit(val) -> None:
+    """Print one config value for shell consumption.
+
+    Booleans print as lowercase true/false. Python's own repr is True/False,
+    which silently fails every `[ "$X" = "true" ]` test a caller writes, so
+    every branch below goes through here rather than printing directly.
+    """
+    if isinstance(val, bool):
+        print("true" if val else "false")
+    else:
+        print(val)
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: api_config.py <section> [<index>] [<key>]", file=sys.stderr)
@@ -52,12 +65,7 @@ def main():
         pc = config.get("plugins_config", {})
         if len(sys.argv) >= 3:
             key = sys.argv[2]
-            val = pc.get(key, "")
-            # Print booleans as lowercase true/false for shell consumption
-            if isinstance(val, bool):
-                print("true" if val else "false")
-            else:
-                print(val)
+            emit(pc.get(key, ""))
         else:
             for k, v in pc.items():
                 print(f"{k}={v}")
@@ -83,8 +91,7 @@ def main():
         sdk = sdks[idx]
         if len(sys.argv) >= 4:
             key = sys.argv[3]
-            val = sdk.get(key, "")
-            print(val)
+            emit(sdk.get(key, ""))
         else:
             for k, v in sdk.items():
                 print(f"{k}={v}")
@@ -101,10 +108,29 @@ def main():
         cli = clis[idx]
         if len(sys.argv) >= 4:
             key = sys.argv[3]
-            val = cli.get(key, "")
-            print(val)
+            emit(cli.get(key, ""))
         else:
             for k, v in cli.items():
+                print(f"{k}={v}")
+
+    elif section == "plugin_by_name":
+        # Index lookup is fine for a loop over every plugin, but a caller that
+        # already knows one plugin (Makefile.api.plugins takes NAME=) would
+        # otherwise have to scan for its index just to read one field.
+        if len(sys.argv) < 3:
+            print("Usage: api_config.py plugin_by_name <name> [<key>]", file=sys.stderr)
+            sys.exit(1)
+        name = sys.argv[2]
+        plugin = next(
+            (p for p in config.get("plugins", []) if p.get("name") == name), None
+        )
+        if plugin is None:
+            print(f"No plugin named '{name}' in api-packages.toml", file=sys.stderr)
+            sys.exit(1)
+        if len(sys.argv) >= 4:
+            emit(plugin.get(sys.argv[3], ""))
+        else:
+            for k, v in plugin.items():
                 print(f"{k}={v}")
 
     elif section == "plugin":
@@ -119,8 +145,7 @@ def main():
         plugin = plugins[idx]
         if len(sys.argv) >= 4:
             key = sys.argv[3]
-            val = plugin.get(key, "")
-            print(val)
+            emit(plugin.get(key, ""))
         else:
             for k, v in plugin.items():
                 print(f"{k}={v}")

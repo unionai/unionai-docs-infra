@@ -36,6 +36,19 @@ sdks:
 clis:
 	@SKIP_VENV_SETUP=$(SKIP_VENV_SETUP) $(UV) unionai-docs-infra/tools/api_cli_generate.py
 
+# Frozen plugins are SKIPPED here, matching check_versions.py and
+# api_cli_generate.py. Their pages are committed content, not regenerable output:
+# flyteplugins-{anthropic,gemini,openai} were removed from the SDK and their
+# API-reference dirs are hand-maintained snapshots carrying a deprecation notice
+# pointing at the flyteplugins-agents-* replacements.
+#
+# Without the skip this target still regenerates them -- it installs the last
+# published version from PyPI (they are all still there, unyanked, at 2.5.8) and
+# `generate` starts with `rm -rf $(OUTPUT_FOLDER)`, so the hand-written notices are
+# deleted with no error and no diff anyone would read as a loss. `make dist` was
+# never exposed to this because it regenerates via check_versions.py, which does
+# honour `frozen`; only this target and a direct Makefile.api.plugins call bypassed
+# it. (DOC-1404.)
 .PHONY: plugins
 plugins:
 	@PLUGIN_COUNT=$$($(UV) unionai-docs-infra/tools/api_config.py plugin_count); \
@@ -43,6 +56,11 @@ plugins:
 		PLUGIN=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i plugin); \
 		TITLE=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i title); \
 		NAME=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i name); \
+		FROZEN=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i frozen 2>/dev/null); \
+		if [ "$$FROZEN" = "true" ]; then \
+			echo "Skipping $$NAME: frozen (committed content)"; \
+			continue; \
+		fi; \
 		OF=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i output_folder 2>/dev/null); \
 		WT=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i weight 2>/dev/null); \
 		VAR=$$($(UV) unionai-docs-infra/tools/api_config.py plugin $$i variants 2>/dev/null); \
