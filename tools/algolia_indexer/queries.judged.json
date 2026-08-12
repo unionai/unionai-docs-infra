@@ -1,0 +1,5151 @@
+{
+  "_meta": {
+    "content_sha": "f44f84bafabb291b96dab141a22f58c5b1d3e658",
+    "judged": "2026-08-07",
+    "method": "expansion pipeline + LLM page reading, human-corrected",
+    "human_corrected": [
+      "secret",
+      "gpu",
+      "api",
+      "eager",
+      "shelltask"
+    ],
+    "caveat": "Absolute scores are not a quality claim; the key carries judgment error. Valid for comparing arms with a SHARED key."
+  },
+  "queries": [
+    {
+      "q": "secret",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/secrets/",
+          "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/secret/"
+        ],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/security/data-protection/secrets/",
+          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/",
+          "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
+          "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/",
+            "title": "Secret-based authentication",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x60"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/secrets/",
+            "title": "Secrets",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "10 heading(s)",
+              "body x75"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/connector-app/",
+            "title": "Connector app",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x16"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/",
+            "title": "Secret",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x18"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/secret/",
+            "title": "Secret",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x29"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x50"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/compliance-monitoring-agent/",
+            "title": "Compliance monitoring agent",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/field-data-enrichment-agent/",
+            "title": "Field data enrichment agent",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
+            "title": "Enabling AWS Secrets Manager",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x74"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/",
+            "title": "Enabling Google Secret Manager",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "4 heading(s)",
+              "body x105"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/data-protection/secrets/",
+            "title": "Secrets management",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x44"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "queue",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/queues/",
+          "/docs/v2/union/user-guide/cluster-workload-management/queues/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 3,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/cluster-workload-management/queues/",
+            "title": "Managing queues",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x107"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/queues/",
+            "title": "Queues",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x39"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/consuming-a-message-queue/",
+            "title": "Consuming a message queue",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x15"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x37"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/trigger/",
+            "title": "Trigger",
+            "score": 12,
+            "why": [
+              "body x12"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/",
+            "title": "TaskEnvironment",
+            "score": 8,
+            "why": [
+              "body x8"
+            ]
+          }
+        ],
+        "tutorial": [],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x14"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/multi-cluster/",
+            "title": "Multiple Clusters",
+            "score": 12,
+            "why": [
+              "body x18"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-aws/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "cache",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/caching/",
+          "/docs/v2/union/user-guide/run-scaling/data-flow/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/cache/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/cachepolicy/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/caching/",
+            "title": "Caching",
+            "score": 57,
+            "why": [
+              "6 heading(s)",
+              "body x64"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/run-scaling/data-flow/",
+            "title": "Data flow",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x12"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/volumes/",
+            "title": "Volumes",
+            "score": 12,
+            "why": [
+              "body x12"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/cache/",
+            "title": "Cache",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x29"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/cachepolicy/",
+            "title": "CachePolicy",
+            "score": 115,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x14"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/qwen-vl-finetuning/",
+            "title": "Fine-tuning a VLM",
+            "score": 9,
+            "why": [
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/frontier-ai/distributed-pretraining/",
+            "title": "Distributed LLM pretraining",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/satellite_image_classification/",
+            "title": "Satellite image classification",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 40,
+            "why": [
+              "2 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/",
+            "title": "Data retention policies",
+            "score": 7,
+            "why": [
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "image",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/container-images/",
+          "/docs/v2/union/user-guide/project-patterns/bring-your-own-image/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/image/"
+        ],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/deployment/selfmanaged/configuration/image-builder/",
+          "/docs/v2/union/deployment/byoc/enabling-azure-resources/enabling-azure-container-registry/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/project-patterns/bring-your-own-image/",
+            "title": "Bring your own image (BYOI)",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x44"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/container-images/",
+            "title": "Container images",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "15 heading(s)",
+              "body x177"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/agents/sandboxing/code-sandboxing/",
+            "title": "Code sandboxing",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x22"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/image/",
+            "title": "Image",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x142"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.extend/imagebuilder/",
+            "title": "ImageBuilder",
+            "score": 135,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.extend/imagechecker/",
+            "title": "ImageChecker",
+            "score": 133,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/satellite_image_classification/",
+            "title": "Satellite image classification",
+            "score": 82,
+            "why": [
+              "title contains",
+              "1 heading(s)",
+              "body x31"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/data-processing/micro-batching/",
+            "title": "Batching strategies",
+            "score": 25,
+            "why": [
+              "1 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/climate-modeling/",
+            "title": "GPU-accelerated climate modeling",
+            "score": 24,
+            "why": [
+              "1 heading(s)",
+              "body x9"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/image-builder/",
+            "title": "Image Builder",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x34"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 57,
+            "why": [
+              "7 heading(s)",
+              "body x41"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-ecr/",
+            "title": "Enabling AWS ECR",
+            "score": 12,
+            "why": [
+              "body x12"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "deck",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/reports/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.report/report/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.report/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 2,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/get-started/core-concepts/where-data-lives/",
+            "title": "Where your data lives",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/reports/",
+            "title": "Reports",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/pandera/",
+            "title": "Pandera",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/",
+            "title": "Data retention policies",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/data-retention-policy/",
+            "title": "Data retention policy",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/configuring-your-data-plane/",
+            "title": "Configuring your data plane",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "task",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/core-concepts/tasks/",
+          "/docs/v2/union/user-guide/tasks/task-configuration/",
+          "/docs/v2/union/user-guide/tasks/task-deployment/how-task-deployment-works/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/task/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/get-started/core-concepts/task-environment/",
+            "title": "TaskEnvironment",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x19"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/get-started/core-concepts/tasks/",
+            "title": "Tasks",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x32"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/tasks-and-workflows/",
+            "title": "Tasks and workflows",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "4 heading(s)",
+              "body x44"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/task/",
+            "title": "Task",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x33"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/",
+            "title": "TaskEnvironment",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x86"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.clustered/clusteredtaskenvironment/",
+            "title": "ClusteredTaskEnvironment",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x55"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/data-processing/micro-batching/",
+            "title": "Batching strategies",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x26"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/satellite_image_classification/",
+            "title": "Satellite image classification",
+            "score": 57,
+            "why": [
+              "4 heading(s)",
+              "body x17"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/autoresearch/",
+            "title": "Autoresearch agent",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x18"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/interruptible-scheduling/",
+            "title": "Interruptible task scheduling",
+            "score": 112,
+            "why": [
+              "title contains",
+              "3 heading(s)",
+              "body x23"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 57,
+            "why": [
+              "8 heading(s)",
+              "body x83"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/data-protection/logging-and-audit/",
+            "title": "Logging and audit",
+            "score": 36,
+            "why": [
+              "2 heading(s)",
+              "body x6"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal",
+      "kept_earlier": "expansion pipeline ranked the task-configuration section index; kept core-concepts/tasks"
+    },
+    {
+      "q": "dynamic",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/migration/flyte-2/control-flow/",
+          "/docs/v2/union/user-guide/migration/flyte-2/overview/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-deployment/deployment-patterns/",
+            "title": "Deployment patterns",
+            "score": 39,
+            "why": [
+              "2 heading(s)",
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/control-flow/",
+            "title": "Control flow",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/run-scaling/batch-inference/",
+            "title": "Batch inference",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.extras/dynamicbatcher/",
+            "title": "DynamicBatcher",
+            "score": 111,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.extras/",
+            "title": "flyte.extras",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/",
+            "title": "Flyte SDK",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/multimodal-retrieval-evaluation/",
+            "title": "Multimodal retrieval evaluation",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/climate-modeling/",
+            "title": "GPU-accelerated climate modeling",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/deep-research/",
+            "title": "Deep research",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 37,
+            "why": [
+              "2 heading(s)",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-oci/prepare-infra/",
+            "title": "Prepare infrastructure",
+            "score": 19,
+            "why": [
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 12,
+            "why": [
+              "body x21"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal",
+      "kept_earlier": "expansion ranked migration/overview 6/6; kept control-flow (title match, more specific)"
+    },
+    {
+      "q": "remote",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/run-modes/running-remote/",
+          "/docs/v2/union/user-guide/tasks/task-programming/remote-tasks/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/remote-tasks/",
+            "title": "Remote tasks",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "7 heading(s)",
+              "body x40"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/get-started/run-modes/running-remote/",
+            "title": "Run on a remote cluster",
+            "score": 114,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/agents/build-mcp/flyte_mcp_server/",
+            "title": "Flyte MCP server",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x13"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.errors/remotetasknotfounderror/",
+            "title": "RemoteTaskNotFoundError",
+            "score": 111,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.errors/remotetaskusageerror/",
+            "title": "RemoteTaskUsageError",
+            "score": 111,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/",
+            "title": "flyte.remote",
+            "score": 82,
+            "why": [
+              "title contains",
+              "1 heading(s)",
+              "body x30"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/autoresearch/",
+            "title": "Autoresearch agent",
+            "score": 18,
+            "why": [
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/parallelized-autoresearch-agent/",
+            "title": "Parallelized autoresearch agent",
+            "score": 17,
+            "why": [
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/autosec-research-agent/",
+            "title": "AutoSec researcher agent",
+            "score": 16,
+            "why": [
+              "1 heading(s)",
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/terraform/management/",
+            "title": "Resource management",
+            "score": 17,
+            "why": [
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/shortcodes/",
+            "title": "Shortcodes",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "auth",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/authenticating/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/security/identity-and-access/authentication/",
+          "/docs/v2/union/deployment/selfmanaged/configuration/authentication/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/",
+            "title": "Secret-based authentication",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x41"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/authenticating/",
+            "title": "Authenticating",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x54"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/snowflake/",
+            "title": "Snowflake",
+            "score": 57,
+            "why": [
+              "4 heading(s)",
+              "body x21"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.app.extras/fastapipassthroughauthmiddleware/",
+            "title": "FastAPIPassthroughAuthMiddleware",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x19"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/agent-plugins/",
+            "title": "Flyte agent plugins",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/",
+            "title": "flyte.remote",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/inference/voice-customer-service/",
+            "title": "Voice customer-service agent",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/autoresearch/",
+            "title": "Autoresearch agent",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/authentication/",
+            "title": "Authentication",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "10 heading(s)",
+              "body x77"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/identity-and-access/authentication/",
+            "title": "Authentication",
+            "score": 135,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/authoring/",
+            "title": "Authoring",
+            "score": 111,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "devbox",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/run-modes/running-devbox/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 2,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/get-started/run-modes/running-devbox/",
+            "title": "Run locally on the devbox",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x19"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/get-started/run-modes/running-locally/",
+            "title": "Run locally in Python",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/get-started/quickstart/",
+            "title": "Quickstart",
+            "score": 7,
+            "why": [
+              "body x7"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x32"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/uctl-cli/",
+            "title": "Uctl CLI",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "secre",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/secrets/",
+          "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/secret/"
+        ],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/security/data-protection/secrets/",
+          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/",
+          "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
+          "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/",
+            "title": "Secret-based authentication",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x60"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/secrets/",
+            "title": "Secrets",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "10 heading(s)",
+              "body x75"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/connector-app/",
+            "title": "Connector app",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x16"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/",
+            "title": "Secret",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x18"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/secret/",
+            "title": "Secret",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x29"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x50"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/compliance-monitoring-agent/",
+            "title": "Compliance monitoring agent",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/field-data-enrichment-agent/",
+            "title": "Field data enrichment agent",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
+            "title": "Enabling AWS Secrets Manager",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x74"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/",
+            "title": "Enabling Google Secret Manager",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "4 heading(s)",
+              "body x105"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/data-protection/secrets/",
+            "title": "Secrets management",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x44"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "mcp",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/agents/build-mcp/",
+          "/docs/v2/union/user-guide/agents/build-mcp/mcp_server/",
+          "/docs/v2/union/user-guide/agents/build-mcp/flyte_mcp_server/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.mcp/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.mcp/mcpappenvironment/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.mcp/flytemcpappenvironment/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/agents/build-mcp/flyte_mcp_server/",
+            "title": "Flyte MCP server",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x30"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/agents/build-mcp/mcp_server/",
+            "title": "User-defined MCP server",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x37"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/agents/build-mcp/",
+            "title": "Build an MCP",
+            "score": 82,
+            "why": [
+              "title contains",
+              "1 heading(s)",
+              "body x21"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.mcp/flytemcpappenvironment/",
+            "title": "FlyteMCPAppEnvironment",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x20"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.mcp/mcpappenvironment/",
+            "title": "MCPAppEnvironment",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x24"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.agents/mcpserverspec/",
+            "title": "MCPServerSpec",
+            "score": 118,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x17"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 18,
+            "why": [
+              "1 heading(s)",
+              "body x3"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "workflow",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/migration/flyte-2/tasks-and-workflows/",
+          "/docs/v2/union/user-guide/get-started/core-concepts/tasks/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/tasks-and-workflows/",
+            "title": "Tasks and workflows",
+            "score": 151,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x11"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/run-scaling/scale-your-workflows/",
+            "title": "Scale your workflows",
+            "score": 133,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/agents/sandboxing/workflow-sandboxing-flyte/",
+            "title": "Workflow sandboxing",
+            "score": 127,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x2"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/agent-plugins/",
+            "title": "Flyte agent plugins",
+            "score": 24,
+            "why": [
+              "1 heading(s)",
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+            "title": "flyte",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/uctl-cli/",
+            "title": "Uctl CLI",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/data-processing/micro-batching/",
+            "title": "Batching strategies",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x12"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/biotech-healthcare/genomic-alignment/",
+            "title": "Genomic alignment",
+            "score": 34,
+            "why": [
+              "2 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/climate-modeling/",
+            "title": "GPU-accelerated climate modeling",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/architecture/kubernetes-rbac/",
+            "title": "Kubernetes Access Controls",
+            "score": 25,
+            "why": [
+              "1 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-coreweave/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal",
+      "kept_earlier": "expansion pipeline ranked sandboxing/scale pages; kept migration/tasks-and-workflows (v2 answer)"
+    },
+    {
+      "q": "config",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/migration/flyte-2/cli-and-configuration/",
+          "/docs/v2/union/user-guide/migration/flyte-2/configuration/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.config/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.config/config/"
+        ],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/deployment/selfmanaged/configuration/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/cli-and-configuration/",
+            "title": "CLI and configuration",
+            "score": 149,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/configuration/",
+            "title": "Task configuration",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x14"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/",
+            "title": "Configure tasks",
+            "score": 111,
+            "why": [
+              "title contains",
+              "3 heading(s)",
+              "body x11"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.config/config/",
+            "title": "Config",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x22"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/bigquery/bigqueryconfig/",
+            "title": "BigQueryConfig",
+            "score": 115,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/ray/rayjobconfig/",
+            "title": "RayJobConfig",
+            "score": 115,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x5"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/frontier-ai/distributed-pretraining/",
+            "title": "Distributed LLM pretraining",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x13"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/biotech-healthcare/tumor-detection/",
+            "title": "Brain tumor MRI classification",
+            "score": 24,
+            "why": [
+              "1 heading(s)",
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/multimodal-retrieval-evaluation/",
+            "title": "Multimodal retrieval evaluation",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/byoc/configuring-your-data-plane/",
+            "title": "Configuring your data plane",
+            "score": 135,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/",
+            "title": "Configuration",
+            "score": 72,
+            "why": [
+              "title contains",
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/authentication/",
+            "title": "Authentication",
+            "score": 57,
+            "why": [
+              "4 heading(s)",
+              "body x17"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "api key",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/authenticating/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/security/identity-and-access/authentication/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/authenticating/",
+            "title": "Authenticating",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x27"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/hybrid-pipelines/",
+            "title": "Hybrid v1 and v2 pipelines",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/project-patterns/cicd/",
+            "title": "CI/CD deployments",
+            "score": 18,
+            "why": [
+              "1 heading(s)",
+              "body x3"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 9,
+            "why": [
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+            "title": "flyte",
+            "score": 9,
+            "why": [
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/",
+            "title": "Flyte SDK",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/compliance-monitoring-agent/",
+            "title": "Compliance monitoring agent",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/field-data-enrichment-agent/",
+            "title": "Field data enrichment agent",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/terraform/management/",
+            "title": "Resource management",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x13"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/terraform/security/",
+            "title": "Security best practices",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x18"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/terraform/",
+            "title": "Manage Union through Terraform",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "trace",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/traces/",
+          "/docs/v2/union/integrations/opentelemetry/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/traces/",
+            "title": "Traces",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "4 heading(s)",
+              "body x34"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/advanced-project/resilient-generation/",
+            "title": "Resilient generation",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x17"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/opentelemetry/",
+            "title": "OpenTelemetry",
+            "score": 38,
+            "why": [
+              "2 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.errors/tracedoesnotallownestedtaskserror/",
+            "title": "TraceDoesNotAllowNestedTasksError",
+            "score": 113,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+            "title": "flyte",
+            "score": 20,
+            "why": [
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/wandb/",
+            "title": "Weights & Biases",
+            "score": 12,
+            "why": [
+              "body x14"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/data-processing/micro-batching/",
+            "title": "Batching strategies",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x13"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/context-engineering/auto_prompt_engineering/",
+            "title": "Automatic prompt engineering",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/",
+            "title": "Data retention policies",
+            "score": 9,
+            "why": [
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/authoring/",
+            "title": "Authoring",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "app",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/core-concepts/introducing-apps/",
+          "/docs/v2/union/user-guide/advanced-project/serving-app/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.app/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/app/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/advanced-project/serving-app/",
+            "title": "Serving app",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "4 heading(s)",
+              "body x36"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/browser-apps/",
+            "title": "Browser apps",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "6 heading(s)",
+              "body x20"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/multi-script-apps/",
+            "title": "Multi-script apps",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "7 heading(s)",
+              "body x33"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/app/",
+            "title": "App",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x69"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.chat/agentchatappenvironment/",
+            "title": "AgentChatAppEnvironment",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x21"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.ai.chat.app/agentchatappenvironment/",
+            "title": "AgentChatAppEnvironment",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x22"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/inference/voice-customer-service/",
+            "title": "Voice customer-service agent",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x69"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x30"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/mle-bot/",
+            "title": "MLE bot",
+            "score": 12,
+            "why": [
+              "body x14"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/namespace-mapping/",
+            "title": "Namespace mapping",
+            "score": 120,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/data-plane-setup-on-azure/",
+            "title": "Data plane setup on Azure",
+            "score": 57,
+            "why": [
+              "4 heading(s)",
+              "body x28"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/authentication/",
+            "title": "Authentication",
+            "score": 57,
+            "why": [
+              "4 heading(s)",
+              "body x21"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "apps",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/core-concepts/introducing-apps/",
+          "/docs/v2/union/user-guide/advanced-project/serving-app/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.app/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/app/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/get-started/core-concepts/introducing-apps/",
+            "title": "Apps",
+            "score": 197,
+            "why": [
+              "title==query",
+              "slug match",
+              "3 heading(s)",
+              "body x13"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/single-script-apps/",
+            "title": "Single-script apps",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x14"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/browser-apps/",
+            "title": "Browser apps",
+            "score": 148,
+            "why": [
+              "title contains",
+              "slug match",
+              "5 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 11,
+            "why": [
+              "body x11"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/agent-plugins/",
+            "title": "Flyte agent plugins",
+            "score": 6,
+            "why": [
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/app/",
+            "title": "App",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/inference/voice-customer-service/",
+            "title": "Voice customer-service agent",
+            "score": 9,
+            "why": [
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/inference/",
+            "title": "Inference",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x14"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/architecture/data-plane/",
+            "title": "Data plane",
+            "score": 19,
+            "why": [
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/data-plane-setup-on-azure/",
+            "title": "Data plane setup on Azure",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "trigger",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/triggers/",
+          "/docs/v2/union/user-guide/apps/native-app-integrations/flyte-webhook/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/trigger/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/trigger/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/triggers/",
+            "title": "Triggers",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "16 heading(s)",
+              "body x156"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/native-app-integrations/flyte-webhook/",
+            "title": "Flyte webhook",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x13"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/from-airflow/part-1-vanilla-operators/",
+            "title": "Part 1: vanilla operators",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x22"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/trigger/",
+            "title": "Trigger",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x108"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/trigger/",
+            "title": "Trigger",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x35"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 57,
+            "why": [
+              "4 heading(s)",
+              "body x52"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/climate-modeling/",
+            "title": "GPU-accelerated climate modeling",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x19"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/authoring/",
+            "title": "Authoring",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/api-docs/",
+            "title": "API docs",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "timeout",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/retries-and-timeouts/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/timeout/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.app/timeouts/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/retries-and-timeouts/",
+            "title": "Retries and timeouts",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x42"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/queues/",
+            "title": "Queues",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/conditions/",
+            "title": "External conditions",
+            "score": 20,
+            "why": [
+              "1 heading(s)",
+              "body x5"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/timeout/",
+            "title": "Timeout",
+            "score": 157,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.app/timeouts/",
+            "title": "Timeouts",
+            "score": 113,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.errors/tasktimeouterror/",
+            "title": "TaskTimeoutError",
+            "score": 112,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x2"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/data-processing/micro-batching/",
+            "title": "Batching strategies",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/autosec-research-agent/",
+            "title": "AutoSec researcher agent",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/qwen-vl-finetuning/",
+            "title": "Fine-tuning a VLM",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 56,
+            "why": [
+              "3 heading(s)",
+              "body x11"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "api",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/authenticating/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+          "/docs/v2/union/api-reference/flyte-cli/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/native-app-integrations/fastapi-app/",
+            "title": "FastAPI app",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "4 heading(s)",
+              "body x31"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/authenticating/",
+            "title": "Authenticating",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x45"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/hybrid-graphs/",
+            "title": "Hybrid app-task graphs",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x14"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.app.extras/fastapipassthroughauthmiddleware/",
+            "title": "FastAPIPassthroughAuthMiddleware",
+            "score": 115,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.app.extras/fastapiappenvironment/",
+            "title": "FastAPIAppEnvironment",
+            "score": 113,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x30"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/financial-services/financial-research-agent/",
+            "title": "Financial research agent",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x17"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/compliance-monitoring-agent/",
+            "title": "Compliance monitoring agent",
+            "score": 26,
+            "why": [
+              "1 heading(s)",
+              "body x11"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 25,
+            "why": [
+              "1 heading(s)",
+              "body x10"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/community/contributing-docs/api-docs/",
+            "title": "API docs",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x21"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/terraform/management/",
+            "title": "Resource management",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x18"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/terraform/security/",
+            "title": "Security best practices",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x20"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal (peeter-directed)"
+    },
+    {
+      "q": "connector",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/apps/build-apps/connector-app/",
+          "/docs/v2/union/integrations/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/asyncconnector/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 3,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/connector-app/",
+            "title": "Connector app",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "5 heading(s)",
+              "body x69"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/",
+            "title": "Integrations",
+            "score": 57,
+            "why": [
+              "7 heading(s)",
+              "body x53"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/snowflake/",
+            "title": "Snowflake",
+            "score": 12,
+            "why": [
+              "body x19"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/connectorregistry/",
+            "title": "ConnectorRegistry",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x12"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/asyncconnector/",
+            "title": "AsyncConnector",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x16"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.app/connectorenvironment/",
+            "title": "ConnectorEnvironment",
+            "score": 121,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x11"
+            ]
+          }
+        ],
+        "tutorial": [],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 12,
+            "why": [
+              "body x44"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/architecture/network/",
+            "title": "Network architecture",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "ray",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/integrations/ray/",
+          "/docs/v2/union/user-guide/tasks/task-configuration/task-plugins/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/integrations/ray/"
+        ],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/deployment/selfmanaged/configuration/plugins/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/integrations/ray/",
+            "title": "Ray",
+            "score": 142,
+            "why": [
+              "title==query",
+              "2 heading(s)",
+              "body x35"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/task-plugins/",
+            "title": "Task plugins",
+            "score": 24,
+            "why": [
+              "1 heading(s)",
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/",
+            "title": "Integrations",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/integrations/ray/",
+            "title": "Ray",
+            "score": 118,
+            "why": [
+              "title==query",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/ray/rayjobconfig/",
+            "title": "RayJobConfig",
+            "score": 114,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/ray/headnodeconfig/",
+            "title": "HeadNodeConfig",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/reinforcement-learning/grpo-lora/",
+            "title": "RL for LLMs with GRPO and LoRA",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/climate-modeling/",
+            "title": "GPU-accelerated climate modeling",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/model-training/hpo/",
+            "title": "Hyperparameter optimization",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/plugins/",
+            "title": "Compute plugins",
+            "score": 40,
+            "why": [
+              "2 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 37,
+            "why": [
+              "2 heading(s)",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/interruptible-scheduling/",
+            "title": "Interruptible task scheduling",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "secrets",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/secrets/",
+          "/docs/v2/union/user-guide/apps/build-apps/secret-based-authentication/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/secret/"
+        ],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/security/data-protection/secrets/",
+          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/",
+          "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
+          "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/secrets/",
+            "title": "Secrets",
+            "score": 197,
+            "why": [
+              "title==query",
+              "slug match",
+              "6 heading(s)",
+              "body x31"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/connector-app/",
+            "title": "Connector app",
+            "score": 40,
+            "why": [
+              "2 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/project-patterns/resource-management/",
+            "title": "Resource management and multi-team scaling",
+            "score": 38,
+            "why": [
+              "2 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/",
+            "title": "TaskEnvironment",
+            "score": 10,
+            "why": [
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 6,
+            "why": [
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/secret/",
+            "title": "Secret",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/autoresearch/",
+            "title": "Autoresearch agent",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/compliance-monitoring-agent/",
+            "title": "Compliance monitoring agent",
+            "score": 22,
+            "why": [
+              "1 heading(s)",
+              "body x7"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/",
+            "title": "Secrets",
+            "score": 160,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
+            "title": "Enabling AWS Secrets Manager",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "5 heading(s)",
+              "body x36"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/data-protection/secrets/",
+            "title": "Secrets management",
+            "score": 122,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x19"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "map",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/map/",
+          "/docs/v2/union/user-guide/tasks/task-programming/streaming-map-reduce/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/map/",
+            "title": "Mapping over inputs",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "4 heading(s)",
+              "body x34"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/streaming-map-reduce/",
+            "title": "Streaming map-reduce",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x22"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/native-app-integrations/vllm-app/",
+            "title": "vLLM app",
+            "score": 42,
+            "why": [
+              "slug match",
+              "body x2"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/integrations/vllm/vllmappenvironment/",
+            "title": "VLLMAppEnvironment",
+            "score": 111,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.types/typeengine/",
+            "title": "TypeEngine",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x17"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+            "title": "flyte",
+            "score": 24,
+            "why": [
+              "1 heading(s)",
+              "body x9"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/parallelized-autoresearch-agent/",
+            "title": "Parallelized autoresearch agent",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/detr-object-detection/",
+            "title": "RT-DETR object detection",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/inference/voice-customer-service/",
+            "title": "Voice customer-service agent",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/namespace-mapping/",
+            "title": "Namespace mapping",
+            "score": 121,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x11"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/authoring/",
+            "title": "Authoring",
+            "score": 20,
+            "why": [
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/api-docs/",
+            "title": "API docs",
+            "score": 12,
+            "why": [
+              "body x14"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "register",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/migration/flyte-2/cli-and-configuration/",
+          "/docs/v2/union/user-guide/tasks/task-deployment/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/cluster-workload-management/clusters/",
+            "title": "Clusters",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x12"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/connector-app/",
+            "title": "Connector app",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/project-patterns/cicd/",
+            "title": "CI/CD deployments",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.io.extend/dataframetransformerengine/",
+            "title": "DataFrameTransformerEngine",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x16"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.types/typeengine/",
+            "title": "TypeEngine",
+            "score": 55,
+            "why": [
+              "3 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/connectorregistry/",
+            "title": "ConnectorRegistry",
+            "score": 18,
+            "why": [
+              "1 heading(s)",
+              "body x3"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/autoresearch/",
+            "title": "Autoresearch agent",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/autosec-research-agent/",
+            "title": "AutoSec researcher agent",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/byoc/single-sign-on-setup/microsoft-entra-id/",
+            "title": "Microsoft Entra ID (formerly Azure AD)",
+            "score": 20,
+            "why": [
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-aws/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 7,
+            "why": [
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-azure/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 7,
+            "why": [
+              "body x7"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "map_task",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/map/",
+          "/docs/v2/union/user-guide/tasks/task-programming/streaming-map-reduce/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 2,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/parallelism/",
+            "title": "Parallelism and fan-out",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/overview/",
+            "title": "Migration Overview",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/fanout/",
+            "title": "Fanout",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          {
+            "url": "/docs/v2/union/community/contributing-docs/shortcodes/",
+            "title": "Shortcodes",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "flytectl",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/migration/flyte-2/cli-and-configuration/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-cli/",
+          "/docs/v2/union/api-reference/uctl-cli/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 3,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/get-started/run-modes/running-remote/",
+            "title": "Run on a remote cluster",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/cli-and-configuration/",
+            "title": "CLI and configuration",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.config/",
+            "title": "flyte.config",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "tutorial": [],
+        "other": [
+          {
+            "url": "/docs/v2/union/community/contributing-docs/shortcodes/",
+            "title": "Shortcodes",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/authentication/",
+            "title": "Authentication",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "spark",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/integrations/spark/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/integrations/spark/spark/",
+          "/docs/v2/union/api-reference/integrations/spark/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/integrations/spark/",
+            "title": "Spark",
+            "score": 157,
+            "why": [
+              "title==query",
+              "3 heading(s)",
+              "body x29"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/databricks/",
+            "title": "Databricks",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x17"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/papermill/",
+            "title": "Papermill",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x12"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/integrations/spark/spark/",
+            "title": "Spark",
+            "score": 162,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/spark/",
+            "title": "Spark",
+            "score": 123,
+            "why": [
+              "title==query",
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/spark/parquettosparkdecoder/",
+            "title": "ParquetToSparkDecoder",
+            "score": 112,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x2"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/financial-services/fraud-detection-feast/",
+            "title": "Fraud detection with Feast",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 57,
+            "why": [
+              "23 heading(s)",
+              "body x26"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/architecture/data-plane/",
+            "title": "Data plane",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "flyteremote",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/remote-tasks/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 2,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/hybrid-pipelines/",
+            "title": "Hybrid v1 and v2 pipelines",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          {
+            "url": "/docs/v2/union/community/contributing-docs/shortcodes/",
+            "title": "Shortcodes",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "gpu",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/resources/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/resources/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/device/"
+        ],
+        "tutorial": [
+          "/docs/v2/union/tutorials/geospatial/climate-modeling/"
+        ],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/build-apps/serving-graphs/",
+            "title": "Serving graphs",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x23"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/run-scaling/batch-inference/",
+            "title": "Batch inference",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x27"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/resources/",
+            "title": "Resources",
+            "score": 57,
+            "why": [
+              "3 heading(s)",
+              "body x24"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+            "title": "flyte",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x20"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/resources/",
+            "title": "Resources",
+            "score": 9,
+            "why": [
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/",
+            "title": "Flyte SDK",
+            "score": 8,
+            "why": [
+              "body x8"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/climate-modeling/",
+            "title": "GPU-accelerated climate modeling",
+            "score": 112,
+            "why": [
+              "title contains",
+              "3 heading(s)",
+              "body x26"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/satellite_image_classification/",
+            "title": "Satellite image classification",
+            "score": 19,
+            "why": [
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/qwen-vl-finetuning/",
+            "title": "Fine-tuning a VLM",
+            "score": 12,
+            "why": [
+              "body x18"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 51,
+            "why": [
+              "3 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x15"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-azure/prepare-infra/",
+            "title": "Prepare infrastructure",
+            "score": 17,
+            "why": [
+              "1 heading(s)",
+              "body x2"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "caching",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/caching/",
+          "/docs/v2/union/user-guide/run-scaling/data-flow/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/cache/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/cachepolicy/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/caching/",
+            "title": "Caching",
+            "score": 197,
+            "why": [
+              "title==query",
+              "slug match",
+              "7 heading(s)",
+              "body x53"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/run-scaling/data-flow/",
+            "title": "Data flow",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x13"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/configuration/",
+            "title": "Task configuration",
+            "score": 38,
+            "why": [
+              "2 heading(s)",
+              "body x8"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/agent-plugins/",
+            "title": "Flyte agent plugins",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/cache/",
+            "title": "Cache",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.io/file/",
+            "title": "File",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/financial-services/trading-agents/",
+            "title": "Multi-agent trading simulation",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/model-training/hpo/",
+            "title": "Hyperparameter optimization",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 20,
+            "why": [
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/data-retention-policy/",
+            "title": "Data retention policy",
+            "score": 17,
+            "why": [
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/",
+            "title": "Data retention policies",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "notification",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-deployment/run-with-notifications/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.notify/notification/",
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.notify/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 2,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-deployment/run-with-notifications/",
+            "title": "Run with notifications",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "3 heading(s)",
+              "body x25"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/triggers/",
+            "title": "Triggers",
+            "score": 57,
+            "why": [
+              "5 heading(s)",
+              "body x29"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/project-patterns/cicd/",
+            "title": "CI/CD deployments",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.notify/notification/",
+            "title": "Notification",
+            "score": 158,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.notify/",
+            "title": "flyte.notify",
+            "score": 12,
+            "why": [
+              "body x13"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/",
+            "title": "Flyte SDK",
+            "score": 10,
+            "why": [
+              "body x10"
+            ]
+          }
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "eager",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/migration/flyte-2/overview/",
+          "/docs/v2/union/user-guide/migration/flyte-2/control-flow/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/remote-tasks/",
+            "title": "Remote tasks",
+            "score": 17,
+            "why": [
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/dataframes/",
+            "title": "DataFrames",
+            "score": 16,
+            "why": [
+              "1 heading(s)",
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/pandera/",
+            "title": "Pandera",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.io/dataframe/",
+            "title": "DataFrame",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/climate-modeling/",
+            "title": "GPU-accelerated climate modeling",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/authentication/",
+            "title": "Authentication",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal (peeter-directed)"
+    },
+    {
+      "q": "volumes",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/volumes/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/deployment/selfmanaged/configuration/volumes/"
+        ]
+      },
+      "groups_with_candidate": 3,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/volumes/",
+            "title": "Volumes",
+            "score": 193,
+            "why": [
+              "title==query",
+              "slug match",
+              "3 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/from-airflow/part-1-vanilla-operators/",
+            "title": "Part 1: vanilla operators",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/pod-templates/",
+            "title": "Pod templates",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/podtemplate/",
+            "title": "PodTemplate",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/",
+            "title": "TaskEnvironment",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "tutorial": [],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/volumes/",
+            "title": "Volumes",
+            "score": 178,
+            "why": [
+              "title==query",
+              "slug match",
+              "2 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 12,
+            "why": [
+              "body x18"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "sso",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/authenticating/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/security/identity-and-access/authentication/",
+          "/docs/v2/union/deployment/selfmanaged/configuration/authentication/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-deployment/deployment-patterns/",
+            "title": "Deployment patterns",
+            "score": 17,
+            "why": [
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/agents/openai/",
+            "title": "OpenAI",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/",
+            "title": "Integrations",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/trigger/",
+            "title": "Trigger",
+            "score": 8,
+            "why": [
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/",
+            "title": "TaskEnvironment",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/context-engineering/text_to_sql/",
+            "title": "Text-to-SQL prompt optimization",
+            "score": 18,
+            "why": [
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/data-processing/micro-batching/",
+            "title": "Batching strategies",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/multimodal-retrieval-evaluation/",
+            "title": "Multimodal retrieval evaluation",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/security/identity-and-access/authentication/",
+            "title": "Authentication",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/helm-chart-reference/dataplane/",
+            "title": "Dataplane chart",
+            "score": 6,
+            "why": [
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/data-plane-setup-on-gcp/",
+            "title": "Data plane setup on GCP",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "retry",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-configuration/retries-and-timeouts/",
+          "/docs/v2/union/user-guide/tasks/task-programming/error-handling/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/retrystrategy/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-configuration/retries-and-timeouts/",
+            "title": "Retries and timeouts",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x20"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/advanced-project/resilient-generation/",
+            "title": "Resilient generation",
+            "score": 20,
+            "why": [
+              "1 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/higher-order-functions/",
+            "title": "Higher-order functions",
+            "score": 18,
+            "why": [
+              "1 heading(s)",
+              "body x3"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/retrystrategy/",
+            "title": "RetryStrategy",
+            "score": 113,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/backoff/",
+            "title": "Backoff",
+            "score": 6,
+            "why": [
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/",
+            "title": "flyte",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/mle-bot/",
+            "title": "MLE bot",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/",
+            "title": "Agents",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/release-notes/",
+            "title": "Release notes",
+            "score": 41,
+            "why": [
+              "2 heading(s)",
+              "body x11"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "deploy",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-deployment/",
+          "/docs/v2/union/user-guide/tasks/task-deployment/how-task-deployment-works/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/serve-and-deploy-apps/how-app-deployment-works/",
+            "title": "How app deployment works",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "5 heading(s)",
+              "body x56"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-deployment/deployment-patterns/",
+            "title": "Deployment patterns",
+            "score": 152,
+            "why": [
+              "title contains",
+              "slug match",
+              "10 heading(s)",
+              "body x97"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-deployment/deploy-command-options/",
+            "title": "Deploy command options",
+            "score": 137,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x36"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.app/deployedappenvironment/",
+            "title": "DeployedAppEnvironment",
+            "score": 114,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.errors/deploymenterror/",
+            "title": "DeploymentError",
+            "score": 113,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 42,
+            "why": [
+              "2 heading(s)",
+              "body x52"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/inference/voice-customer-service/",
+            "title": "Voice customer-service agent",
+            "score": 23,
+            "why": [
+              "1 heading(s)",
+              "body x8"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/code-mode-agent/",
+            "title": "Code mode analytics agent",
+            "score": 19,
+            "why": [
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/context-engineering/auto_prompt_engineering/",
+            "title": "Automatic prompt engineering",
+            "score": 4,
+            "why": [
+              "body x4"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-crusoe/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 131,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-coreweave/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 130,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 130,
+            "why": [
+              "title contains",
+              "slug match",
+              "2 heading(s)",
+              "body x5"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "rbac",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/user-management/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": [
+          "/docs/v2/union/security/identity-and-access/rbac/",
+          "/docs/v2/union/deployment/selfmanaged/architecture/kubernetes-rbac/"
+        ]
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/project-patterns/resource-management/",
+            "title": "Resource management and multi-team scaling",
+            "score": 21,
+            "why": [
+              "1 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/get-started/core-concepts/projects-and-domains/",
+            "title": "Projects and domains",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/project-patterns/",
+            "title": "Project patterns",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-cli/",
+            "title": "Flyte CLI",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/uctl-cli/",
+            "title": "Uctl CLI",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/geospatial/satellite_image_classification/",
+            "title": "Satellite image classification",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/security/identity-and-access/rbac/",
+            "title": "Role-based access control",
+            "score": 59,
+            "why": [
+              "slug match",
+              "1 heading(s)",
+              "body x4"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/architecture/kubernetes-rbac/",
+            "title": "Kubernetes Access Controls",
+            "score": 47,
+            "why": [
+              "slug match",
+              "body x7"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/security/architecture/sovereign-data-plane/",
+            "title": "Sovereign Data Plane",
+            "score": 12,
+            "why": [
+              "body x12"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "flytefile",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/files-and-directories/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.io/file/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 2,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/overview/",
+            "title": "Migration Overview",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/data-io/",
+            "title": "Data types and I/O",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/ml-workloads/",
+            "title": "ML workloads",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/agent-plugins/",
+            "title": "Flyte agent plugins",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/anthropic/",
+            "title": "Anthropic",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/gemini/",
+            "title": "Gemini",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "quickstart",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/quickstart/",
+          "/docs/v2/union/user-guide/get-started/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 3,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/get-started/quickstart/",
+            "title": "Quickstart",
+            "score": 158,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/agents/build-mcp/",
+            "title": "Build an MCP",
+            "score": 16,
+            "why": [
+              "1 heading(s)",
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-deployment/run-python-script/",
+            "title": "Run a Python script",
+            "score": 16,
+            "why": [
+              "1 heading(s)",
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/compliance-monitoring-agent/",
+            "title": "Compliance monitoring agent",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/field-data-enrichment-agent/",
+            "title": "Field data enrichment agent",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/community/contributing-docs/quick-start/",
+            "title": "Set up a local docs dev environment",
+            "score": 40,
+            "why": [
+              "slug match"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/data-plane-setup-on-azure/",
+            "title": "Data plane setup on Azure",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/single-sign-on-setup/microsoft-entra-id/",
+            "title": "Microsoft Entra ID (formerly Azure AD)",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "flyte.io.File",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/files-and-directories/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte.io/file/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/apps/configure-apps/passing-parameters/",
+            "title": "Passing parameters into app environments",
+            "score": 5,
+            "why": [
+              "body x5"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/tasks/task-programming/volumes/",
+            "title": "Volumes",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/integrations/papermill/",
+            "title": "Papermill",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.sandbox/",
+            "title": "flyte.sandbox",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/integrations/papermill/",
+            "title": "Papermill",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/",
+            "title": "Flyte SDK",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/agents/mle-bot/",
+            "title": "MLE bot",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/biotech-healthcare/genomic-alignment/",
+            "title": "Genomic alignment",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/computer-vision/multimodal-retrieval-evaluation/",
+            "title": "Multimodal retrieval evaluation",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/data-retention/",
+            "title": "Data retention policies",
+            "score": 3,
+            "why": [
+              "body x3"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/community/contributing-docs/api-docs/",
+            "title": "API docs",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/byoc/data-retention-policy/",
+            "title": "Data retention policy",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "TaskEnvironment",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/core-concepts/task-environment/",
+          "/docs/v2/union/user-guide/tasks/task-configuration/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 4,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/user-guide/get-started/core-concepts/task-environment/",
+            "title": "TaskEnvironment",
+            "score": 176,
+            "why": [
+              "title==query",
+              "slug match",
+              "2 heading(s)",
+              "body x6"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/flyte-2/tasks-and-workflows/",
+            "title": "Tasks and workflows",
+            "score": 39,
+            "why": [
+              "2 heading(s)",
+              "body x9"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/user-guide/migration/from-airflow/part-1-vanilla-operators/",
+            "title": "Part 1: vanilla operators",
+            "score": 27,
+            "why": [
+              "1 heading(s)",
+              "body x16"
+            ]
+          }
+        ],
+        "reference": [
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte/taskenvironment/",
+            "title": "TaskEnvironment",
+            "score": 167,
+            "why": [
+              "title==query",
+              "slug match",
+              "1 heading(s)",
+              "body x15"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/flyte.clustered/clusteredtaskenvironment/",
+            "title": "ClusteredTaskEnvironment",
+            "score": 120,
+            "why": [
+              "title contains",
+              "slug match",
+              "1 heading(s)",
+              "body x10"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/api-reference/flyte-sdk/",
+            "title": "Flyte SDK",
+            "score": 8,
+            "why": [
+              "body x8"
+            ]
+          }
+        ],
+        "tutorial": [
+          {
+            "url": "/docs/v2/union/tutorials/data-processing/micro-batching/",
+            "title": "Batching strategies",
+            "score": 17,
+            "why": [
+              "1 heading(s)",
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/autoresearch/",
+            "title": "Autoresearch agent",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/tutorials/agents/competitive-intelligence-agent/",
+            "title": "Competitive intelligence agent",
+            "score": 2,
+            "why": [
+              "body x2"
+            ]
+          }
+        ],
+        "other": [
+          {
+            "url": "/docs/v2/union/community/contributing-docs/writing-guidelines/",
+            "title": "Writing guidelines",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/configuration/multi-cluster/",
+            "title": "Multiple Clusters",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          },
+          {
+            "url": "/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius/deploy-dataplane/",
+            "title": "Deploy the dataplane",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ]
+      },
+      "judged": "expansion+multi-ideal"
+    },
+    {
+      "q": "shelltask",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/tasks/task-programming/container-tasks/"
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 0,
+      "candidates": {
+        "guide": [],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "judged": "expansion+multi-ideal (peeter-directed)"
+    },
+    {
+      "q": "install cli",
+      "ideal": {
+        "guide": [
+          "/docs/v2/union/user-guide/get-started/",
+          "/docs/v2/union/user-guide/get-started/quickstart/"
+        ],
+        "reference": [
+          "/docs/v2/union/api-reference/flyte-cli/"
+        ],
+        "tutorial": [],
+        "other": []
+      },
+      "groups_with_candidate": 1,
+      "candidates": {
+        "guide": [
+          {
+            "url": "/docs/v2/union/integrations/hydra/",
+            "title": "Hydra",
+            "score": 1,
+            "why": [
+              "body x1"
+            ]
+          }
+        ],
+        "reference": [],
+        "tutorial": [],
+        "other": []
+      },
+      "judged": "expansion+multi-ideal"
+    }
+  ]
+}
