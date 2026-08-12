@@ -65,6 +65,7 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 # rather than truncated -- truncating would silently make the tail of a long
 # page unsearchable, which is worse than carrying an extra record.
 MAX_CONTENT_BYTES = 7000
+ALGOLIA_RECORD_LIMIT = 10000
 
 
 def chunk_content(text, limit=MAX_CONTENT_BYTES):
@@ -74,23 +75,30 @@ def chunk_content(text, limit=MAX_CONTENT_BYTES):
     if len(text.encode("utf-8")) <= limit:
         return [text]
 
+    def hard_split(s):
+        """Split a single oversized run on word boundaries."""
+        out, raw = [], s.encode("utf-8")
+        while len(raw) > limit:
+            cut = raw[:limit].rsplit(b" ", 1)[0] or raw[:limit]
+            out.append(cut.decode("utf-8", "ignore"))
+            raw = raw[len(cut):].lstrip()
+        return out, raw.decode("utf-8", "ignore")
+
     chunks, current = [], ""
     for sentence in re.split(r"(?<=[.!?])\s+", text):
         candidate = f"{current} {sentence}".strip() if current else sentence
-        if len(candidate.encode("utf-8")) > limit:
-            if current:
-                chunks.append(current)
-                current = sentence
-            else:
-                # A single sentence over the limit: fall back to a hard split.
-                raw = sentence.encode("utf-8")
-                while len(raw) > limit:
-                    cut = raw[:limit].rsplit(b" ", 1)[0] or raw[:limit]
-                    chunks.append(cut.decode("utf-8", "ignore"))
-                    raw = raw[len(cut):].lstrip()
-                current = raw.decode("utf-8", "ignore")
-        else:
+        if len(candidate.encode("utf-8")) <= limit:
             current = candidate
+            continue
+        if current:
+            chunks.append(current)
+        # The flushed sentence may itself exceed the limit -- generated API
+        # reference prose runs for pages without sentence punctuation, so
+        # re-splitting on `.!?` yields one enormous "sentence". Starting a new
+        # chunk with it unchecked is how a 13 KB record reached the push and
+        # was rejected there instead of here.
+        head, current = hard_split(sentence)
+        chunks.extend(head)
     if current:
         chunks.append(current)
     return chunks
@@ -288,6 +296,17 @@ def main():
         slice_stats = per_slice.setdefault(key, {"pages": 0, "records": 0})
         slice_stats["pages"] += 1
         slice_stats["records"] += len(recs)
+
+    oversized = [r for r in all_records
+                 if len(json.dumps(r).encode("utf-8")) > ALGOLIA_RECORD_LIMIT]
+    if oversized:
+        worst = max(len(json.dumps(r).encode()) for r in oversized)
+        raise SystemExit(
+            f"ERROR: {len(oversized)} record(s) exceed Algolia's "
+            f"{ALGOLIA_RECORD_LIMIT} byte limit (largest {worst}).\n"
+            f"       First: {oversized[0]['url']}\n"
+            "       Fix the chunker rather than pushing -- a mid-push rejection "
+            "leaves the index partially written.")
 
     Path(args.out).write_text(json.dumps(all_records, indent=None), encoding="utf-8")
 
