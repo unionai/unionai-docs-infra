@@ -67,6 +67,22 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 MAX_CONTENT_BYTES = 7000
 ALGOLIA_RECORD_LIMIT = 10000
 
+# A pinned version tree is a near-complete copy of its line, so at full anchor
+# granularity each one costs ~10.5K records (v2) or ~23.3K (v1 -- its flytekit
+# reference is heading-dense). Cuts land every ~1.3 days, so indexing every
+# served pin at full granularity crosses Grow's 100K record allowance inside a
+# week and then grows without bound.
+#
+# Page granularity costs ~1.2K per pin instead: a reader on a pinned historical
+# snapshot needs to FIND the page; deep-linking an h4 in an old copy is a
+# luxury. Current surfaces keep full granularity.
+PIN_MAX_LEVEL = 1
+PIN_RE = re.compile(r"^v\d+\.\d+")          # v2.5.16.3 -- a pin, not `v2`/`v1`/`latest`
+
+
+def is_pin(version):
+    return bool(PIN_RE.match(version))
+
 
 def chunk_content(text, limit=MAX_CONTENT_BYTES):
     """Split prose into <=limit-byte pieces on sentence/word boundaries."""
@@ -187,6 +203,19 @@ def parse_sections(md):
     return sections
 
 
+def _version_key(v):
+    """Sort pins numerically: v2.5.16.3 -> (2, 5, 16, 3)."""
+    return tuple(int(x) for x in re.findall(r"\d+", v))
+
+
+def _slices(dist):
+    """(version, variant) pairs present in a built dist."""
+    root = Path(dist) / "docs"
+    return {(p.parts[0], p.parts[1])
+            for p in (q.relative_to(root) for q in root.rglob("page.md"))
+            if len(p.parts) >= 3}
+
+
 def iter_pages(dist):
     """Yield (page_md_path, version, variant, url_path) for every built page."""
     docs_root = Path(dist) / "docs"
@@ -272,8 +301,17 @@ def main():
     ap.add_argument("--out", default="records.json")
     ap.add_argument("--max-level", type=int, default=6,
                     help="deepest heading level to index (lower = fewer records)")
+    ap.add_argument("--keep-pins", type=int, default=6,
+                    help="index only the N newest pinned versions (-1 = all). "
+                         "Pins accrue every ~1.3 days and never change, so "
+                         "without a window the index grows without bound.")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
+
+    pins = sorted({v for v, _ in _slices(args.dist) if is_pin(v)},
+                  key=_version_key, reverse=True)
+    keep_pins = set(pins if args.keep_pins < 0 else pins[: args.keep_pins])
+    dropped = [p for p in pins if p not in keep_pins]
 
     all_records = []
     pages = 0
@@ -282,8 +320,11 @@ def main():
     other_segments = {}
 
     for path, version, variant, url_path in iter_pages(args.dist):
+        if is_pin(version) and version not in keep_pins:
+            continue
         md = path.read_text(encoding="utf-8", errors="replace")
-        recs = records_for_page(md, version, variant, url_path, args.max_level)
+        level = PIN_MAX_LEVEL if is_pin(version) else args.max_level
+        recs = records_for_page(md, version, variant, url_path, level)
         if not recs:
             continue
         pages += 1
@@ -326,6 +367,11 @@ def main():
             print("\ntop-level sections landing in 'other':")
             for seg in sorted(other_segments, key=lambda s2: -other_segments[s2]):
                 print(f"  {seg or '<root>':<24} {other_segments[seg]:>5} pages")
+        if pins:
+            print(f"\npins: {len(keep_pins)} of {len(pins)} indexed, at page "
+                  f"level (--keep-pins {args.keep_pins})")
+            if dropped:
+                print(f"  outside window, not indexed: {', '.join(dropped)}")
         print(f"\nwrote {args.out}")
 
 
