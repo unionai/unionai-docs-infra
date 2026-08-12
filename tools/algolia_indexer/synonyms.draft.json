@@ -1,0 +1,607 @@
+[
+  {
+    "objectID": "v1v2-flytekit-map",
+    "type": "oneWaySynonym",
+    "input": "flytekit.map",
+    "synonyms": [
+      "Python loop with",
+      "asyncio.gather",
+      "asyncio.gathers",
+      "for",
+      "fors",
+      "gather",
+      "python loop with",
+      "python loop withs"
+    ],
+    "_also_matches": [
+      "flytekit.map",
+      "flytekit.maps",
+      "map"
+    ],
+    "_source": "_index.md:43",
+    "_old_cell": "`flytekit.map`",
+    "_new_cell": "Python `for` loop with `asyncio.gather`"
+  },
+  {
+    "objectID": "v1v2-flytekit-conditional",
+    "type": "oneWaySynonym",
+    "input": "flytekit.conditional",
+    "synonyms": [
+      "Python",
+      "if-elif-else",
+      "if-elif-elses",
+      "python",
+      "pythons"
+    ],
+    "_also_matches": [
+      "conditional",
+      "flytekit.conditional",
+      "flytekit.conditionals"
+    ],
+    "_source": "_index.md:44",
+    "_old_cell": "`flytekit.conditional`",
+    "_new_cell": "Python `if-elif-else`"
+  },
+  {
+    "objectID": "v1v2-pyflyte-run",
+    "type": "oneWaySynonym",
+    "input": "pyflyte run",
+    "synonyms": [
+      "flyte run",
+      "flyte runs"
+    ],
+    "_also_matches": [
+      "pyflyte run",
+      "pyflyte runs"
+    ],
+    "_source": "cli-and-configuration.md:15",
+    "_old_cell": "`pyflyte run`",
+    "_new_cell": "`flyte run`"
+  },
+  {
+    "objectID": "v1v2-pyflyte-run-remote",
+    "type": "oneWaySynonym",
+    "input": "pyflyte run --remote",
+    "synonyms": [
+      "flyte run",
+      "flyte runs"
+    ],
+    "_also_matches": [
+      "pyflyte run --remote",
+      "pyflyte run --remotes"
+    ],
+    "_source": "cli-and-configuration.md:16",
+    "_old_cell": "`pyflyte run --remote`",
+    "_new_cell": "`flyte run`"
+  },
+  {
+    "objectID": "v1v2-pyflyte-register",
+    "type": "oneWaySynonym",
+    "input": "pyflyte register",
+    "synonyms": [
+      "flyte deploy",
+      "flyte deploys"
+    ],
+    "_also_matches": [
+      "pyflyte register",
+      "pyflyte registers"
+    ],
+    "_source": "cli-and-configuration.md:18",
+    "_old_cell": "`pyflyte register`",
+    "_new_cell": "`flyte deploy`"
+  },
+  {
+    "objectID": "v1v2-copy-all",
+    "type": "oneWaySynonym",
+    "input": "--copy-all",
+    "synonyms": [
+      "--copy-style all",
+      "--copy-style alls"
+    ],
+    "_also_matches": [
+      "--copy-all",
+      "--copy-alls"
+    ],
+    "_source": "cli-and-configuration.md:86",
+    "_old_cell": "`--copy-all`",
+    "_new_cell": "`--copy-style all`"
+  },
+  {
+    "objectID": "v1v2-p-project",
+    "type": "oneWaySynonym",
+    "input": "-p, --project",
+    "synonyms": [
+      "--project",
+      "--projects"
+    ],
+    "_also_matches": [
+      "-p, --project",
+      "-p, --projects"
+    ],
+    "_source": "cli-and-configuration.md:88",
+    "_old_cell": "`-p, --project`",
+    "_new_cell": "`--project`"
+  },
+  {
+    "objectID": "v1v2-d-domain",
+    "type": "oneWaySynonym",
+    "input": "-d, --domain",
+    "synonyms": [
+      "--domain",
+      "--domains"
+    ],
+    "_also_matches": [
+      "-d, --domain",
+      "-d, --domains"
+    ],
+    "_source": "cli-and-configuration.md:89",
+    "_old_cell": "`-d, --domain`",
+    "_new_cell": "`--domain`"
+  },
+  {
+    "objectID": "v1v2-i-image",
+    "type": "oneWaySynonym",
+    "input": "-i, --image",
+    "synonyms": [
+      "--image",
+      "--images"
+    ],
+    "_also_matches": [
+      "-i, --image",
+      "-i, --images"
+    ],
+    "_source": "cli-and-configuration.md:90",
+    "_old_cell": "`-i, --image`",
+    "_new_cell": "`--image`"
+  },
+  {
+    "objectID": "v1v2-admin-authtype",
+    "type": "oneWaySynonym",
+    "input": "admin.authtype",
+    "synonyms": [
+      "Auto-detected",
+      "auto-detected",
+      "auto-detecteds"
+    ],
+    "_also_matches": [
+      "admin.authType",
+      "admin.authtype",
+      "admin.authtypes",
+      "authtype"
+    ],
+    "_source": "cli-and-configuration.md:129",
+    "_old_cell": "`admin.authType`",
+    "_new_cell": "Auto-detected (PKCE default)"
+  },
+  {
+    "objectID": "v1v2-org",
+    "type": "oneWaySynonym",
+    "input": "--org",
+    "synonyms": [
+      "org",
+      "task.org",
+      "task.orgs"
+    ],
+    "_also_matches": [
+      "--org",
+      "--orgs"
+    ],
+    "_source": "cli-and-configuration.md:132",
+    "_old_cell": "CLI flag `--org`",
+    "_new_cell": "`task.org` (default)"
+  },
+  {
+    "objectID": "v1v2-aptpackages",
+    "type": "oneWaySynonym",
+    "input": "aptpackages",
+    "synonyms": [
+      "withaptpackage",
+      "withaptpackages"
+    ],
+    "_also_matches": [
+      "aptpackage",
+      "aptpackages"
+    ],
+    "_source": "configuration.md:58",
+    "_old_cell": "`apt_packages`",
+    "_new_cell": "`.with_apt_packages()`"
+  },
+  {
+    "objectID": "v1v2-sourceroot",
+    "type": "oneWaySynonym",
+    "input": "sourceroot",
+    "synonyms": [
+      "withsourcefile",
+      "withsourcefiles",
+      "withsourcefolder",
+      "withsourcefolders"
+    ],
+    "_also_matches": [
+      "sourceroot",
+      "sourceroots"
+    ],
+    "_source": "configuration.md:62",
+    "_old_cell": "`copy` / `source_root`",
+    "_new_cell": "`.with_source_file()` / `.with_source_folder()`"
+  },
+  {
+    "objectID": "v1v2-baseimage",
+    "type": "oneWaySynonym",
+    "input": "baseimage",
+    "synonyms": [
+      "Image.frombase",
+      "frombase",
+      "image.frombase",
+      "image.frombases"
+    ],
+    "_also_matches": [
+      "baseimage",
+      "baseimages"
+    ],
+    "_source": "configuration.md:63",
+    "_old_cell": "`base_image`",
+    "_new_cell": "`Image.from_base()`"
+  },
+  {
+    "objectID": "v1v2-ephemeralstorage",
+    "type": "oneWaySynonym",
+    "input": "ephemeralstorage",
+    "synonyms": [
+      "disk",
+      "disks"
+    ],
+    "_also_matches": [
+      "ephemeralstorage",
+      "ephemeralstorages"
+    ],
+    "_source": "configuration.md:92",
+    "_old_cell": "`ephemeral_storage=\"10Gi\"`",
+    "_new_cell": "`disk=\"10Gi\"`"
+  },
+  {
+    "objectID": "v1v2-ctx-secrets-get",
+    "type": "oneWaySynonym",
+    "input": "ctx.secrets.get",
+    "synonyms": [
+      "environ[\"mygroupmykey\"]",
+      "os.environ[\"MYGROUPMYKEY\"]",
+      "os.environ[\"mygroupmykey\"]",
+      "os.environ[\"mygroupmykey\"]s"
+    ],
+    "_also_matches": [
+      "ctx.secrets.get",
+      "ctx.secrets.gets",
+      "get"
+    ],
+    "_source": "configuration.md:165",
+    "_old_cell": "`ctx.secrets.get(key=\"mykey\", group=\"mygroup\")`",
+    "_new_cell": "`os.environ[\"MYGROUP_MYKEY\"]` (auto-named)"
+  },
+  {
+    "objectID": "v1v2-flytekit",
+    "type": "oneWaySynonym",
+    "input": "flytekit",
+    "synonyms": [
+      "flyte",
+      "flytes"
+    ],
+    "_also_matches": [
+      "flytekit",
+      "flytekits"
+    ],
+    "_source": "overview.md:85",
+    "_old_cell": "`flytekit` (package)",
+    "_new_cell": "`flyte` (package)"
+  },
+  {
+    "objectID": "v1v2-pyflyte",
+    "type": "oneWaySynonym",
+    "input": "pyflyte",
+    "synonyms": [
+      "flyte",
+      "flytes"
+    ],
+    "_also_matches": [
+      "pyflyte",
+      "pyflytes"
+    ],
+    "_source": "overview.md:86",
+    "_old_cell": "`pyflyte` (CLI)",
+    "_new_cell": "`flyte` (CLI)"
+  },
+  {
+    "objectID": "v1v2-maptask",
+    "type": "oneWaySynonym",
+    "input": "maptask",
+    "synonyms": [
+      "flyte.map",
+      "flyte.maps",
+      "map"
+    ],
+    "_also_matches": [
+      "maptask",
+      "maptasks"
+    ],
+    "_source": "overview.md:88",
+    "_old_cell": "`map_task()`",
+    "_new_cell": "`flyte.map()`"
+  },
+  {
+    "objectID": "v1v2-imagespec",
+    "type": "oneWaySynonym",
+    "input": "imagespec",
+    "synonyms": [
+      "flyte.Image",
+      "flyte.image",
+      "flyte.images",
+      "image"
+    ],
+    "_also_matches": [
+      "ImageSpec",
+      "imagespec",
+      "imagespecs"
+    ],
+    "_source": "overview.md:90",
+    "_old_cell": "`ImageSpec`",
+    "_new_cell": "`flyte.Image`"
+  },
+  {
+    "objectID": "v1v2-currentcontext",
+    "type": "oneWaySynonym",
+    "input": "currentcontext",
+    "synonyms": [
+      "ctx",
+      "flyte.ctx",
+      "flyte.ctxs"
+    ],
+    "_also_matches": [
+      "currentcontext",
+      "currentcontexts"
+    ],
+    "_source": "overview.md:91",
+    "_old_cell": "`current_context()`",
+    "_new_cell": "`flyte.ctx()`"
+  },
+  {
+    "objectID": "v1v2-flytefile",
+    "type": "oneWaySynonym",
+    "input": "flytefile",
+    "synonyms": [
+      "dir",
+      "file",
+      "flyte.io.Dir",
+      "flyte.io.File",
+      "flyte.io.dir",
+      "flyte.io.dirs",
+      "flyte.io.file",
+      "flyte.io.files"
+    ],
+    "_also_matches": [
+      "FlyteFile",
+      "flytefile",
+      "flytefiles"
+    ],
+    "_source": "overview.md:92",
+    "_old_cell": "`FlyteFile` / `FlyteDirectory`",
+    "_new_cell": "`flyte.io.File` / `flyte.io.Dir`"
+  },
+  {
+    "objectID": "v1v2-flytedirectory",
+    "type": "oneWaySynonym",
+    "input": "flytedirectory",
+    "synonyms": [
+      "dir",
+      "file",
+      "flyte.io.Dir",
+      "flyte.io.File",
+      "flyte.io.dir",
+      "flyte.io.dirs",
+      "flyte.io.file",
+      "flyte.io.files"
+    ],
+    "_also_matches": [
+      "FlyteDirectory",
+      "flytedirectory",
+      "flytedirectorys"
+    ],
+    "_source": "overview.md:92",
+    "_old_cell": "`FlyteFile` / `FlyteDirectory`",
+    "_new_cell": "`flyte.io.File` / `flyte.io.Dir`"
+  },
+  {
+    "objectID": "v1v2-structureddataset",
+    "type": "oneWaySynonym",
+    "input": "structureddataset",
+    "synonyms": [
+      "dataframe",
+      "flyte.io.DataFrame",
+      "flyte.io.dataframe",
+      "flyte.io.dataframes"
+    ],
+    "_also_matches": [
+      "StructuredDataset",
+      "structureddataset",
+      "structureddatasets"
+    ],
+    "_source": "overview.md:93",
+    "_old_cell": "`StructuredDataset`",
+    "_new_cell": "`flyte.io.DataFrame`"
+  },
+  {
+    "objectID": "v1v2-launchplan",
+    "type": "oneWaySynonym",
+    "input": "launchplan",
+    "synonyms": [
+      "flyte.Trigger",
+      "flyte.trigger",
+      "flyte.triggers",
+      "trigger"
+    ],
+    "_also_matches": [
+      "LaunchPlan",
+      "launchplan",
+      "launchplans"
+    ],
+    "_source": "overview.md:94",
+    "_old_cell": "`LaunchPlan`",
+    "_new_cell": "`flyte.Trigger`"
+  },
+  {
+    "objectID": "v1v2-cronschedule",
+    "type": "oneWaySynonym",
+    "input": "cronschedule",
+    "synonyms": [
+      "cron",
+      "flyte.Cron",
+      "flyte.cron",
+      "flyte.crons"
+    ],
+    "_also_matches": [
+      "CronSchedule",
+      "cronschedule",
+      "cronschedules"
+    ],
+    "_source": "overview.md:95",
+    "_old_cell": "`CronSchedule`",
+    "_new_cell": "`flyte.Cron`"
+  },
+  {
+    "objectID": "v1v2-decks",
+    "type": "oneWaySynonym",
+    "input": "decks",
+    "synonyms": [
+      "Reports",
+      "report",
+      "reports"
+    ],
+    "_also_matches": [
+      "Decks",
+      "deck",
+      "decks"
+    ],
+    "_source": "overview.md:96",
+    "_old_cell": "Decks (`enable_deck=True`)",
+    "_new_cell": "Reports (`report=True`)"
+  },
+  {
+    "objectID": "v1v2-enabledeck",
+    "type": "oneWaySynonym",
+    "input": "enabledeck",
+    "synonyms": [
+      "Reports",
+      "report",
+      "reports"
+    ],
+    "_also_matches": [
+      "enabledeck",
+      "enabledecks"
+    ],
+    "_source": "overview.md:96",
+    "_old_cell": "Decks (`enable_deck=True`)",
+    "_new_cell": "Reports (`report=True`)"
+  },
+  {
+    "objectID": "v1v2-containerimage",
+    "type": "oneWaySynonym",
+    "input": "containerimage",
+    "synonyms": [
+      "TaskEnvironment",
+      "taskenvironment",
+      "taskenvironments"
+    ],
+    "_also_matches": [
+      "containerimage",
+      "containerimages"
+    ],
+    "_source": "tasks-and-workflows.md:89",
+    "_old_cell": "`container_image`",
+    "_new_cell": "`TaskEnvironment(image=...)`"
+  },
+  {
+    "objectID": "v1v2-secretrequests",
+    "type": "oneWaySynonym",
+    "input": "secretrequests",
+    "synonyms": [
+      "TaskEnvironment",
+      "taskenvironment",
+      "taskenvironments"
+    ],
+    "_also_matches": [
+      "secretrequest",
+      "secretrequests"
+    ],
+    "_source": "tasks-and-workflows.md:93",
+    "_old_cell": "`secret_requests`",
+    "_new_cell": "`TaskEnvironment(secrets=...)`"
+  },
+  {
+    "objectID": "v1v2-cacheversion",
+    "type": "oneWaySynonym",
+    "input": "cacheversion",
+    "synonyms": [
+      "cache",
+      "flyte.Cache",
+      "flyte.cache",
+      "flyte.caches"
+    ],
+    "_also_matches": [
+      "cacheversion",
+      "cacheversions"
+    ],
+    "_source": "tasks-and-workflows.md:95",
+    "_old_cell": "`cache_version`",
+    "_new_cell": "`flyte.Cache(version_override=...)`"
+  },
+  {
+    "objectID": "v1v2-replicacount",
+    "type": "oneWaySynonym",
+    "input": "replicacount",
+    "synonyms": [
+      "replica",
+      "replicas"
+    ],
+    "_also_matches": [
+      "replicacount",
+      "replicacounts"
+    ],
+    "_source": "union-features.md:68",
+    "_old_cell": "`replica_count`",
+    "_new_cell": "`replicas`"
+  },
+  {
+    "objectID": "v1v2-ttlseconds",
+    "type": "oneWaySynonym",
+    "input": "ttlseconds",
+    "synonyms": [
+      "idlettl",
+      "idlettls",
+      "scaledownttl",
+      "scaledownttls"
+    ],
+    "_also_matches": [
+      "ttlsecond",
+      "ttlseconds"
+    ],
+    "_source": "union-features.md:69",
+    "_old_cell": "`ttl_seconds`",
+    "_new_cell": "`scaledown_ttl` / `idle_ttl`"
+  },
+  {
+    "objectID": "v1v2-actor-task",
+    "type": "oneWaySynonym",
+    "input": "actor.task",
+    "synonyms": [
+      "env.task",
+      "env.tasks",
+      "task"
+    ],
+    "_also_matches": [
+      "actor.task",
+      "actor.tasks",
+      "task"
+    ],
+    "_source": "union-features.md:72",
+    "_old_cell": "`@actor.task`",
+    "_new_cell": "`@env.task`"
+  }
+]

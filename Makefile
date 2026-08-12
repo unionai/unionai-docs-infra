@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
+.PHONY: index-search index-search-settings all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
 
 all: usage
 
@@ -48,6 +48,32 @@ base:
 	@# Root 404.html (DOC-1334 failure-surfaces): its presence switches CF Pages
 	@# from SPA-fallback (the 200-stub) to REAL 404s for unknown paths.
 	cat unionai-docs-infra/404-root.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/404.html
+
+# Push the built docs into the search index. Runs after a deploy, scoped to the
+# slices THIS branch built: main carries v2 + latest, the v1 branch carries v1.
+# Nothing outside those slices is touched, so the two lines cannot clobber each
+# other. See unionai-docs-infra/tools/algolia_indexer/README.md.
+#
+# Skips silently without credentials so `make dist` stays runnable locally.
+# Settings are NOT applied here -- see index-search-settings.
+SEARCH_RECORDS := $(shell mktemp -t search-records)
+index-search:
+	@if [ -z "$$ALGOLIA_DOCS_2_WRITE_API_KEY" ]; then \
+		echo "  skip search index (ALGOLIA_DOCS_2_WRITE_API_KEY unset)"; \
+	else \
+		$(UV) unionai-docs-infra/tools/algolia_indexer/build_records.py \
+			--dist dist --out "$(SEARCH_RECORDS)" && \
+		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+			--records "$(SEARCH_RECORDS)" --index union; \
+		rm -f "$(SEARCH_RECORDS)"; \
+	fi
+
+# Index settings are config-as-code but applied deliberately, not on every
+# deploy: a push that also rewrote settings would silently revert any dashboard
+# tuning someone did to diagnose a relevance problem.
+index-search-settings:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+		--index union --settings unionai-docs-infra/tools/algolia_indexer/settings.json
 
 dist:
 	@VARIANTS="$(VARIANTS)" PARALLEL_HUGO="$(PARALLEL_HUGO)" unionai-docs-infra/scripts/build_dist.sh
