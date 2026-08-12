@@ -77,7 +77,13 @@ Deeper topic docs that this README deliberately does not duplicate:
 
 ## Requirements
 
-1. **Hugo (extended)** (>= 0.145.0; enforced by `scripts/pre-flight.sh`). CI builds with Hugo 0.161.1.
+1. **Hugo (extended)** — version pinned in **[`.hugoversion`](./.hugoversion)** (currently `0.161.1`), enforced by `scripts/pre-flight.sh`. **The floor equals the pin**: local dev and CI build with the same Hugo, so there is no window where a template works in one and not the other.
+
+   `pre-flight.sh` **fails** below the pin and **warns** above it. Being newer is the likelier skew — `brew install hugo` tracks latest — and it is the more dangerous direction, because it renders fine locally while the build that reaches readers uses the pin. If you are chasing a CI-only build or `check-determinism` failure, match the pin before trusting a local result.
+
+   **Changing the version means changing three things together:** `.hugoversion`, and the `hugo-version:` value in the parent repo's `build-pr.yml`, `build-and-deploy.yml`, and `check-determinism.yml`. They are not wired to each other, so drift is silent.
+
+   *History:* the floor was `0.145.0` while the templates already called `hugo.Data`, which needs `>= 0.156` — the declared constraint was wrong for eleven minor versions, and infra#195 papered over it with a `.Site.Data` fallback rather than correcting the number. That fallback is gone; do not reintroduce it (`.Site.Data` is deprecated and fatal under `--panicOnWarning`).
 
    ```
    brew install hugo
@@ -224,7 +230,7 @@ If no port is specified, defaults to `PORT=9000`. Open `http://localhost:<port>`
 
 The docs are **built in GitHub Actions and uploaded to Cloudflare Pages via Direct Upload** (the `wrangler pages deploy` action). Cloudflare Pages' own build runner is **not** used — CF Pages is only the static host, and its automatic build-on-push is disabled for the `docs` project so GHA owns production end-to-end. (This replaced the earlier CF-native build; see DOC-1228.)
 
-All build jobs use the same toolchain: `actions/checkout` with `submodules: recursive`, Hugo 0.161.1 (extended), Python 3.12, and `astral-sh/setup-uv`, then `make dist`.
+All build jobs use the same toolchain: `actions/checkout` with `submodules: recursive`, Hugo 0.161.1 (extended) — the value in [`.hugoversion`](./.hugoversion), which `pre-flight.sh` also enforces locally — Python 3.12, and `astral-sh/setup-uv`, then `make dist`. The workflows hardcode `hugo-version:` rather than reading the file, so bump both together.
 
 ### Production deploys
 

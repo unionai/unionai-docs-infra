@@ -6,17 +6,12 @@ one on /docs/latest). Renders NOTHING when either is absent (a v1 single build o
 dev), so the same shared template is safe on every branch.
 */ -}}
 {{- $cur := .Site.Params.current_version -}}
-{{- /* hugo.Data (Hugo >= 0.156) — .Site.Data is deprecated and, with the build's
-       --panicOnWarning, fatal on the pinned Hugo 0.161.x. Do not switch back on the
-       pinned build. The version guard keeps local dev on older Hugo (< 0.156, which
-       lacks hugo.Data) working: the unexecuted branch is never evaluated, so neither
-       the missing hugo.Data field (old) nor the .Site.Data deprecation (new) fires. */ -}}
-{{- $mf := "" -}}
-{{- if ge hugo.Version "0.156.0" -}}
-  {{- $mf = index hugo.Data "version-manifest" -}}
-{{- else -}}
-  {{- $mf = index .Site.Data "version-manifest" -}}
-{{- end -}}
+{{- /* hugo.Data needs Hugo >= 0.156, which the repo floor now guarantees (.hugoversion,
+       enforced by scripts/pre-flight.sh). Do NOT reintroduce a .Site.Data fallback: it
+       is deprecated and, with the build's --panicOnWarning, fatal on the pinned Hugo.
+       infra#195 added one to keep local dev working on a Hugo older than the templates
+       required; raising the floor to equal the pin removed the reason for it. */ -}}
+{{- $mf := index hugo.Data "version-manifest" -}}
 {{- if and $cur $mf -}}
   {{- $variant := .Site.Params.variant -}}
   {{- $c := index $mf.variants $variant -}}
