@@ -93,12 +93,26 @@ be given too -- see below.
 | `union` | every version and variant | site search, faceted client-side |
 | `union_askai` | **v2 only** (`--only-version v2`) | Ask AI |
 
-Agent Studio exposes no facet filter when configuring an agent, so retrieval
-cannot be constrained at query time — the scoping has to happen at the index
-boundary. v1 is not merely stale for a v2 reader: the SDK was rewritten, so a
-v1 answer is wrong, and confidently so. Scoped on version rather than variant
-because that is the dangerous axis; union/flyte differ on feature availability,
+**`union_askai` is probably redundant — prefer scoping at query time.** It was
+built on the assumption that Agent Studio could not filter, because its
+agent-creation wizard never asks about facets. Algolia have since confirmed it
+accepts `searchParameters.facetFilters` per request, and can lock facets in the
+Algolia Search tool's `searchControls`.
+
+Pointing the agent at the full `union` index and passing the page's own
+`version`/`variant` is strictly better, because Ask AI and search share one
+modal. With a fixed-version index the results list follows the reader while the
+answer does not, so the two halves of the same box describe different products
+and each lends the other false authority. With query-time scoping a v1 reader
+gets v1 results *and* a v1 answer.
+
+Either way the point stands: v1 is not merely stale for a v2 reader. The SDK
+was rewritten, so a v2 answer given to a v1 reader is wrong, and confidently
+so. Version is the dangerous axis — union/flyte differ on feature availability,
 v1/v2 differ on the whole API surface.
+
+`ask-ai-prompt.md` assumes the scoped-retrieval design and must be rewritten if
+that assumption is ever dropped.
 
 ## Traps worth knowing
 
