@@ -77,6 +77,15 @@ index, which is shared by every version and variant — calling it from `main`
 would wipe the whole v1 line. The scoped sync **is** the reconciliation: its
 delete pass removes records for pages that disappeared.
 
+## Facets
+
+`version`, `variant`, `category`, `type`. `lang` was dropped: it was inherited
+verbatim from the crawler's settings, and no record we generate carries it, so
+it advertised a filter that could never match.
+
+`version` and `variant` are what the frontend filters on, and what Ask AI must
+be given too -- see below.
+
 ## Two indexes
 
 | index | contents | consumer |

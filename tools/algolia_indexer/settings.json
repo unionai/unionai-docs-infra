@@ -13,7 +13,6 @@
   ],
   "attributesForFaceting": [
     "category",
-    "lang",
     "type",
     "variant",
     "version"
@@ -42,8 +41,13 @@
     "exact",
     "custom"
   ],
-  "attributesToSnippet": ["content:10"],
-  "attributesToHighlight": ["hierarchy", "content"],
+  "attributesToSnippet": [
+    "content:10"
+  ],
+  "attributesToHighlight": [
+    "hierarchy",
+    "content"
+  ],
   "highlightPreTag": "<span class=\"algolia-docsearch-suggestion--highlight\">",
   "highlightPostTag": "</span>",
   "minWordSizefor1Typo": 3,
@@ -52,7 +56,10 @@
   "ignorePlurals": true,
   "advancedSyntax": true,
   "attributeCriteriaComputedByMinProximity": true,
-  "camelCaseAttributes": ["hierarchy", "content"],
+  "camelCaseAttributes": [
+    "hierarchy",
+    "content"
+  ],
   "removeWordsIfNoResults": "allOptional",
   "exactOnSingleWordQuery": "attribute",
   "separatorsToIndex": "",
