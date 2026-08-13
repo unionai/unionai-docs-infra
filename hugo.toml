@@ -86,4 +86,4 @@ ask_ai_index = "union-markdown"
 #
 # Ask AI stays OFF until this is set; the partial emits no askAi config without
 # it, so search degrades to keyword-only rather than erroring.
-ask_ai_key = ""
+ask_ai_key = "868f9f518fd9877f03eaca2b8c942851"
