@@ -38,7 +38,12 @@ import json
 import sys
 from pathlib import Path
 
-SKIP_KEYS = ("_README", "content_gaps_NOT_synonyms")
+# Any category whose name ends in _NOT_synonyms is a findings bucket, not a
+# synonym source -- content gaps, ranking-policy questions, anything the file
+# records because it turned up next to a synonym without being one. The suffix
+# is the contract, so a new bucket cannot be added and silently pushed.
+SKIP_SUFFIX = "_NOT_synonyms"
+SKIP_KEYS = ("_README",)
 REQUIRED = ("objectID", "type")
 
 
@@ -52,8 +57,9 @@ def load_manual(path):
         if not isinstance(val, list):
             continue
         if key in SKIP_KEYS:
-            if key != "_README":
-                skipped[key] = len(val)
+            continue
+        if key.endswith(SKIP_SUFFIX):
+            skipped[key] = len(val)
             continue
         out.extend(val)
     return out, skipped
@@ -113,7 +119,7 @@ def main():
     for t, n in sorted(by_type.items()):
         print(f"    {t:<18} {n:>3}")
     for key, n in skipped.items():
-        print(f"  EXCLUDED {key}: {n} (not synonyms -- no page to point at)")
+        print(f"  EXCLUDED {key}: {n} (findings, not synonyms)")
     print(f"\nwrote {args.out}")
     return 0
 
