@@ -55,16 +55,18 @@ base:
 #
 # Skips silently without credentials so `make dist` stays runnable locally.
 # Settings are NOT applied here -- see index-search-settings.
-SEARCH_RECORDS := $(shell mktemp -t search-records)
 index-search:
 	@if [ -z "$$ALGOLIA_DOCS_2_WRITE_API_KEY" ]; then \
 		echo "  skip search index (ALGOLIA_DOCS_2_WRITE_API_KEY unset)"; \
 	else \
+		records=$$(mktemp "$${TMPDIR:-/tmp}/search-records.XXXXXX") || exit 1; \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/build_records.py \
-			--dist dist --out "$(SEARCH_RECORDS)" && \
+			--dist dist --out "$$records" && \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
-			--records "$(SEARCH_RECORDS)" --index union; \
-		rm -f "$(SEARCH_RECORDS)"; \
+			--records "$$records" --index union; \
+		status=$$?; \
+		rm -f "$$records"; \
+		exit $$status; \
 	fi
 
 # Index settings are config-as-code but applied deliberately, not on every
