@@ -1,9 +1,13 @@
 {{- $app := site.Params.search.app_id -}}
 {{- $key := site.Params.search.search_key -}}
 {{- $idx := site.Params.search.index_name -}}
+{{- $aiAgent := site.Params.search.ask_ai_agent_id -}}
+{{- $aiKey := site.Params.search.ask_ai_key -}}
+{{- $aiIdx := site.Params.search.ask_ai_index -}}
+{{- $askAi := and $aiAgent $aiKey $aiIdx -}}
 
 <link rel="preconnect" href="https://{{ $app }}-dsn.algolia.net" crossorigin />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@5" />
 
 <div id="docsearch" style="display:none;"></div>
 <button id="search-trigger" title="Search" class="header-search">
@@ -39,7 +43,7 @@ pinned tree gets that line's results instead of nothing.
   {{- end -}}
 {{- end -}}
 
-<script src="https://cdn.jsdelivr.net/npm/@docsearch/js@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/@docsearch/js@5"></script>
 <script>
     // seg -> the `version` facet value to filter on. Empty on an unversioned build
     // (local dev, pre-go-live), where the raw segment is used exactly as before.
@@ -69,19 +73,54 @@ pinned tree gets that line's results instead of nothing.
         console.log(`Search version ${version}, variant ${variant}`)
     }
 
-    docsearch({
+    // Same scope, two shapes. Keyword search filters with facetFilters (AND of
+    // an array); Agent Studio takes a `filters` string instead -- it ignores
+    // facetFilters in that position, so the two cannot share one expression.
+    const facetFilters = [
+        version ? `version:${version}` : '',
+        variant ? `variant:${variant}` : ''
+    ].filter(Boolean); // remove empty strings
+
+    const options = {
         container: '#docsearch',
         appId: '{{ $app }}',
-        indexName: '{{ $idx }}',
         apiKey: '{{ $key }}',
+        // v5 replaces v3's `indexName` with `indices`, and moves
+        // searchParameters inside each entry.
+        indices: [{ name: '{{ $idx }}', searchParameters: { facetFilters } }]
+    };
+
+{{ if $askAi }}
+    // Ask AI retrieves from its own index, and is scoped by the SAME version /
+    // variant the reader is on. This filter is the only thing preventing a
+    // reader on a v2 page being answered out of v1 content: no agent-side
+    // setting can vary per reader, so the scope has to be supplied per request
+    // from here. Verified against the live index -- each slice answers only
+    // from itself.
+    const askAiFilters = [
+        version ? `version:${version}` : '',
+        variant ? `variant:${variant}` : ''
+    ].filter(Boolean).join(' AND ');
+
+    options.askAi = {
+        agentId: '{{ $aiAgent }}',
+        // A distinct, referer-less key -- see hugo.toml for why the restricted
+        // key cannot be used here.
+        apiKey: '{{ $aiKey }}',
+        indices: ['{{ $aiIdx }}'],
         searchParameters: {
-        facetFilters: [
-            version ? `version:${version}` : '',
-            variant ? `variant:${variant}` : ''
-        ].filter(Boolean) // remove empty strings
-        },
-        debug: true
-    });
+            '{{ $aiIdx }}': askAiFilters ? { filters: askAiFilters } : {}
+        }
+    };
+
+    if (!askAiFilters) {
+        // Unscoped Ask AI would answer across every version and variant at
+        // once. Say so, rather than let it look like it worked.
+        console.warn('Ask AI: no version/variant scope resolved for this path; answers may span versions');
+    }
+{{ end }}
+
+    docsearch(options);
 
     // Connect custom button to DocSearch modal
     document.getElementById('search-trigger').addEventListener('click', function() {
