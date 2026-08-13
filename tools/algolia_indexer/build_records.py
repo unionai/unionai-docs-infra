@@ -23,6 +23,7 @@ Usage:
 import argparse
 import hashlib
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -49,6 +50,77 @@ CATEGORY_MAP = {
     "integrations": ("guide", "Integrations"),
 }
 CATEGORY_FALLBACK = ("other", "Other")
+
+# ---------------------------------------------------------------- pageRank --
+# `weight.pageRank` is the FIRST customRanking criterion, and `custom` is LAST
+# in the ranking array -- so this is a pure tie-break between records that
+# already tie on every textual criterion. It cannot promote a bad match over a
+# good one, and only the ORDER of the values matters, not their magnitude.
+# That is why this is deliberately coarse: extra precision buys nothing and
+# makes a surprising result harder to explain.
+#
+# It was previously hardcoded to 0, which made the primary tie-break inert.
+#
+# Section bases are ordered by MEASURED clicks (90 days, prod analytics), not
+# by intuition. Recording the counts because the ordering is the surprising
+# part: api-reference earns 28% of all clicks and an earlier hand-tuned pass
+# had put it in the BOTTOM bucket.
+SECTION_RANK = {
+    "user-guide": 30,      # 5224 clicks
+    "api-reference": 22,   # 2258
+    "tutorials": 15,       # 121
+    "security": 15,        # 116
+    "deployment": 15,      # 110
+    "community": 15,       # 109
+    "integrations": 10,    # 38
+    "release-notes": 10,   # 11
+}
+SECTION_RANK_FALLBACK = 12
+MAX_DEPTH_BONUS = 6
+POPULARITY_SCALE = 10
+
+
+def page_rank(url_path, popularity):
+    """Canonicality prior for one page, shared by all of its records.
+
+    Three terms, in decreasing confidence:
+      section    which part of the docs it lives in
+      depth      shallower pages are landing/canonical, deeper ones are leaves
+      clicks     log-scaled observed popularity, 0 when unknown
+
+    `popularity` is keyed by version- and variant-agnostic path, so the same
+    page carries the same prior across v2/latest/pins and across union/flyte.
+    That is intentional: they are the same content at different pins.
+
+    Popularity is a WEAK term on purpose. Click data comes from the incumbent
+    search, so pages are popular partly BECAUSE the old ranker surfaced them.
+    Weighting it heavily would bake that bias in permanently.
+    """
+    # url_path is "<version>/<variant>/<section>/..." -- the same shape
+    # categorise() relies on when it reads parts[2]. Strip that prefix so the
+    # section, the depth and the popularity key are all version/variant-free.
+    segments = [s for s in url_path.split("/") if s][2:]
+    section = segments[0] if segments else ""
+    base = SECTION_RANK.get(section, SECTION_RANK_FALLBACK)
+    depth_bonus = max(0, MAX_DEPTH_BONUS - len(segments)) * 2
+    clicks = popularity.get("/".join(segments), 0) if popularity else 0
+    return base + depth_bonus + int(POPULARITY_SCALE * math.log2(1 + clicks))
+
+
+def load_popularity(path):
+    """Load {path: clicks}, or an empty dict when absent.
+
+    Absent is a normal state, not an error: a fresh checkout, a fork, or CI
+    before the first refresh. The prior then falls back to section+depth, which
+    is still far better than the constant 0 this replaced.
+    """
+    if not path:
+        return {}
+    p = Path(path)
+    if not p.is_file():
+        return {}
+    data = json.loads(p.read_text(encoding="utf-8"))
+    return {k.strip("/"): v for k, v in data.items() if isinstance(v, (int, float))}
 
 
 def categorise(url_path):
@@ -237,8 +309,9 @@ def iter_pages(dist):
         yield path, version, variant, url_path
 
 
-def records_for_page(md, version, variant, url_path, max_level):
+def records_for_page(md, version, variant, url_path, max_level, popularity=None):
     (category, section_label), _seg = categorise(url_path)
+    rank = page_rank(url_path, popularity or {})
     sections = parse_sections(md)
     if not sections:
         return []
@@ -286,7 +359,7 @@ def records_for_page(md, version, variant, url_path, max_level):
                 "version": version,
                 "category": category,
                 "weight": {
-                    "pageRank": 0,
+                    "pageRank": rank,
                     "level": 100 - (level * 10),
                     "position": position,
                 },
@@ -305,8 +378,14 @@ def main():
                     help="index only the N newest pinned versions (-1 = all). "
                          "Pins accrue every ~1.3 days and never change, so "
                          "without a window the index grows without bound.")
+    ap.add_argument("--popularity",
+                    default=str(Path(__file__).with_name("popularity.json")),
+                    help="JSON {page path: click count} used as a weak "
+                         "popularity prior. Missing file is fine -- the "
+                         "prior falls back to section+depth.")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
+    popularity = load_popularity(args.popularity)
 
     pins = sorted({v for v, _ in _slices(args.dist) if is_pin(v)},
                   key=_version_key, reverse=True)
@@ -324,7 +403,7 @@ def main():
             continue
         md = path.read_text(encoding="utf-8", errors="replace")
         level = PIN_MAX_LEVEL if is_pin(version) else args.max_level
-        recs = records_for_page(md, version, variant, url_path, level)
+        recs = records_for_page(md, version, variant, url_path, level, popularity)
         if not recs:
             continue
         pages += 1

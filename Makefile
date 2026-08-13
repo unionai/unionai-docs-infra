@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
 all: usage
 
 usage:
@@ -79,11 +79,16 @@ index-search-settings:
 # that renames or deletes a labelled page silently rots the benchmark, so the
 # next eval reports a "ranking regression" that is really labelling decay.
 # Fail loudly at PR time instead. Cheap: pure path existence, no network.
+check-search-labels:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/check_labels.py \
+		unionai-docs-infra/tools/algolia_indexer/queries.judged.json \
+		--content content
+
 # Synonyms, like settings, are applied DELIBERATELY -- never on a deploy.
 # push_records uses replaceExistingSynonyms=true, so the payload must always be
 # complete: pushing one source file alone would delete the other's synonyms.
-# merge_synonyms.py is what makes it complete (and drops the content-gap
-# entries, which name queries with no page to point at).
+# merge_synonyms.py is what makes it complete (and drops the findings buckets,
+# which name queries with no page to point at).
 index-search-synonyms:
 	@$(UV) unionai-docs-infra/tools/algolia_indexer/merge_synonyms.py \
 		--draft unionai-docs-infra/tools/algolia_indexer/synonyms.draft.json \
@@ -93,10 +98,14 @@ index-search-synonyms:
 		--index union \
 		--synonyms unionai-docs-infra/tools/algolia_indexer/synonyms.merged.json
 
-check-search-labels:
-	@$(UV) unionai-docs-infra/tools/algolia_indexer/check_labels.py \
-		unionai-docs-infra/tools/algolia_indexer/queries.judged.json \
-		--content content
+# Popularity prior feeding weight.pageRank. Refreshed DELIBERATELY, not per
+# deploy: click data moves slowly, and a prior that shifts under every build
+# makes a ranking regression impossible to attribute. Reads the LEGACY app by
+# default -- it holds the history; pass --app-env ALGOLIA_DOCS_2 once the new
+# app has accumulated its own. Commit the resulting popularity.json.
+refresh-search-popularity:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/fetch_popularity.py \
+		--out unionai-docs-infra/tools/algolia_indexer/popularity.json
 
 dist:
 	@VARIANTS="$(VARIANTS)" PARALLEL_HUGO="$(PARALLEL_HUGO)" unionai-docs-infra/scripts/build_dist.sh
