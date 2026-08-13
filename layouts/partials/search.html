@@ -7,9 +7,7 @@
 {{- $askAi := and $aiAgent $aiKey $aiIdx -}}
 
 <link rel="preconnect" href="https://{{ $app }}-dsn.algolia.net" crossorigin />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@5" />
 
-<div id="docsearch" style="display:none;"></div>
 <button id="search-trigger" title="Search" class="header-search">
   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8.5" r="6"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
   <span class="search-label">Search</span>
@@ -43,7 +41,23 @@ pinned tree gets that line's results instead of nothing.
   {{- end -}}
 {{- end -}}
 
-<script src="https://cdn.jsdelivr.net/npm/@docsearch/js@5"></script>
+{{- /* DOC-1423: the search UI is ours -- InstantSearch for keyword search plus our
+       own Ask AI panel, in assets/js/search.js. We no longer load @docsearch/js.
+
+       Two of its Ask AI defects were client state-management bugs that no
+       configuration could reach (algolia/docsearch#3010, #3011): the primary
+       entry point discarded the reader's question after receiving the whole
+       answer, and one press of stop permanently broke the conversation. Owning
+       the client removes both by construction.
+
+       The stylesheet (assets/css/search-modal.css) is a fork of @docsearch/css,
+       so this cutover is invisible to readers. The libraries below ship browser
+       UMD builds, so no bundler or package.json is needed -- same loading model
+       as the CDN widget it replaces. */ -}}
+<script src="https://cdn.jsdelivr.net/npm/algoliasearch@5/dist/lite/builds/browser.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.111.1/dist/instantsearch.production.min.js"></script>
+{{ if $askAi }}<script src="https://cdn.jsdelivr.net/npm/@algolia/agent-studio@1.1.0/dist/builds/browser.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>{{ end }}
 <script>
     // seg -> the `version` facet value to filter on. Empty on an unversioned build
     // (local dev, pre-go-live), where the raw segment is used exactly as before.
@@ -81,54 +95,44 @@ pinned tree gets that line's results instead of nothing.
         variant ? `variant:${variant}` : ''
     ].filter(Boolean); // remove empty strings
 
-    const options = {
-        container: '#docsearch',
-        appId: '{{ $app }}',
-        apiKey: '{{ $key }}',
-        // v5 replaces v3's `indexName` with `indices`, and moves
-        // searchParameters inside each entry.
-        indices: [{ name: '{{ $idx }}', searchParameters: { facetFilters } }]
-    };
-
-{{ if $askAi }}
-    // Ask AI retrieves from its own index, and is scoped by the SAME version /
-    // variant the reader is on. This filter is the only thing preventing a
-    // reader on a v2 page being answered out of v1 content: no agent-side
-    // setting can vary per reader, so the scope has to be supplied per request
-    // from here. Verified against the live index -- each slice answers only
-    // from itself.
     const askAiFilters = [
         version ? `version:${version}` : '',
         variant ? `variant:${variant}` : ''
     ].filter(Boolean).join(' AND ');
 
-    options.askAi = {
-        agentId: '{{ $aiAgent }}',
-        // A distinct, referer-less key -- see hugo.toml for why the restricted
-        // key cannot be used here.
-        apiKey: '{{ $aiKey }}',
-        // NO `indices` here. The agent's search tool is configured mode='static',
-        // which pins the index server-side and rejects a per-request override
-        // outright ("does not accept a per-request algolia.indices override"),
-        // failing the whole question. searchParameters is a separate field and
-        // is still honoured, so scoping survives -- only the index list is fixed.
-        searchParameters: {
-            '{{ $aiIdx }}': askAiFilters ? { filters: askAiFilters } : {}
-        }
-    };
+    window.__SEARCH_CONFIG = {
+        appId: '{{ $app }}',
+        apiKey: '{{ $key }}',
+        indexName: '{{ $idx }}',
+        facetFilters: facetFilters,
+        placeholder: 'Search docs'{{ if $askAi }},
 
+        // Ask AI retrieves from its own index, and is scoped by the SAME version /
+        // variant the reader is on. This filter is the only thing preventing a
+        // reader on a v2 page being answered out of v1 content: no agent-side
+        // setting can vary per reader, so the scope has to be supplied per request
+        // from here. Verified against the live index -- each slice answers only
+        // from itself.
+        askAi: {
+            agentId: '{{ $aiAgent }}',
+            // A distinct, referer-less key -- see hugo.toml for why the restricted
+            // key cannot be used here.
+            apiKey: '{{ $aiKey }}',
+            indexName: '{{ $aiIdx }}',
+            // NO `indices` override on the request. The agent's search tool is
+            // configured mode='static', which pins the index server-side and
+            // rejects a per-request override outright, failing the whole
+            // question. searchParameters is a separate field and is still
+            // honoured, so scoping survives -- only the index list is fixed.
+            filters: askAiFilters
+        }{{ end }}
+    };
+{{ if $askAi }}
     if (!askAiFilters) {
         // Unscoped Ask AI would answer across every version and variant at
         // once. Say so, rather than let it look like it worked.
         console.warn('Ask AI: no version/variant scope resolved for this path; answers may span versions');
     }
 {{ end }}
-
-    docsearch(options);
-
-    // Connect custom button to DocSearch modal
-    document.getElementById('search-trigger').addEventListener('click', function() {
-        var dsBtn = document.querySelector('#docsearch .DocSearch-Button');
-        if (dsBtn) dsBtn.click();
-    });
 </script>
+<script src="{{ partial "asset-url" "js/search.js" }}"></script>

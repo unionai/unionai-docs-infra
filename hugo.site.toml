@@ -39,6 +39,7 @@ custom_css = [
   "mermaid.css",
   "plugin.css",
   "search.css",
+  "search-modal.css",
   "sidebar.css",
   "toc.css",
 ]
