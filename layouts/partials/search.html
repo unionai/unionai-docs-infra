@@ -80,6 +80,31 @@ pinned tree gets that line's results instead of nothing.
             variant ? `variant:${variant}` : ''
         ].filter(Boolean) // remove empty strings
         },
+
+        // DocSearch groups CONSECUTIVE hits by hierarchy.lvl0, so group order is
+        // emergent from ranking: whichever group holds the best-ranked hit is
+        // drawn first. That let 'Other' -- the taxonomy's leftovers bucket
+        // (community, security, release-notes, root pages) -- appear above named
+        // sections like Deployment whenever one of its pages happened to rank
+        // highest.
+        //
+        // This demotes ONLY 'Other', with a STABLE sort: every named group keeps
+        // its relevance-derived order relative to the others, and hits keep their
+        // order within a group. Sorting all groups into a fixed list would impose
+        // a lot more policy than the problem calls for.
+        //
+        // Trade-off, deliberately accepted: if the single best match for a query
+        // IS an 'Other' page, it now renders below the named groups. `category`
+        // is not in the index's attributesToRetrieve, so lvl0 is what the client
+        // actually has to work with here.
+        transformItems: (items) => items
+            .map((item, i) => [item, i])
+            .sort(([a, ia], [b, ib]) => {
+                const rank = (h) => ((h.hierarchy || {}).lvl0 === 'Other' ? 1 : 0);
+                return rank(a) - rank(b) || ia - ib;
+            })
+            .map(([item]) => item),
+
         debug: true
     });
 
