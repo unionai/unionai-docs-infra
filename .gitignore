@@ -12,3 +12,4 @@ uv.lock
 # AI assistant
 .claude/
 .codex/
+tools/algolia_indexer/synonyms.merged.json

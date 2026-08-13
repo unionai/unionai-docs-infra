@@ -131,6 +131,10 @@ def evaluate(app_id, api_key, index, queries, facets):
     zero = 0
     pages = 0.0
     per_query = []
+    # The legacy crawler index has no `category` attribute. Without it every
+    # hit maps to 'other' and the per-group table reads as real when it is an
+    # artifact of the schema -- so track it and say so instead.
+    categorised = 0
 
     for item in queries:
         ideal = item.get("ideal") or {}
@@ -151,6 +155,7 @@ def evaluate(app_id, api_key, index, queries, facets):
             continue
 
         pages += len({h.get("url_without_anchor") for h in hits})
+        categorised += sum(1 for h in hits if h.get("category"))
 
         # flat view: any labelled page anywhere in the unfiltered top 10
         r_flat = rank_of(hits, all_ideals) if all_ideals else None
@@ -169,6 +174,7 @@ def evaluate(app_id, api_key, index, queries, facets):
     return {
         "flat": {**finish(flat), "Pages@10": pages / n, "Zero": zero / n},
         "groups": {g: finish(per_group[g]) for g in GROUPS},
+        "categorised": categorised,
     }, per_query
 
 
@@ -182,13 +188,17 @@ def main():
                     help="facetFilters applied to every search")
     ap.add_argument("--per-query", action="store_true",
                     help="show the rank of the first ideal hit, per query")
+    ap.add_argument("--app-env", default="ALGOLIA_DOCS_2",
+                    help="env-var prefix selecting the app (e.g. "
+                         "ALGOLIA_DOCS_1 for the legacy crawler app). Read-only "
+                         "search keys are sufficient; this tool never writes.")
     args = ap.parse_args()
 
-    app_id = os.environ.get("ALGOLIA_DOCS_2_APPLICATION_ID")
-    api_key = (os.environ.get("ALGOLIA_DOCS_2_SEARCH_API_KEY")
-               or os.environ.get("ALGOLIA_DOCS_2_WRITE_API_KEY"))
+    app_id = os.environ.get(f"{args.app_env}_APPLICATION_ID")
+    api_key = (os.environ.get(f"{args.app_env}_SEARCH_API_KEY")
+               or os.environ.get(f"{args.app_env}_WRITE_API_KEY"))
     if not app_id or not api_key:
-        raise SystemExit("set ALGOLIA_DOCS_2_APPLICATION_ID and a key")
+        raise SystemExit(f"set {args.app_env}_APPLICATION_ID and a key")
 
     doc = json.load(open(args.queries))
     queries = doc["queries"] if isinstance(doc, dict) else doc
@@ -217,6 +227,12 @@ def main():
     gcols = ["MRR@10", "Recall@5", "nDCG@10"]
     print("\nPER GROUP — rank within that group's own result list")
     for index in args.index:
+        if not results[index]["categorised"]:
+            print(f"  {index}: NOT AVAILABLE — no hit carries a `category`"
+                  "\n    attribute (legacy crawler schema). Every hit would map"
+                  "\n    to 'other', so the per-group table would be an artifact"
+                  "\n    of the schema rather than a measurement. Use FLAT.")
+            continue
         print(f"  {index}")
         print(f"    {'group':<12}{'n':>5}" + "".join(f"{c:>11}" for c in gcols))
         for g in GROUPS:

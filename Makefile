@@ -79,6 +79,20 @@ index-search-settings:
 # that renames or deletes a labelled page silently rots the benchmark, so the
 # next eval reports a "ranking regression" that is really labelling decay.
 # Fail loudly at PR time instead. Cheap: pure path existence, no network.
+# Synonyms, like settings, are applied DELIBERATELY -- never on a deploy.
+# push_records uses replaceExistingSynonyms=true, so the payload must always be
+# complete: pushing one source file alone would delete the other's synonyms.
+# merge_synonyms.py is what makes it complete (and drops the content-gap
+# entries, which name queries with no page to point at).
+index-search-synonyms:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/merge_synonyms.py \
+		--draft unionai-docs-infra/tools/algolia_indexer/synonyms.draft.json \
+		--manual unionai-docs-infra/tools/algolia_indexer/synonyms.manual.json \
+		--out unionai-docs-infra/tools/algolia_indexer/synonyms.merged.json
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+		--index union \
+		--synonyms unionai-docs-infra/tools/algolia_indexer/synonyms.merged.json
+
 check-search-labels:
 	@$(UV) unionai-docs-infra/tools/algolia_indexer/check_labels.py \
 		unionai-docs-infra/tools/algolia_indexer/queries.judged.json \
