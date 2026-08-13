@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: update-docsearch index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
 all: usage
 
 usage:
@@ -83,18 +83,6 @@ check-search-labels:
 	@$(UV) unionai-docs-infra/tools/algolia_indexer/check_labels.py \
 		unionai-docs-infra/tools/algolia_indexer/queries.judged.json \
 		--content content
-
-# Re-vendor the patched DocSearch bundle. Run on a version bump; it FAILS if the
-# upstream sanitizer changed shape rather than silently shipping an unpatched
-# copy (which would restore the Ask AI error banner invisibly).
-# Why we self-host at all: tools/docsearch/patch_docsearch.py
-DOCSEARCH_VERSION ?= 5.0.1
-update-docsearch:
-	@$(UV) unionai-docs-infra/tools/docsearch/patch_docsearch.py \
-		--version $(DOCSEARCH_VERSION) \
-		--out unionai-docs-infra/assets/js/vendor/docsearch.js
-	@node --check unionai-docs-infra/assets/js/vendor/docsearch.js \
-		&& echo "  patched bundle parses"
 
 # Synonyms, like settings, are applied DELIBERATELY -- never on a deploy.
 # push_records uses replaceExistingSynonyms=true, so the payload must always be
