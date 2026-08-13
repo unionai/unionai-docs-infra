@@ -43,7 +43,20 @@ pinned tree gets that line's results instead of nothing.
   {{- end -}}
 {{- end -}}
 
-<script src="https://cdn.jsdelivr.net/npm/@docsearch/js@5"></script>
+{{- /* Self-hosted, PATCHED @docsearch/js — not the CDN copy.
+
+       Upstream v5 sends Ask AI a conversation ending in an empty assistant
+       message, which Agent Studio rejects ("This model does not support
+       assistant message prefill"), painting a red error banner over every
+       otherwise-correct answer. The fix cannot come from configuration: the
+       request-shaping hook is internal to the widget, and it is not a model
+       capability (opus-5 / sonnet-5 / haiku-4.5 all reject the same payload).
+
+       tools/docsearch/patch_docsearch.py vendors the bundle with that one
+       function wrapped, and documents when to delete all of this. Regenerate
+       with `make update-docsearch`. The CSS is still the stock CDN build —
+       only the JS is patched. */ -}}
+<script src="{{ partial "asset-url" "js/vendor/docsearch.js" }}"></script>
 <script>
     // seg -> the `version` facet value to filter on. Empty on an unversioned build
     // (local dev, pre-go-live), where the raw segment is used exactly as before.
