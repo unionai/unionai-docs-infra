@@ -107,7 +107,11 @@ pinned tree gets that line's results instead of nothing.
         // A distinct, referer-less key -- see hugo.toml for why the restricted
         // key cannot be used here.
         apiKey: '{{ $aiKey }}',
-        indices: ['{{ $aiIdx }}'],
+        // NO `indices` here. The agent's search tool is configured mode='static',
+        // which pins the index server-side and rejects a per-request override
+        // outright ("does not accept a per-request algolia.indices override"),
+        // failing the whole question. searchParameters is a separate field and
+        // is still honoured, so scoping survives -- only the index list is fixed.
         searchParameters: {
             '{{ $aiIdx }}': askAiFilters ? { filters: askAiFilters } : {}
         }
