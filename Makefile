@@ -74,14 +74,21 @@ index-search:
 			   $(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
 				--records "$$md" --index union-markdown; then \
 				echo "  Ask AI retrieval index updated"; \
+			elif [ -n "$$(sed -n 's/^ask_ai_key *= *"\(..*\)"/\1/p' unionai-docs-infra/hugo.toml 2>/dev/null | head -1)" ]; then \
+				echo "  ****************************************************************"; \
+				echo "  ERROR: the Ask AI retrieval index was NOT updated, and Ask AI"; \
+				echo "  IS LIVE (ask_ai_key is set in hugo.toml). Readers would be"; \
+				echo "  answered from a corpus that is stale against this build, with"; \
+				echo "  nothing on the page saying so. Failing the deploy."; \
+				echo "  ****************************************************************"; \
+				status=1; \
 			else \
 				echo "  ****************************************************************"; \
 				echo "  WARNING: the Ask AI retrieval index was NOT updated."; \
 				echo "  The union-markdown corpus is now STALE against this build."; \
-				echo "  The deploy continues on purpose: nothing in production reads"; \
-				echo "  union-markdown yet, so a failure here must not take the docs"; \
-				echo "  site down. MAKE THIS FATAL once Ask AI ships to readers --"; \
-				echo "  from then on a stale corpus is a user-visible defect."; \
+				echo "  Continuing because ask_ai_key is NOT set, so Ask AI is not"; \
+				echo "  serving readers and nothing in production reads this corpus."; \
+				echo "  This becomes fatal automatically once the key is set."; \
 				echo "  ****************************************************************"; \
 			fi; \
 		fi; \
