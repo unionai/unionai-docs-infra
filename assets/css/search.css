@@ -212,3 +212,45 @@ body.DocSearch--active div.bd-header-article {
     outline: 2px solid var(--docsearch-highlight-color);
     outline-offset: 2px;
 }
+
+/* Mobile: the modal goes full-screen (height:100dvh) and the fork switches
+   .DocSearch-Dropdown to height:100%/max-height:none to fill it. The Ask AI
+   panel has to track that, or it stays capped at the desktop 60dvh/600px and
+   sits stranded in a full-screen modal with dead space beneath it. Same values
+   the fork uses for the dropdown, for the same reason. */
+@media (width <= 768px) {
+    .DocSearch-AskAiScreen {
+        height: 100%;
+        max-height: none;
+    }
+}
+
+/* Screen-reader-only status text. The Ask AI answer re-renders on every
+   streamed token, so the live region announces STATE ("Searching the
+   documentation", "Answer ready") rather than the answer itself -- a live
+   region on the answer would re-read the whole growing response dozens of
+   times. */
+.DocSearch-VisuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Enter pressed while an answer is still streaming: the question is kept in the
+   box rather than discarded, and the bar flashes so the reader sees why nothing
+   was sent. Respects reduced-motion -- the colour change alone still reads. */
+.DocSearch-SearchBar--busy {
+    box-shadow: inset 0 -2px 0 0 var(--docsearch-highlight-color);
+    transition: box-shadow 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .DocSearch-SearchBar--busy { transition: none; }
+}

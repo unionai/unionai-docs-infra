@@ -133,8 +133,20 @@
       h('div', 'DocSearch-AskAiScreen-Disclaimer', 'Answers are generated with AI which can make mistakes.')
     );
     el.askAiBody = h('ul', 'DocSearch-AskAiScreen-ExchangesList');
-    el.askAiBody.setAttribute('aria-live', 'polite');
     askAiInner.appendChild(el.askAiBody);
+
+    // Announce STATE, never the answer text.
+    //
+    // A live region on the exchanges list is actively harmful here: the answer
+    // is re-rendered from scratch on every streamed token, so a polite region
+    // would re-announce the whole growing answer dozens of times, each pass
+    // longer than the last. Screen-reader users would be unable to get through
+    // it. Instead the response carries aria-busy while it streams, and this
+    // region says only what changed.
+    el.status = h('div', 'DocSearch-VisuallyHidden');
+    el.status.setAttribute('role', 'status');
+    el.status.setAttribute('aria-live', 'polite');
+    askAiInner.appendChild(el.status);
     el.askAiScroll.appendChild(askAiInner);
     el.askAiScreen.appendChild(el.askAiScroll);
     el.askAiScreen.hidden = true;
@@ -152,9 +164,11 @@
     el.form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (mode === 'askai') {
-        var q = el.input.value;
-        el.input.value = '';
-        askAiSend(q);
+        // Clear ONLY if the send was accepted. Clearing first meant a question
+        // typed while an answer was still streaming vanished with no feedback
+        // at all -- the reader's words silently discarded, which is the very
+        // failure we left DocSearch over.
+        if (askAiSend(el.input.value)) el.input.value = '';
         return;
       }
       var sel = currentSelection();
@@ -184,11 +198,13 @@
   var isOpen = false;
   var mode = 'search'; // 'search' | 'askai'
   var scrollY = 0;
+  var lastFocused = null;
 
   function open(initialQuery) {
     build();
     if (isOpen) return;
     isOpen = true;
+    lastFocused = document.activeElement;
     scrollY = window.scrollY;
     document.body.classList.add('DocSearch--active');
     el.container.style.display = '';
@@ -211,6 +227,10 @@
     document.body.classList.remove('DocSearch--active');
     el.container.style.display = 'none';
     window.scrollTo(0, scrollY);
+    // Return focus where the reader left it. Without this, closing drops focus
+    // to <body> and a keyboard user restarts from the top of the page.
+    if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    lastFocused = null;
   }
 
   function resetAskAi() {
@@ -464,6 +484,13 @@
     if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
   }
 
+  // Visible, focusable elements inside the dialog, in DOM order.
+  function focusable() {
+    var sel = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])';
+    return Array.prototype.slice.call(el.modal.querySelectorAll(sel))
+      .filter(function (n) { return !n.hidden && n.offsetParent !== null; });
+  }
+
   function currentSelection() {
     return selectables[selectedIndex] || null;
   }
@@ -490,6 +517,25 @@
       e.preventDefault();
       if (mode === 'askai') { setMode('search'); el.input.focus(); }
       else close();
+      return;
+    }
+
+    // Keep Tab inside the dialog. aria-modal tells assistive tech the rest of
+    // the page is inert, but it does not move focus -- without a trap, Tab
+    // walks out into the page behind the overlay, where the reader cannot see
+    // what is focused.
+    if (e.key === 'Tab') {
+      var f = focusable();
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      var here = document.activeElement;
+      if (e.shiftKey && (here === first || !el.modal.contains(here))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && here === last) {
+        e.preventDefault();
+        first.focus();
+      }
       return;
     }
     if (mode !== 'search') return;
@@ -671,7 +717,13 @@
 
   function askAiSend(question) {
     var q = (question || '').trim();
-    if (!q || askai.streaming) return;
+    if (!q) return false;
+    if (askai.streaming) {
+      // Keep the text in the box and say why nothing happened.
+      announce('Still answering the previous question. Your question was not sent yet.');
+      flashBusy();
+      return false;
+    }
     if (!askai.conv) newConversation();
 
     // What we SEND carries the scope; what we DISPLAY is the reader's question
@@ -685,7 +737,18 @@
     });
 
     var exchange = appendExchange(q);
+    announce('Searching the documentation.');
     streamAnswer(exchange);
+    return true;
+  }
+
+  // Visible counterpart to the announcement: briefly mark the bar as busy so a
+  // sighted reader sees why their Enter did nothing.
+  function flashBusy() {
+    var bar = el.stopBtn && el.stopBtn.parentNode;
+    if (!bar) return;
+    bar.classList.add('DocSearch-SearchBar--busy');
+    setTimeout(function () { bar.classList.remove('DocSearch-SearchBar--busy'); }, 900);
   }
 
   function streamAnswer(ex) {
@@ -770,6 +833,10 @@
         // placed at the end of the try -- leaving the exchange stuck on
         // "Searching..." with no indication the reader stopped it.
         if (askai.stopped) paintStopped(ex);
+        var resp = ex.querySelector('.DocSearch-AskAiScreen-Response');
+        if (resp) resp.setAttribute('aria-busy', 'false');
+        announce(askai.stopped ? 'Answer stopped.'
+                               : (gotText ? 'Answer ready.' : 'No answer returned.'));
         askai.controller = null;
         askai.streaming = false;
         setStreamingUI(false);
@@ -872,6 +939,7 @@
       '<div class="DocSearch-AskAiScreen-MessageContent-Tool" hidden></div>' +
       '<div class="DocSearch-Markdown-Content DocSearch-Markdown-Content--streaming"></div>' +
       '</div>';
+    li.querySelector('.DocSearch-AskAiScreen-Response').setAttribute('aria-busy', 'true');
     el.askAiBody.appendChild(li);
     // Bring the new QUESTION to the top of the view, then leave the scroll
     // position alone. Pinning to the bottom as text streams (chat convention)
@@ -913,6 +981,10 @@
     if (ex.querySelector('.DocSearch-AskAiScreen-MessageContent-Stopped')) return;
     var note = h('div', 'DocSearch-AskAiScreen-MessageContent-Stopped', 'Stopped.');
     ex.querySelector('.DocSearch-AskAiScreen-Response').appendChild(note);
+  }
+
+  function announce(msg) {
+    if (el.status) el.status.textContent = msg;
   }
 
   function setStreamingUI(on) {
