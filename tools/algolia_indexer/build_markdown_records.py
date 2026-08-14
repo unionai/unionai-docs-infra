@@ -46,6 +46,7 @@ Usage:
 """
 
 import argparse
+import re
 import hashlib
 import json
 import sys
@@ -70,9 +71,75 @@ from build_records import (  # noqa: E402  (path shim must precede the import)
 # Algolia's guidance is that fragmented answers mean chunks are too small.
 MAX_TEXT_BYTES = 8000
 
+# |---|:--:|---| separator rows carry no information once flattened.
+_TABLE_SEP = re.compile(r"^\|[\s:|-]+\|?$")
+
 
 def _size(text):
     return len(text.encode("utf-8"))
+
+
+def flatten_for_retrieval(text):
+    """Flatten markdown for the RAG corpus, KEEPING code blocks and tables.
+
+    build_records.py's strip_markdown() drops both:
+
+        re.sub(r"```.*?```", " ", ...)   every fenced code block
+        re.sub(r"^\\s*\\|.*$", " ", ...)   every table row
+
+    That is defensible for the keyword index -- you search prose and click
+    through to the page, where the code still is. It is wrong here, because the
+    agent only ever sees what it retrieves and cannot click through. Stripping
+    them cost us 65% of the source text across a sample of five pages (68% of
+    the CLI reference, 79% of the SDK API reference), and it is why Ask AI could
+    not answer "what does `flyte rerun --recover` do?": `--force-rerun-action`
+    lives only in an options table and a command example, so nothing about it
+    reached the corpus.
+
+    Two direct consequences of that loss, both worth keeping fixed:
+      * generated reference pages are mostly tables, so they arrived as a title
+        and a few sentences;
+      * with no code in the corpus, every code sample in an answer was
+        model-generated rather than quoted from our docs -- the same failure
+        mode that had RunLLM citing a dead API in the benchmark, except our
+        correct code was sitting in the docs unindexed.
+
+    So: keep fenced blocks verbatim, keep table rows as readable cell text, and
+    flatten only the prose around them.
+    """
+    out, fence, lang = [], None, ""
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if fence is None and (stripped.startswith("```") or stripped.startswith("~~~")):
+            fence = stripped[:3]
+            lang = stripped[3:].strip()
+            out.append(f"[{lang} example]" if lang else "[example]")
+            continue
+        if fence is not None:
+            if stripped.startswith(fence):
+                fence, lang = None, ""
+            else:
+                out.append(line.rstrip())      # code, verbatim
+            continue
+        if _TABLE_SEP.match(stripped):
+            continue                            # |---|---| carries no meaning
+        if stripped.startswith("|"):
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            out.append(" - ".join(c for c in cells if c))
+            continue
+        out.append(strip_markdown(line))
+    # collapse blank runs without joining every line into one paragraph, so the
+    # model still sees where an example starts and stops
+    flat, blank = [], False
+    for line in out:
+        if not line.strip():
+            blank = True
+            continue
+        if blank and flat:
+            flat.append("")
+        blank = False
+        flat.append(line)
+    return "\n".join(flat).strip()
 
 
 def split_on_headings(sections, limit=MAX_TEXT_BYTES):
@@ -89,7 +156,7 @@ def split_on_headings(sections, limit=MAX_TEXT_BYTES):
     """
     parts, current, current_size = [], [], 0
     for sec in sections:
-        body = strip_markdown("\n".join(sec["body"])).strip()
+        body = flatten_for_retrieval("\n".join(sec["body"])).strip()
         block = f"{sec['title']}\n{body}".strip() if sec["title"] else body
         if not block:
             continue
