@@ -254,3 +254,60 @@ body.DocSearch--active div.bd-header-article {
 @media (prefers-reduced-motion: reduce) {
     .DocSearch-SearchBar--busy { transition: none; }
 }
+
+/* Sources list.
+
+   Our own markup rather than the fork's .DocSearch-AskAiScreen-RelatedSources-*,
+   which lays items out as a horizontal wrapping row (flex-flow: wrap). That
+   suits short chips; it does not suit page titles, which wrapped mid-phrase and
+   ran together. A source needs two lines anyway -- the title, and where it
+   lives, because titles repeat across the corpus ("Resources" is both a
+   user-guide page and an API reference page) and a bare title list offers no
+   way to tell them apart. */
+
+.DocSearch-Sources {
+    margin-top: 1.25rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.DocSearch-Sources-Title {
+    color: var(--text-color-light);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.DocSearch-Sources-List {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.DocSearch-Sources-Item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    margin: 0;
+    min-width: 0;
+}
+
+.DocSearch-Sources-Link {
+    font-size: 0.9rem;
+    line-height: 1.35;
+    text-decoration: none;
+    color: var(--docsearch-highlight-color);
+}
+
+.DocSearch-Sources-Link:hover { text-decoration: underline; }
+
+.DocSearch-Sources-Crumb {
+    font-size: 0.74rem;
+    line-height: 1.3;
+    color: var(--text-color-light);
+}

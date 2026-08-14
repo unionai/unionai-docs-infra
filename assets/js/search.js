@@ -856,7 +856,9 @@
     var product = a.variant === 'flyte' ? 'Flyte (open source)' : 'Union.ai';
     var scope = a.version ? product + ', documentation version ' + a.version : product;
     return '[Context: the documentation search is already restricted to ' + scope +
-      '. Do not ask which product or version the reader means; answer from the retrieved documents.]\n\n';
+      '. Do not ask which product or version the reader means; answer from the retrieved documents. ' +
+      'Do not end the answer with a "Sources:" list -- the interface renders the sources itself, ' +
+      'so one would appear twice. Inline links within a sentence are fine.]\n\n';
   }
 
   function buildAskAiAlgoliaParams() {
@@ -962,12 +964,42 @@
       : 'Searching...';
   }
 
+  // Segments whose sentence-case form is not just "capitalise the first letter".
+  var CRUMB_LABELS = {
+    'api-reference': 'API reference',
+    'flyte-sdk': 'Flyte SDK',
+    'flyte-cli': 'Flyte CLI',
+    'user-guide': 'User guide',
+    'byoc': 'BYOC',
+    'llms': 'LLMs'
+  };
+
+  // Where a source lives, derived from its URL. Page titles repeat across the
+  // corpus -- "Resources" is both a user-guide page and an API reference page --
+  // so a bare list of titles gives the reader two identical-looking links and no
+  // way to tell which is which.
+  function sourceBreadcrumb(url) {
+    var path;
+    try { path = new URL(url, location.href).pathname; } catch (e) { return ''; }
+    var parts = path.split('/').filter(Boolean);
+    var i = parts.indexOf('docs');
+    if (i >= 0) parts = parts.slice(i + 3);   // drop docs/<version>/<variant>
+    parts.pop();                              // drop the page slug -- that is the title
+    return parts.map(function (p) {
+      return CRUMB_LABELS[p] || (p.charAt(0).toUpperCase() + p.slice(1).replace(/-/g, ' '));
+    }).join(' › ');
+  }
+
   function paintSources(ex, sources) {
-    var wrap = h('div', 'DocSearch-AskAiScreen-Sources');
-    var html = '<div class="DocSearch-AskAiScreen-RelatedSources-Title">Sources</div><ul class="DocSearch-AskAiScreen-RelatedSources-List">';
+    var wrap = h('div', 'DocSearch-Sources');
+    var html = '<div class="DocSearch-Sources-Title">Sources</div><ul class="DocSearch-Sources-List">';
     sources.slice(0, 6).forEach(function (s) {
-      html += '<li><a class="DocSearch-AskAiScreen-RelatedSources-Item-Link" href="' +
-        escapeHtml(s.url) + '">' + escapeHtml(s.title) + '</a></li>';
+      var crumb = sourceBreadcrumb(s.url);
+      html += '<li class="DocSearch-Sources-Item">' +
+        '<a class="DocSearch-Sources-Link" href="' + escapeHtml(s.url) + '">' +
+        escapeHtml(s.title) + '</a>' +
+        (crumb ? '<span class="DocSearch-Sources-Crumb">' + escapeHtml(crumb) + '</span>' : '') +
+        '</li>';
     });
     wrap.innerHTML = html + '</ul>';
     ex.querySelector('.DocSearch-AskAiScreen-Response').appendChild(wrap);
