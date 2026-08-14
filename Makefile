@@ -60,12 +60,19 @@ index-search:
 		echo "  skip search index (ALGOLIA_DOCS_2_WRITE_API_KEY unset)"; \
 	else \
 		records=$$(mktemp "$${TMPDIR:-/tmp}/search-records.XXXXXX") || exit 1; \
+		md=$$(mktemp "$${TMPDIR:-/tmp}/markdown-records.XXXXXX") || exit 1; \
+		echo "== keyword index (union) =="; \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/build_records.py \
 			--dist dist --out "$$records" && \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
-			--records "$$records" --index union; \
+			--records "$$records" --index union && \
+		echo "== Ask AI retrieval index (union-markdown) ==" && \
+		$(UV) unionai-docs-infra/tools/algolia_indexer/build_markdown_records.py \
+			--dist dist --out "$$md" && \
+		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+			--records "$$md" --index union-markdown; \
 		status=$$?; \
-		rm -f "$$records"; \
+		rm -f "$$records" "$$md"; \
 		exit $$status; \
 	fi
 
@@ -75,6 +82,9 @@ index-search:
 index-search-settings:
 	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
 		--index union --settings unionai-docs-infra/tools/algolia_indexer/settings.json
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+		--index union-markdown \
+		--settings unionai-docs-infra/tools/algolia_indexer/settings.markdown.json
 # The search-quality benchmark's answer key references real content URLs. A PR
 # that renames or deletes a labelled page silently rots the benchmark, so the
 # next eval reports a "ranking regression" that is really labelling decay.
