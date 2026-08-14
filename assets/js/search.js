@@ -658,6 +658,17 @@
     TABLE: 1, THEAD: 1, TBODY: 1, TR: 1, TH: 1, TD: 1, DEL: 1, SPAN: 1, DIV: 1
   };
 
+  // Highlight AFTER the stream ends, never per token: half-written code
+  // tokenises wrongly (an unterminated string swallows the rest of the block),
+  // and re-parsing on every delta is wasted work the reader would see flicker.
+  function highlightCode(ex) {
+    if (!window.Prism) return;
+    var blocks = ex.querySelectorAll('pre code[class*="language-"]');
+    for (var i = 0; i < blocks.length; i++) {
+      try { window.Prism.highlightElement(blocks[i]); } catch (e) { /* leave it plain */ }
+    }
+  }
+
   function renderMarkdown(text) {
     var html;
     try {
@@ -833,6 +844,7 @@
         // placed at the end of the try -- leaving the exchange stuck on
         // "Searching..." with no indication the reader stopped it.
         if (askai.stopped) paintStopped(ex);
+        highlightCode(ex);
         var resp = ex.querySelector('.DocSearch-AskAiScreen-Response');
         if (resp) resp.setAttribute('aria-busy', 'false');
         announce(askai.stopped ? 'Answer stopped.'

@@ -311,3 +311,167 @@ body.DocSearch--active div.bd-header-article {
     line-height: 1.3;
     color: var(--text-color-light);
 }
+
+/* ==========================================================================
+   Match the docs, not the widget's defaults
+
+   The forked stylesheet ships Algolia's own type and controls. Now that the
+   modal is ours, it should read as part of the site: same faces, same inline
+   code treatment, same button idiom as #search-trigger above.
+   ========================================================================== */
+
+/* Type. The fork sets --docsearch-font-family to a system stack; point it at
+   the docs' own face so the modal stops looking like a third-party overlay. */
+.DocSearch-Container,
+.DocSearch-Modal {
+    --docsearch-font-family: var(--font-sans);
+    font-family: var(--font-sans);
+}
+
+.DocSearch-Input,
+.DocSearch-Hit-title,
+.DocSearch-Hit-path,
+.DocSearch-Hit-source,
+.DocSearch-Footer,
+.DocSearch-Markdown-Content {
+    font-family: var(--font-sans);
+}
+
+/* Inline code, matching base.css's `code` rule exactly -- same background,
+   padding, radius, and the deliberate em-based size so an identifier inside a
+   heading scales with it instead of collapsing to body size. */
+.DocSearch-Markdown-Content code,
+.DocSearch-AskAiScreen-MessageContent-Tool code {
+    background: var(--code-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.86em;
+    font-family: var(--font-mono);
+}
+
+.DocSearch-Markdown-Content pre {
+    background: var(--pre-bg);
+    color: var(--pre-color);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: var(--type-code);
+    line-height: var(--lh-code);
+    overflow-x: auto;
+}
+
+.DocSearch-Markdown-Content pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* The hairline under the input.
+
+   The fork puts `border-block-end` on .DocSearch-Form, which sits INSIDE the
+   bar alongside Clear and the close button -- so the rule stopped short of the
+   modal edge and looked like a mistake. Move it to the bar itself, which spans
+   the full width, and take it off the form. */
+.DocSearch-SearchBar {
+    border-block-end: 1px solid var(--border-color);
+    align-items: center;
+    padding-inline-end: var(--docsearch-spacing);
+}
+
+.DocSearch-Form {
+    border-block-end: 0;
+    box-shadow: none;
+}
+
+/* Controls, matching the #search-trigger idiom above. */
+.DocSearch-StopStreaming {
+    height: 28px;
+    box-sizing: border-box;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-hairline);
+    color: var(--text-color-light);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.DocSearch-StopStreaming:hover {
+    border-color: var(--separator);
+    box-shadow: var(--shadow-card);
+}
+
+.DocSearch-Clear {
+    font-family: var(--font-sans);
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--text-color-light);
+}
+
+.DocSearch-Clear:hover { color: var(--docsearch-highlight-color); }
+
+@media (prefers-reduced-motion: reduce) {
+    .DocSearch-StopStreaming { transition: none; }
+}
+
+/* Syntax highlighting for Ask AI code blocks.
+
+   Chroma highlights at build time, so it never touches markdown rendered in the
+   browser. Prism does it client-side -- and these rules point its token classes
+   at the SAME --syntax-* variables chroma.css uses, so a code block in an answer
+   is coloured identically to one on any other page. Prism ships no stylesheet
+   of its own here; this is the whole theme. */
+
+.DocSearch-Markdown-Content .token.comment,
+.DocSearch-Markdown-Content .token.prolog,
+.DocSearch-Markdown-Content .token.doctype,
+.DocSearch-Markdown-Content .token.cdata {
+    color: var(--syntax-comment);
+    font-style: italic;
+}
+
+.DocSearch-Markdown-Content .token.keyword,
+.DocSearch-Markdown-Content .token.boolean,
+.DocSearch-Markdown-Content .token.constant,
+.DocSearch-Markdown-Content .token.atrule {
+    color: var(--syntax-kw);
+}
+
+.DocSearch-Markdown-Content .token.string,
+.DocSearch-Markdown-Content .token.char,
+.DocSearch-Markdown-Content .token.attr-value,
+.DocSearch-Markdown-Content .token.regex {
+    color: var(--syntax-str);
+}
+
+.DocSearch-Markdown-Content .token.number,
+.DocSearch-Markdown-Content .token.symbol {
+    color: var(--syntax-num);
+}
+
+.DocSearch-Markdown-Content .token.function,
+.DocSearch-Markdown-Content .token.class-name,
+.DocSearch-Markdown-Content .token.builtin,
+.DocSearch-Markdown-Content .token.attr-name,
+.DocSearch-Markdown-Content .token.tag {
+    color: var(--syntax-fn);
+}
+
+/* Decorators (@env.task) -- chroma gives .nd the accent colour. */
+.DocSearch-Markdown-Content .token.decorator,
+.DocSearch-Markdown-Content .token.annotation {
+    color: var(--accent);
+}
+
+.DocSearch-Markdown-Content .token.operator,
+.DocSearch-Markdown-Content .token.punctuation {
+    color: inherit;
+}
+
+.DocSearch-Markdown-Content .token.deleted { color: var(--red); }
+.DocSearch-Markdown-Content .token.inserted { color: var(--green); }

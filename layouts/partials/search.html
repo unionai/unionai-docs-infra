@@ -56,7 +56,21 @@ pinned tree gets that line's results instead of nothing.
        as the CDN widget it replaces. */ -}}
 <script src="https://cdn.jsdelivr.net/npm/algoliasearch@5/dist/lite/builds/browser.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.111.1/dist/instantsearch.production.min.js"></script>
-{{ if $askAi }}<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>{{ end }}
+{{- /* Ask AI answers are markdown rendered in the browser, so the code blocks
+       in them are NOT touched by Chroma, which highlights at build time. Prism
+       colours them client-side; assets/css/search.css maps its token classes
+       onto the same --syntax-* variables Chroma uses, so an answer's code looks
+       like a code block on any other page.
+
+       Prism core plus only the languages answers actually contain: 8 KB gzip,
+       against 42 KB for highlight.js's smallest UMD build (it ships ~40
+       languages and offers no core-only UMD). */ -}}
+{{ if $askAi }}<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>{{ end }}
 <script>
     // seg -> the `version` facet value to filter on. Empty on an unversioned build
     // (local dev, pre-go-live), where the raw segment is used exactly as before.
