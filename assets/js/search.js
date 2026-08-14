@@ -84,11 +84,6 @@
     el.input.setAttribute('placeholder', CFG.placeholder || 'Search docs');
     el.form.appendChild(el.input);
 
-    el.reset = h('button', 'DocSearch-Reset', ICON.reset);
-    el.reset.type = 'reset';
-    el.reset.setAttribute('aria-label', 'Clear the query');
-    el.form.appendChild(el.reset);
-
     bar.appendChild(el.form);
 
     el.stopBtn = h('button', 'DocSearch-StopStreaming', 'Stop');
@@ -97,9 +92,21 @@
     el.stopBtn.setAttribute('aria-label', 'Stop generating the answer');
     bar.appendChild(el.stopBtn);
 
-    var cancel = h('button', 'DocSearch-Cancel', 'Cancel');
-    cancel.type = 'button';
-    bar.appendChild(cancel);
+    // Clear (text) empties the query; Close (x) dismisses the modal. That is
+    // v5's arrangement -- `.DocSearch-Reset` / `.DocSearch-Cancel` are v3 names
+    // with NO rules in the v5 stylesheet, so they rendered as unstyled default
+    // buttons, and putting "clear" behind the x made it look inert whenever the
+    // input was already empty.
+    el.clearBtn = h('button', 'DocSearch-Clear', 'Clear');
+    el.clearBtn.type = 'button';
+    el.clearBtn.hidden = true;
+    bar.appendChild(el.clearBtn);
+
+    el.closeBtn = h('button', 'DocSearch-Close', ICON.reset);
+    el.closeBtn.type = 'button';
+    el.closeBtn.setAttribute('aria-label', 'Close search');
+    bar.appendChild(el.closeBtn);
+
     el.modal.appendChild(bar);
 
     // -- results
@@ -162,12 +169,13 @@
     el.stopBtn.addEventListener('click', function () {
       if (askai.abort) askai.abort();
     });
-    el.reset.addEventListener('click', function (e) {
+    el.clearBtn.addEventListener('click', function (e) {
       e.preventDefault();
+      if (mode === 'askai') setMode('search');
       setQuery('');
       el.input.focus();
     });
-    cancel.addEventListener('click', close);
+    el.closeBtn.addEventListener('click', close);
     el.container.addEventListener('mousedown', function (e) {
       if (e.target === el.container) close();
     });
@@ -199,9 +207,22 @@
   function close() {
     if (!isOpen) return;
     isOpen = false;
+    // Closing ends the conversation. Without this the next question is appended
+    // to the previous exchange, so reopening the modal and asking something new
+    // shows the OLD question and answer first -- which reads as the widget
+    // ignoring you. Conversation history is deliberately not a v1 feature, so
+    // "one modal session, one conversation" is the coherent rule.
+    if (askai.streaming && askai.abort) askai.abort();
+    resetAskAi();
     document.body.classList.remove('DocSearch--active');
     el.container.style.display = 'none';
     window.scrollTo(0, scrollY);
+  }
+
+  function resetAskAi() {
+    askai.conv = null;
+    askai.suppressedErrors = 0;
+    if (el.askAiBody) el.askAiBody.innerHTML = '';
   }
 
   function setMode(next) {
@@ -288,6 +309,7 @@
 
   function onQuery(q) {
     pendingQuery = q;
+    if (el.clearBtn) el.clearBtn.hidden = !q;
     if (!search) startSearch();
     setISQuery(q);
     if (!q) renderHits([]);
@@ -814,14 +836,17 @@
       '<div class="DocSearch-Markdown-Content DocSearch-Markdown-Content--streaming"></div>' +
       '</div>';
     el.askAiBody.appendChild(li);
-    li.scrollIntoView({ block: 'end' });
+    // Bring the new QUESTION to the top of the view, then leave the scroll
+    // position alone. Pinning to the bottom as text streams (chat convention)
+    // is wrong for a docs answer: the reader wants to start at the beginning of
+    // the answer, not chase its tail.
+    el.askAiScroll.scrollTop = Math.max(0, li.offsetTop - 8);
     return li;
   }
 
   function paintAnswer(ex, text) {
     var target = ex.querySelector('.DocSearch-Markdown-Content');
     target.innerHTML = renderMarkdown(text);
-    el.askAiScroll.scrollTop = el.askAiScroll.scrollHeight;
   }
 
   function paintTool(ex, queries) {

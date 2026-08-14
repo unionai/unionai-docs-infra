@@ -155,3 +155,60 @@ body.DocSearch--active div.bd-header-article {
 .DocSearch-StopStreaming[hidden] {
     display: none !important;
 }
+
+/* The Ask AI panel must scroll.
+
+   The forked stylesheet styles .DocSearch-AskAiScreen for DocSearch's EMPTY
+   "new conversation" screen -- centred, 80% wide, max-height:80%, no overflow.
+   A real conversation therefore overflowed the modal with no scrollbar and the
+   answer was unreachable. Re-lay it out as a bounded, scrolling column using the
+   same height math the keyword dropdown uses, so both modes feel identical. */
+.DocSearch-AskAiScreen {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 1rem;
+    font-weight: normal;
+    text-align: start;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: var(--docsearch-modal-variable-height);
+    max-height: calc(var(--docsearch-modal-height)
+                     - var(--docsearch-spacing)
+                     - var(--docsearch-footer-height));
+    overflow: hidden;
+}
+
+.DocSearch-AskAiScreen-Container {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 var(--docsearch-spacing) var(--docsearch-spacing);
+    scrollbar-color: var(--docsearch-muted-color) var(--docsearch-modal-background);
+}
+
+/* The fork has no rule for .DocSearch-Close (v5 markup differs), so style the
+   dismiss control to sit beside Clear rather than as a default button. */
+.DocSearch-Close {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    margin-inline-start: var(--docsearch-spacing);
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--docsearch-muted-color);
+}
+
+.DocSearch-Close:hover { color: var(--docsearch-highlight-color); }
+.DocSearch-Close:focus-visible,
+.DocSearch-Clear:focus-visible {
+    outline: 2px solid var(--docsearch-highlight-color);
+    outline-offset: 2px;
+}
