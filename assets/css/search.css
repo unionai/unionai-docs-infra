@@ -142,3 +142,16 @@ body.DocSearch--active div.bd-header-article {
 .DocSearch-AskAi-Host:empty {
     display: none;
 }
+
+/* The [hidden] attribute only hides an element via the UA stylesheet's
+   `display: none`, which ANY author `display` rule outranks. The forked
+   stylesheet sets `display: flex` on the Ask AI screen and the dropdown, so
+   toggling `.hidden` in JS had no effect and the Ask AI disclaimer rendered
+   underneath the keyword results. Make the attribute authoritative for the
+   elements we toggle. */
+.DocSearch-AskAiScreen[hidden],
+.DocSearch-Dropdown[hidden],
+.DocSearch-AskAiScreen-MessageContent-Tool[hidden],
+.DocSearch-StopStreaming[hidden] {
+    display: none !important;
+}
