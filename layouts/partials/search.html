@@ -56,8 +56,7 @@ pinned tree gets that line's results instead of nothing.
        as the CDN widget it replaces. */ -}}
 <script src="https://cdn.jsdelivr.net/npm/algoliasearch@5/dist/lite/builds/browser.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.111.1/dist/instantsearch.production.min.js"></script>
-{{ if $askAi }}<script src="https://cdn.jsdelivr.net/npm/@algolia/agent-studio@1.1.0/dist/builds/browser.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>{{ end }}
+{{ if $askAi }}<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>{{ end }}
 <script>
     // seg -> the `version` facet value to filter on. Empty on an unversioned build
     // (local dev, pre-go-live), where the raw segment is used exactly as before.

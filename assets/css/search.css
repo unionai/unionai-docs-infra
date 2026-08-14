@@ -115,3 +115,30 @@ body.DocSearch--active div.bd-header-article {
         border-radius: 6px;
     }
 }
+
+/* Ask AI panel (DOC-1423)
+   Rules for the markup our panel introduces. The forked @docsearch/css styles
+   the shared modal chrome; these cover the pieces it has no selector for. */
+
+.DocSearch-AskAiScreen-ExchangesList {
+    list-style: none;   /* exchanges are conversation turns, not a bulleted list */
+    margin: 0;
+    padding: 0;
+}
+
+.DocSearch-AskAiScreen-Exchange + .DocSearch-AskAiScreen-Exchange {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.DocSearch-AskAiScreen-MessageContent-Stopped {
+    color: var(--text-color-light);
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-top: 0.5rem;
+}
+
+.DocSearch-AskAi-Host:empty {
+    display: none;
+}

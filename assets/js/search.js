@@ -90,6 +90,13 @@
     el.form.appendChild(el.reset);
 
     bar.appendChild(el.form);
+
+    el.stopBtn = h('button', 'DocSearch-StopStreaming', 'Stop');
+    el.stopBtn.type = 'button';
+    el.stopBtn.hidden = true;
+    el.stopBtn.setAttribute('aria-label', 'Stop generating the answer');
+    bar.appendChild(el.stopBtn);
+
     var cancel = h('button', 'DocSearch-Cancel', 'Cancel');
     cancel.type = 'button';
     bar.appendChild(cancel);
@@ -97,12 +104,27 @@
 
     // -- results
     el.dropdown = h('div', 'DocSearch-Dropdown');
+    // The Ask AI row lives in its own host ABOVE the hits. renderHits() clears
+    // its container on every result set, so a row rendered into that container
+    // is wiped the moment the (asynchronous) hits response lands.
+    el.askAiHost = h('div', 'DocSearch-AskAi-Host');
+    el.dropdown.appendChild(el.askAiHost);
     el.dropdownContainer = h('div', 'DocSearch-Dropdown-Container');
     el.dropdown.appendChild(el.dropdownContainer);
     el.modal.appendChild(el.dropdown);
 
-    // -- Ask AI panel mounts here (populated in askai.js section below)
+    // -- Ask AI panel
     el.askAiScreen = h('div', 'DocSearch-AskAiScreen');
+    el.askAiScroll = h('div', 'DocSearch-AskAiScreen-Container');
+    var askAiInner = h('div', 'DocSearch-AskAiScreen-Body');
+    askAiInner.appendChild(
+      h('div', 'DocSearch-AskAiScreen-Disclaimer', 'Answers are generated with AI which can make mistakes.')
+    );
+    el.askAiBody = h('ul', 'DocSearch-AskAiScreen-ExchangesList');
+    el.askAiBody.setAttribute('aria-live', 'polite');
+    askAiInner.appendChild(el.askAiBody);
+    el.askAiScroll.appendChild(askAiInner);
+    el.askAiScreen.appendChild(el.askAiScroll);
     el.askAiScreen.hidden = true;
     el.modal.appendChild(el.askAiScreen);
 
@@ -128,8 +150,17 @@
     // -- events
     el.form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (mode === 'askai') {
+        var q = el.input.value;
+        el.input.value = '';
+        askAiSend(q);
+        return;
+      }
       var sel = currentSelection();
       if (sel) activate(sel);
+    });
+    el.stopBtn.addEventListener('click', function () {
+      if (askai.abort) askai.abort();
     });
     el.reset.addEventListener('click', function (e) {
       e.preventDefault();
@@ -178,7 +209,10 @@
     var searching = next === 'search';
     el.dropdown.hidden = !searching;
     el.askAiScreen.hidden = searching;
-    el.footer.hidden = false;
+    el.input.placeholder = searching
+      ? (CFG.placeholder || 'Search docs')
+      : 'Ask another question...';
+    if (searching) el.stopBtn.hidden = true;
   }
 
   // --------------------------------------------------------------------------
@@ -348,8 +382,7 @@
   // --------------------------------------------------------------------------
   function renderAskAiRow(q) {
     if (!HAS_ASK_AI) return;
-    var existing = el.dropdown.querySelector('.DocSearch-AskAi-Section');
-    if (existing) existing.remove();
+    el.askAiHost.innerHTML = '';
     if (!q) return;
 
     var section = h('section', 'DocSearch-Hits DocSearch-AskAi-Section');
@@ -369,7 +402,7 @@
     li.appendChild(a);
     ul.appendChild(li);
     section.appendChild(ul);
-    el.dropdownContainer.insertBefore(section, el.dropdownContainer.firstChild);
+    el.askAiHost.appendChild(section);
     indexSelectables();
   }
 
@@ -380,7 +413,8 @@
   var selectedIndex = 0;
 
   function indexSelectables() {
-    selectables = Array.prototype.slice.call(el.dropdownContainer.querySelectorAll('.DocSearch-Hit a'));
+    // across BOTH hosts, so the Ask AI row is reachable by keyboard
+    selectables = Array.prototype.slice.call(el.dropdown.querySelectorAll('.DocSearch-Hit a'));
     if (selectedIndex >= selectables.length) selectedIndex = 0;
     paintSelection();
   }
@@ -442,14 +476,398 @@
     }
   });
 
-  // --------------------------------------------------------------------------
-  // Ask AI panel -- implemented in the next stage; the row is hidden until then
-  // --------------------------------------------------------------------------
-  function openAskAi(query) {
-    if (typeof window.__askAiOpen === 'function') {
-      setMode('askai');
-      window.__askAiOpen(query, el.askAiScreen);
+  // ==========================================================================
+  // Ask AI panel
+  //
+  // Plain DOM over one conversation object. That is the whole fix for
+  // algolia/docsearch#3010: there is no second chat instance to lose the send
+  // to, because entering the panel and sending the question act on the same
+  // state. The stop path is the fix for #3011 -- see pruneForSend().
+  // ==========================================================================
+  var askai = {
+    conv: null,      // { id, messages: [] }
+    streaming: false,
+    stopped: false,
+    controller: null,
+    suppressedErrors: 0
+  };
+
+  // -- transport --------------------------------------------------------------
+  // We talk to the completions endpoint directly rather than through
+  // @algolia/agent-studio. The official client CANNOT stream in a browser
+  // without a bundler: its UMD build ships the XHR requester, which throws
+  // "This requester does not support streaming", and the fetch requester is
+  // published as ESM only. Since the no-bundler script-tag model is what makes
+  // this approach viable at all, we own the ~30 lines instead -- which also
+  // gives us a real AbortController, and a proper abort is the whole mechanism
+  // behind stopping cleanly (see pruneForSend).
+  //
+  // The contract below was verified exhaustively against the live endpoint:
+  // errors arrive INSIDE a 200 response as `{"type":"error"}` parts, so a
+  // non-ok status is the exception, not the error path.
+  async function* askAiStream(body, signal) {
+    var url =
+      'https://' + CFG.appId + '.algolia.net/agent-studio/1/agents/' +
+      encodeURIComponent(CFG.askAi.agentId) +
+      '/completions?stream=true&compatibilityMode=ai-sdk-5';
+
+    var res = await fetch(url, {
+      method: 'POST',
+      signal: signal,
+      headers: {
+        'content-type': 'application/json',
+        'x-algolia-application-id': CFG.appId,
+        'x-algolia-api-key': CFG.askAi.apiKey
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok || !res.body) {
+      var t = '';
+      try { t = await res.text(); } catch (e) {}
+      throw new Error(extractErrorMessage({ errorText: t }) || ('HTTP ' + res.status));
     }
+
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    var buf = '';
+    try {
+      while (true) {
+        var step = await reader.read();
+        if (step.done) break;
+        buf += decoder.decode(step.value, { stream: true });
+        var lines = buf.split('\n');
+        buf = lines.pop();
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (line.indexOf('data:') !== 0) continue;
+          var payload = line.slice(5).trim();
+          if (payload === '[DONE]') return;
+          try { yield JSON.parse(payload); } catch (e) { /* skip partial */ }
+        }
+      }
+    } finally {
+      try { reader.cancel(); } catch (e) {}
+    }
+  }
+
+  function newConversation() {
+    askai.conv = { id: randomId(), messages: [] };
+    askai.suppressedErrors = 0;
+    el.askAiBody.innerHTML = '';
+  }
+
+  function randomId() {
+    var s = '';
+    var a = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var r = new Uint32Array(16);
+    (window.crypto || window.msCrypto).getRandomValues(r);
+    for (var i = 0; i < 16; i++) s += a[r[i] % a.length];
+    return s;
+  }
+
+  // -- markdown ---------------------------------------------------------------
+  // The answer is model-generated text. marked emits raw HTML, so scrub the
+  // result before it reaches the DOM rather than trusting the model not to emit
+  // markup. Allowlist, not blocklist.
+  var ALLOWED_TAGS = {
+    P: 1, BR: 1, STRONG: 1, EM: 1, CODE: 1, PRE: 1, UL: 1, OL: 1, LI: 1,
+    BLOCKQUOTE: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1, A: 1, HR: 1,
+    TABLE: 1, THEAD: 1, TBODY: 1, TR: 1, TH: 1, TD: 1, DEL: 1, SPAN: 1, DIV: 1
+  };
+
+  function renderMarkdown(text) {
+    var html;
+    try {
+      html = window.marked ? window.marked.parse(text, { breaks: true }) : escapeHtml(text);
+    } catch (e) {
+      html = escapeHtml(text);
+    }
+    var tpl = document.createElement('div');
+    tpl.innerHTML = html;
+    scrub(tpl);
+    return tpl.innerHTML;
+  }
+
+  function scrub(root) {
+    var nodes = root.querySelectorAll('*');
+    for (var i = nodes.length - 1; i >= 0; i--) {
+      var n = nodes[i];
+      if (!ALLOWED_TAGS[n.tagName]) {
+        n.parentNode.replaceChild(document.createTextNode(n.textContent || ''), n);
+        continue;
+      }
+      for (var j = n.attributes.length - 1; j >= 0; j--) {
+        var attr = n.attributes[j].name;
+        var val = n.attributes[j].value;
+        var ok =
+          (n.tagName === 'A' && attr === 'href' && /^(https?:|\/|#)/i.test(val)) ||
+          attr === 'class';
+        if (!ok) n.removeAttribute(attr);
+      }
+      if (n.tagName === 'A') {
+        n.setAttribute('rel', 'noopener noreferrer');
+        n.setAttribute('target', '_blank');
+      }
+    }
+  }
+
+  // -- send -------------------------------------------------------------------
+  // Drop anything the backend will reject before it is ever sent. A tool call
+  // that never reached a terminal state -- which is exactly what pressing stop
+  // mid-search leaves behind -- serialises to an assistant `tool_use` with no
+  // matching `tool_result`, and the provider rejects EVERY later request in the
+  // conversation. That is algolia/docsearch#3011: their sanitiser strips only
+  // data-* parts, so one press of stop kills the conversation permanently.
+  function pruneForSend(messages) {
+    var out = [];
+    messages.forEach(function (m) {
+      if (m.role !== 'assistant') { out.push(m); return; }
+      var parts = (m.parts || []).filter(function (p) {
+        if (p.type.indexOf('tool-') !== 0) return true;
+        return p.state === 'output-available' || p.state === 'output-error';
+      });
+      if (parts.length) out.push({ id: m.id, role: m.role, parts: parts });
+      // an assistant message left with no parts is dropped entirely
+    });
+    return out;
+  }
+
+  function askAiSend(question) {
+    var q = (question || '').trim();
+    if (!q || askai.streaming) return;
+    if (!askai.conv) newConversation();
+
+    askai.conv.messages.push({
+      id: randomId(),
+      role: 'user',
+      parts: [{ type: 'text', text: q }]
+    });
+
+    var exchange = appendExchange(q);
+    streamAnswer(exchange);
+  }
+
+  function streamAnswer(ex) {
+    askai.streaming = true;
+    askai.stopped = false;
+    setStreamingUI(true);
+
+    var assistant = { id: randomId(), role: 'assistant', parts: [] };
+    askai.conv.messages.push(assistant);
+
+    var text = '';
+    var gotText = false;
+    var sources = [];
+    var toolQueries = [];
+
+    askai.controller = new AbortController();
+    askai.abort = function () {
+      askai.stopped = true;
+      if (askai.controller) askai.controller.abort();
+    };
+
+    (async function () {
+      try {
+        var stream = askAiStream(
+          {
+            id: askai.conv.id,
+            messages: pruneForSend(askai.conv.messages),
+            algolia: buildAskAiAlgoliaParams()
+          },
+          askai.controller.signal
+        );
+
+        for await (var p of stream) {
+          if (askai.stopped) break;
+          if (!p || !p.type) continue;
+
+          if (p.type === 'text-delta' && p.delta) {
+            text += p.delta;
+            gotText = true;
+            paintAnswer(ex, text);
+          } else if (p.type === 'tool-input-start') {
+            assistant.parts.push({
+              type: 'tool-' + (p.toolName || 'search'),
+              toolCallId: p.toolCallId,
+              state: 'input-streaming'
+            });
+            paintTool(ex, toolQueries);
+          } else if (p.type === 'tool-input-available') {
+            markTool(assistant, p.toolCallId, 'input-available');
+            if (p.input && p.input.query) { toolQueries.push(p.input.query); paintTool(ex, toolQueries); }
+          } else if (p.type === 'tool-output-available') {
+            markTool(assistant, p.toolCallId, 'output-available', p.output);
+            collectSources(sources, p.output);
+          } else if (p.type === 'data-guardrail-violation') {
+            // upstream #2941 drops these; render the configured fallback so the
+            // reader gets a sentence instead of a stray character
+            if (!gotText && p.data && p.data.fallbackResponse) {
+              text = p.data.fallbackResponse;
+              gotText = true;
+              paintAnswer(ex, text);
+            }
+          } else if (p.type === 'error') {
+            handleStreamError(ex, p, gotText);
+          }
+        }
+
+        if (text) assistant.parts.push({ type: 'text', text: text, state: 'done' });
+        if (sources.length) paintSources(ex, sources);
+      } catch (e) {
+        var aborted = askai.stopped || (e && e.name === 'AbortError');
+        if (!aborted) handleStreamError(ex, { errorText: String((e && e.message) || e) }, gotText);
+      } finally {
+        // In `finally`, not after the loop: aborting REJECTS the in-flight
+        // fetch, so the stopped path arrives via catch and would skip anything
+        // placed at the end of the try -- leaving the exchange stuck on
+        // "Searching..." with no indication the reader stopped it.
+        if (askai.stopped) paintStopped(ex);
+        askai.controller = null;
+        askai.streaming = false;
+        setStreamingUI(false);
+        // Pruning happens on send, but do it here too so the conversation in
+        // memory never carries a half-finished tool call between turns.
+        askai.conv.messages = pruneForSend(askai.conv.messages);
+      }
+    })();
+  }
+
+  function buildAskAiAlgoliaParams() {
+    var o = {};
+    if (CFG.askAi.filters) {
+      o.searchParameters = {};
+      o.searchParameters[CFG.askAi.indexName] = { filters: CFG.askAi.filters };
+    }
+    // deliberately NO `indices` -- the agent's tool is mode='static' and
+    // rejects a per-request index override outright, failing the question
+    return o;
+  }
+
+  function markTool(assistant, id, state, output) {
+    for (var i = 0; i < assistant.parts.length; i++) {
+      if (assistant.parts[i].toolCallId === id) {
+        assistant.parts[i].state = state;
+        if (output !== undefined) assistant.parts[i].output = output;
+        return;
+      }
+    }
+  }
+
+  function collectSources(sources, output) {
+    var hits = (output && output.hits) || [];
+    var seen = {};
+    sources.forEach(function (s) { seen[s.url] = 1; });
+    hits.forEach(function (hit) {
+      if (!hit || !hit.url || seen[hit.url]) return;
+      seen[hit.url] = 1;
+      sources.push({ url: hit.url, title: hit.title || hit.url });
+    });
+  }
+
+  // -- error triage -----------------------------------------------------------
+  // An error part can arrive AFTER a complete answer has streamed. DocSearch
+  // paints its red banner either way, so a correct answer gets a failure notice
+  // over it. Only surface an error the reader actually needs to act on.
+  function handleStreamError(ex, part, gotText) {
+    var msg = extractErrorMessage(part);
+    if (gotText) {
+      askai.suppressedErrors++;
+      if (window.console && console.warn) {
+        console.warn('[search] Ask AI: post-answer stream error suppressed:', msg);
+      }
+      return;
+    }
+    var box = ex.querySelector('.DocSearch-AskAiScreen-Error');
+    if (!box) {
+      box = h('div', 'DocSearch-AskAiScreen-Error');
+      ex.querySelector('.DocSearch-AskAiScreen-Response').appendChild(box);
+    }
+    box.innerHTML =
+      '<div class="DocSearch-AskAiScreen-Error-Title">Chat error</div>' +
+      '<div class="DocSearch-AskAiScreen-Error-Content">' + escapeHtml(msg) + '</div>';
+  }
+
+  function extractErrorMessage(part) {
+    var raw = part.errorText || part.error || '';
+    try {
+      var m = /"message"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(raw);
+      if (m) return m[1].replace(/\\"/g, '"');
+    } catch (e) {}
+    return String(raw) || 'Something went wrong.';
+  }
+
+  function renderAskAiFatal(msg) {
+    el.askAiBody.innerHTML =
+      '<div class="DocSearch-AskAiScreen-Error">' +
+      '<div class="DocSearch-AskAiScreen-Error-Title">Chat error</div>' +
+      '<div class="DocSearch-AskAiScreen-Error-Content">' + escapeHtml(msg) + '</div></div>';
+  }
+
+  // -- panel rendering --------------------------------------------------------
+  function appendExchange(question) {
+    var li = h('li', 'DocSearch-AskAiScreen-Exchange');
+    li.innerHTML =
+      '<div class="DocSearch-AskAiScreen-Message--user">' + escapeHtml(question) + '</div>' +
+      '<div class="DocSearch-AskAiScreen-Response">' +
+      '<div class="DocSearch-AskAiScreen-MessageContent-Tool" hidden></div>' +
+      '<div class="DocSearch-Markdown-Content DocSearch-Markdown-Content--streaming"></div>' +
+      '</div>';
+    el.askAiBody.appendChild(li);
+    li.scrollIntoView({ block: 'end' });
+    return li;
+  }
+
+  function paintAnswer(ex, text) {
+    var target = ex.querySelector('.DocSearch-Markdown-Content');
+    target.innerHTML = renderMarkdown(text);
+    el.askAiScroll.scrollTop = el.askAiScroll.scrollHeight;
+  }
+
+  function paintTool(ex, queries) {
+    var t = ex.querySelector('.DocSearch-AskAiScreen-MessageContent-Tool');
+    t.hidden = false;
+    t.textContent = queries.length
+      ? 'Searched for ' + queries.map(function (q) { return '"' + q + '"'; }).join(' and ')
+      : 'Searching...';
+  }
+
+  function paintSources(ex, sources) {
+    var wrap = h('div', 'DocSearch-AskAiScreen-Sources');
+    var html = '<div class="DocSearch-AskAiScreen-RelatedSources-Title">Sources</div><ul class="DocSearch-AskAiScreen-RelatedSources-List">';
+    sources.slice(0, 6).forEach(function (s) {
+      html += '<li><a class="DocSearch-AskAiScreen-RelatedSources-Item-Link" href="' +
+        escapeHtml(s.url) + '">' + escapeHtml(s.title) + '</a></li>';
+    });
+    wrap.innerHTML = html + '</ul>';
+    ex.querySelector('.DocSearch-AskAiScreen-Response').appendChild(wrap);
+  }
+
+  function paintStopped(ex) {
+    var c = ex.querySelector('.DocSearch-Markdown-Content');
+    c.classList.remove('DocSearch-Markdown-Content--streaming');
+    var tool = ex.querySelector('.DocSearch-AskAiScreen-MessageContent-Tool');
+    if (tool && /^Searching/.test(tool.textContent)) tool.hidden = true;
+    if (ex.querySelector('.DocSearch-AskAiScreen-MessageContent-Stopped')) return;
+    var note = h('div', 'DocSearch-AskAiScreen-MessageContent-Stopped', 'Stopped.');
+    ex.querySelector('.DocSearch-AskAiScreen-Response').appendChild(note);
+  }
+
+  function setStreamingUI(on) {
+    el.stopBtn.hidden = !on;
+    el.input.placeholder = on ? 'Answering...' : 'Ask another question...';
+    if (!on) {
+      var s = el.askAiBody.querySelectorAll('.DocSearch-Markdown-Content--streaming');
+      for (var i = 0; i < s.length; i++) s[i].classList.remove('DocSearch-Markdown-Content--streaming');
+    }
+  }
+
+  function openAskAi(query) {
+    setMode('askai');
+    if (!askai.conv) newConversation();
+    askAiSend(query);
+    el.input.value = '';
+    el.input.focus();
   }
 
   // --------------------------------------------------------------------------
@@ -478,6 +896,16 @@
     attachTrigger();
   }
 
-  // expose for the Ask AI stage
-  window.__search = { open: open, close: close, setMode: setMode, el: el, cfg: CFG };
+  // Exposed for debugging and for the regression checks in the PR description.
+  // `askai.conv.messages` is the conversation exactly as it will be sent, so a
+  // reviewer can confirm the pruning invariant after pressing stop.
+  window.__search = {
+    open: open,
+    close: close,
+    setMode: setMode,
+    el: el,
+    cfg: CFG,
+    askai: askai,
+    pruneForSend: pruneForSend
+  };
 })();

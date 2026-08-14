@@ -38,8 +38,8 @@ custom_css = [
   "markdown.css",
   "mermaid.css",
   "plugin.css",
-  "search.css",
   "search-modal.css",
+  "search.css",
   "sidebar.css",
   "toc.css",
 ]
