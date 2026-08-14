@@ -60,12 +60,39 @@ index-search:
 		echo "  skip search index (ALGOLIA_DOCS_2_WRITE_API_KEY unset)"; \
 	else \
 		records=$$(mktemp "$${TMPDIR:-/tmp}/search-records.XXXXXX") || exit 1; \
+		md=$$(mktemp "$${TMPDIR:-/tmp}/markdown-records.XXXXXX") || exit 1; \
+		echo "== keyword index (union) =="; \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/build_records.py \
 			--dist dist --out "$$records" && \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
 			--records "$$records" --index union; \
 		status=$$?; \
-		rm -f "$$records"; \
+		if [ $$status -eq 0 ]; then \
+			echo "== Ask AI retrieval index (union-markdown) =="; \
+			if $(UV) unionai-docs-infra/tools/algolia_indexer/build_markdown_records.py \
+				--dist dist --out "$$md" && \
+			   $(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+				--records "$$md" --index union-markdown; then \
+				echo "  Ask AI retrieval index updated"; \
+			elif [ -n "$$(sed -n 's/^ask_ai_key *= *"\(..*\)"/\1/p' unionai-docs-infra/hugo.toml 2>/dev/null | head -1)" ]; then \
+				echo "  ****************************************************************"; \
+				echo "  ERROR: the Ask AI retrieval index was NOT updated, and Ask AI"; \
+				echo "  IS LIVE (ask_ai_key is set in hugo.toml). Readers would be"; \
+				echo "  answered from a corpus that is stale against this build, with"; \
+				echo "  nothing on the page saying so. Failing the deploy."; \
+				echo "  ****************************************************************"; \
+				status=1; \
+			else \
+				echo "  ****************************************************************"; \
+				echo "  WARNING: the Ask AI retrieval index was NOT updated."; \
+				echo "  The union-markdown corpus is now STALE against this build."; \
+				echo "  Continuing because ask_ai_key is NOT set, so Ask AI is not"; \
+				echo "  serving readers and nothing in production reads this corpus."; \
+				echo "  This becomes fatal automatically once the key is set."; \
+				echo "  ****************************************************************"; \
+			fi; \
+		fi; \
+		rm -f "$$records" "$$md"; \
 		exit $$status; \
 	fi
 
@@ -75,6 +102,9 @@ index-search:
 index-search-settings:
 	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
 		--index union --settings unionai-docs-infra/tools/algolia_indexer/settings.json
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+		--index union-markdown \
+		--settings unionai-docs-infra/tools/algolia_indexer/settings.markdown.json
 # The search-quality benchmark's answer key references real content URLs. A PR
 # that renames or deletes a labelled page silently rots the benchmark, so the
 # next eval reports a "ranking regression" that is really labelling decay.
