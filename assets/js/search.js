@@ -63,10 +63,15 @@
     built = true;
 
     el.container = h('div', 'DocSearch-Container');
-    el.container.setAttribute('role', 'button');
-    el.container.setAttribute('tabindex', '0');
 
+    // A dialog, not a button. DocSearch marks the overlay role="button" so a
+    // click dismisses it; screen readers then announce the whole search
+    // experience as a button. Keep click-to-dismiss (handled below) and
+    // describe what this actually is.
     el.modal = h('div', 'DocSearch-Modal');
+    el.modal.setAttribute('role', 'dialog');
+    el.modal.setAttribute('aria-modal', 'true');
+    el.modal.setAttribute('aria-label', 'Search the documentation');
 
     // -- search bar
     var bar = h('header', 'DocSearch-SearchBar');
@@ -136,20 +141,9 @@
     el.modal.appendChild(el.askAiScreen);
 
     // -- footer
-    el.footer = h(
-      'footer',
-      'DocSearch-Footer',
-      '<div class="DocSearch-Commands">' +
-        '<span class="DocSearch-Commands-Key">&#8595;</span>' +
-        '<span class="DocSearch-Commands-Key">&#8593;</span>' +
-        '<span class="DocSearch-Label">Navigate</span>' +
-        '<span class="DocSearch-Commands-Key">&#8629;</span>' +
-        '<span class="DocSearch-Label">Select</span>' +
-        '<span class="DocSearch-Commands-Key">esc</span>' +
-        '<span class="DocSearch-Label">Close</span>' +
-        '</div>'
-    );
+    el.footer = h('footer', 'DocSearch-Footer');
     el.modal.appendChild(el.footer);
+    paintFooter();
 
     el.container.appendChild(el.modal);
     document.body.appendChild(el.container);
@@ -234,6 +228,26 @@
       ? (CFG.placeholder || 'Search docs')
       : 'Ask another question...';
     if (searching) el.stopBtn.hidden = true;
+    paintFooter();
+  }
+
+  // The footer advertises the keys, so it has to follow the mode. In Ask AI,
+  // Enter submits a question rather than opening a result, and Esc returns to
+  // search rather than closing -- a static footer describes the wrong widget.
+  function paintFooter() {
+    var key = function (k, label) {
+      return '<span class="DocSearch-Commands-Key">' + k + '</span>' +
+             '<span class="DocSearch-Label">' + label + '</span>';
+    };
+    el.footer.innerHTML =
+      '<div class="DocSearch-Commands">' +
+      (mode === 'askai'
+        ? key('&#8629;', 'Submit question') + key('esc', 'Back to search')
+        : '<span class="DocSearch-Commands-Key">&#8595;</span>' +
+          '<span class="DocSearch-Commands-Key">&#8593;</span>' +
+          '<span class="DocSearch-Label">Navigate</span>' +
+          key('&#8629;', 'Select') + key('esc', 'Close')) +
+      '</div>';
   }
 
   // --------------------------------------------------------------------------
@@ -660,10 +674,14 @@
     if (!q || askai.streaming) return;
     if (!askai.conv) newConversation();
 
+    // What we SEND carries the scope; what we DISPLAY is the reader's question
+    // verbatim. Only values we resolved ourselves go in here -- never raw URL
+    // or query-string input, which would turn a crafted link into a
+    // prompt-injection path into our own agent.
     askai.conv.messages.push({
       id: randomId(),
       role: 'user',
-      parts: [{ type: 'text', text: q }]
+      parts: [{ type: 'text', text: scopePreamble() + q }]
     });
 
     var exchange = appendExchange(q);
@@ -682,6 +700,7 @@
     var gotText = false;
     var sources = [];
     var toolQueries = [];
+    var guardrailed = false;
 
     askai.controller = new AbortController();
     askai.abort = function () {
@@ -722,11 +741,17 @@
             markTool(assistant, p.toolCallId, 'output-available', p.output);
             collectSources(sources, p.output);
           } else if (p.type === 'data-guardrail-violation') {
-            // upstream #2941 drops these; render the configured fallback so the
-            // reader gets a sentence instead of a stray character
-            if (!gotText && p.data && p.data.fallbackResponse) {
+            // REPLACE whatever text arrived, do not merely fill in for it.
+            // A guardrail truncates the model mid-sentence, so the stream is
+            // literally: text-delta("This") -> text-end -> finish-step ->
+            // data-guardrail-violation. That single stray token is guarded
+            // output, not an answer -- gating the fallback on "no text yet"
+            // leaves the reader looking at one word, which is upstream #2941's
+            // symptom reproduced in our own client.
+            if (p.data && p.data.fallbackResponse) {
               text = p.data.fallbackResponse;
               gotText = true;
+              guardrailed = true;
               paintAnswer(ex, text);
             }
           } else if (p.type === 'error') {
@@ -735,7 +760,7 @@
         }
 
         if (text) assistant.parts.push({ type: 'text', text: text, state: 'done' });
-        if (sources.length) paintSources(ex, sources);
+        if (sources.length && !guardrailed) paintSources(ex, sources);
       } catch (e) {
         var aborted = askai.stopped || (e && e.name === 'AbortError');
         if (!aborted) handleStreamError(ex, { errorText: String((e && e.message) || e) }, gotText);
@@ -753,6 +778,18 @@
         askai.conv.messages = pruneForSend(askai.conv.messages);
       }
     })();
+  }
+
+  // Prepended to every user turn, not just the first: the clarifying question
+  // is triggered by SHORT queries, and follow-ups ("what about caching?") are
+  // the shortest of all. Costs ~25 tokens a turn.
+  function scopePreamble() {
+    var a = CFG.askAi || {};
+    if (!a.version && !a.variant) return '';
+    var product = a.variant === 'flyte' ? 'Flyte (open source)' : 'Union.ai';
+    var scope = a.version ? product + ', documentation version ' + a.version : product;
+    return '[Context: the documentation search is already restricted to ' + scope +
+      '. Do not ask which product or version the reader means; answer from the retrieved documents.]\n\n';
   }
 
   function buildAskAiAlgoliaParams() {

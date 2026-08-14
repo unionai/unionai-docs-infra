@@ -118,6 +118,15 @@ pinned tree gets that line's results instead of nothing.
             // key cannot be used here.
             apiKey: '{{ $aiKey }}',
             indexName: '{{ $aiIdx }}',
+            // The SAME resolved values the filter is built from. The model
+            // cannot see the retrieval scope -- asked directly, it answers "I
+            // don't know" -- so on short queries it asks the reader which
+            // product and version they mean, a question it cannot act on
+            // because the answer is already fixed. Telling it removes that.
+            // Sourced from `version`/`variant` above so the filter and the
+            // stated scope can never drift apart.
+            version: version,
+            variant: variant,
             // NO `indices` override on the request. The agent's search tool is
             // configured mode='static', which pins the index server-side and
             // rejects a per-request override outright, failing the whole
