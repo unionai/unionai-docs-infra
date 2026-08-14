@@ -74,7 +74,16 @@
     el.modal.setAttribute('aria-label', 'Search the documentation');
 
     // -- search bar
-    var bar = h('header', 'DocSearch-SearchBar');
+    //
+    // A DIV, not <header>. The docs site styles bare `header` and `footer`
+    // elements globally (header.css sets height/background/border/padding,
+    // footer.css and base.css set display and min-height), and those rules
+    // matched our modal's chrome -- the search bar inherited the SITE header's
+    // height and padding, so the modal rendered differently on the real site
+    // than in a harness that had not loaded those stylesheets. Using neutral
+    // elements removes the collision by construction rather than by fighting
+    // specificity, which would break again the next time header.css changes.
+    var bar = h('div', 'DocSearch-SearchBar');
     el.form = h('form', 'DocSearch-Form');
     el.form.appendChild(h('label', 'DocSearch-MagnifierLabel', ICON.magnifier));
     el.form.appendChild(h('div', 'DocSearch-LoadingIndicator'));
@@ -153,7 +162,7 @@
     el.modal.appendChild(el.askAiScreen);
 
     // -- footer
-    el.footer = h('footer', 'DocSearch-Footer');
+    el.footer = h('div', 'DocSearch-Footer');   // div, not <footer> -- see the search bar above
     el.modal.appendChild(el.footer);
     paintFooter();
 
