@@ -65,13 +65,26 @@ index-search:
 		$(UV) unionai-docs-infra/tools/algolia_indexer/build_records.py \
 			--dist dist --out "$$records" && \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
-			--records "$$records" --index union && \
-		echo "== Ask AI retrieval index (union-markdown) ==" && \
-		$(UV) unionai-docs-infra/tools/algolia_indexer/build_markdown_records.py \
-			--dist dist --out "$$md" && \
-		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
-			--records "$$md" --index union-markdown; \
+			--records "$$records" --index union; \
 		status=$$?; \
+		if [ $$status -eq 0 ]; then \
+			echo "== Ask AI retrieval index (union-markdown) =="; \
+			if $(UV) unionai-docs-infra/tools/algolia_indexer/build_markdown_records.py \
+				--dist dist --out "$$md" && \
+			   $(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+				--records "$$md" --index union-markdown; then \
+				echo "  Ask AI retrieval index updated"; \
+			else \
+				echo "  ****************************************************************"; \
+				echo "  WARNING: the Ask AI retrieval index was NOT updated."; \
+				echo "  The union-markdown corpus is now STALE against this build."; \
+				echo "  The deploy continues on purpose: nothing in production reads"; \
+				echo "  union-markdown yet, so a failure here must not take the docs"; \
+				echo "  site down. MAKE THIS FATAL once Ask AI ships to readers --"; \
+				echo "  from then on a stale corpus is a user-visible defect."; \
+				echo "  ****************************************************************"; \
+			fi; \
+		fi; \
 		rm -f "$$records" "$$md"; \
 		exit $$status; \
 	fi
