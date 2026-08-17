@@ -264,20 +264,26 @@
   // Enter submits a question rather than opening a result, and Esc returns to
   // search rather than closing -- a static footer describes the wrong widget.
   function paintFooter() {
-    var key = function (k, label) {
-      return '<span class="DocSearch-Commands-Key">' + k + '</span>' +
-             '<span class="DocSearch-Label">' + label + '</span>';
+    // Each key (or key pair) and the label describing it are ONE group. A flat
+    // row put "Navigate" the same distance from the arrows it describes as from
+    // the Enter key it does not, so the eye had to guess which label belonged
+    // to which control. Grouping tightens that within a pair and widens it
+    // between pairs, which is what makes the association readable.
+    var K = function (k) { return '<span class="DocSearch-Commands-Key">' + k + '</span>'; };
+    var cmd = function (keys, label) {
+      return '<span class="DocSearch-Command">' + keys +
+             '<span class="DocSearch-Label">' + label + '</span></span>';
     };
     el.footer.innerHTML =
       '<div class="DocSearch-Commands">' +
       (mode === 'askai'
-        ? key('&#8629;', 'Submit question') + key('esc', 'Back to search')
-        : '<span class="DocSearch-Commands-Key">&#8595;</span>' +
-          '<span class="DocSearch-Commands-Key">&#8593;</span>' +
-          '<span class="DocSearch-Label">Navigate</span>' +
-          key('&#8629;', 'Select') + key('esc', 'Close')) +
+        ? cmd(K('&#8629;'), 'Submit question') + cmd(K('esc'), 'Back to search')
+        : cmd('<span class="DocSearch-Command-Keys">' + K('&#8595;') + K('&#8593;') + '</span>', 'Navigate') +
+          cmd(K('&#8629;'), 'Select') +
+          cmd(K('esc'), 'Close')) +
       '</div>';
   }
+
 
   // --------------------------------------------------------------------------
   // InstantSearch
