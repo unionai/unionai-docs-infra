@@ -961,3 +961,11 @@ body.DocSearch--active div.bd-header-article {
        above and selection lifts, in both themes. */
     --docsearch-hit-focus-background: var(--docsearch-background-color);
 }
+
+/* The version line (v2 / v1) carries the emphasis inside the scope bar's
+   version group -- it is the part a reader checks first, and the release
+   number beside it is the detail. */
+.DocSearch-Scope-Line {
+    font-weight: 700;
+    color: var(--text-color);
+}

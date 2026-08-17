@@ -145,7 +145,10 @@
         '<span class="DocSearch-Scope-Dot" aria-hidden="true"></span>' +
         '<span class="DocSearch-Scope-Label">Searching</span>' +
         '<span class="DocSearch-Scope-Product">' + escapeHtml(scope.product) + '</span>' +
-        '<span class="DocSearch-Scope-Version">' + escapeHtml(scope.version) + '</span>';
+        '<span class="DocSearch-Scope-Version">' +
+          '<span class="DocSearch-Scope-Line">' + escapeHtml(scope.line) + '</span>' +
+          (scope.release ? ' <span class="DocSearch-Scope-Release">' + escapeHtml(scope.release) + '</span>' : '') +
+        '</span>';
       el.modal.appendChild(el.scope);
     }
 
@@ -1044,6 +1047,8 @@
     var version = CFG.version;
     if (!variant && !version) return null;
 
+    var label = version ? ((CFG.versionLabels || {})[version] || version) : 'all versions';
+    var sp = label.indexOf(' ');
     return {
       product: variant ? (VARIANT_LABELS[variant] || variant) : 'all products',
       // Keyed on the RESOLVED version, not the served segment. They are the
@@ -1051,7 +1056,12 @@
       // only for a pin outside the indexers' keep-pins window, which falls back
       // to its line -- and there the bar must name the line, because that is
       // what is being searched.
-      version: version ? ((CFG.versionLabels || {})[version] || version) : 'all versions'
+      // Split at the first space so the LINE (v2 / v1) can be emphasised apart
+      // from the release. The label is built as "<line> <num>" in search.html;
+      // `latest` and any unlabelled segment have no second half, and fall
+      // through as a line with an empty release.
+      line: label.slice(0, sp < 0 ? label.length : sp),
+      release: sp < 0 ? '' : label.slice(sp + 1)
     };
   }
 
