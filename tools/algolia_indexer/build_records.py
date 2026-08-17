@@ -281,6 +281,38 @@ def clean_title(title):
     return cleaned or title
 
 
+# A heading that is NOTHING BUT a markdown link is a generated link card, not a
+# section. The section landing pages (/user-guide/, /api-reference/, ...) are
+# card indexes: each card renders as `### [Child page](url)` plus the child's
+# one-line description, so indexing them duplicates every child page's title
+# and blurb under the PARENT's url. Searching "run scaling" returned the real
+# page and, competing with it, an anchor into the index page that merely links
+# there -- strictly the worse destination.
+#
+# This is the rule SKIP_NAMES already states ("Aggregate files restate page
+# content; indexing them duplicates every page's prose under the wrong URL"),
+# applied one level down: a landing page is not wholly an aggregate, so it
+# cannot be skipped by filename. Its own lead prose -- what Union.ai is, BYOC
+# vs Self-managed -- is real content and stays indexed. Only the card sections
+# are dropped.
+#
+# `^[link]$` and nothing else, which is exact on the corpus: NO authored
+# heading is a bare link (checked across content/), and the one authored
+# heading that CONTAINS a link -- "Abide by the [LF's Code of Conduct](...)" --
+# is not one, so it is kept and cleaned by clean_title().
+LINK_CARD_HEADING_RE = re.compile(r"^\[[^\]]*\]\([^)]*\)$")
+
+# `## Subpages` is the same scaffolding in its other shape. layouts/_default/
+# list.md emits it on every section page, and the llms generator then EXPANDS
+# it to carry each child's H2/H3 headings too -- 5 KB on /user-guide/ alone,
+# restating the title of every page and heading in the subtree under the
+# parent's url. It exists to be traversed by an LLM reading page.md, not read;
+# build_llm_docs.py strips it again when it concatenates. Indexed, it means a
+# search for any heading anywhere in a subtree can match the parent landing
+# page. No authored heading is titled "Subpages" (checked across content/).
+SUBPAGES_HEADING_RE = re.compile(r"^subpages$", re.I)
+
+
 def parse_sections(md):
     """Split markdown into (level, title, anchor, body) sections.
 
@@ -331,6 +363,14 @@ def parse_sections(md):
             # the release notes, which is most of what carries these.
             current = {"level": level, "title": clean_title(title),
                        "anchor": anchor, "body": []}
+            # Deliberately NOT appended. `current` is still reassigned so the
+            # card's body (the child's one-line blurb) lands in a section that
+            # is thrown away, rather than being appended to whichever real
+            # section happened to precede it. The anchor bookkeeping above has
+            # already run, so a later duplicate title still gets Hugo's -1/-2
+            # suffix -- the skipped heading occupies an id on the page either way.
+            if LINK_CARD_HEADING_RE.match(title) or SUBPAGES_HEADING_RE.match(title):
+                continue
             sections.append(current)
         elif current is not None:
             current["body"].append(line)
