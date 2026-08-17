@@ -826,3 +826,93 @@ body.DocSearch--active div.bd-header-article {
 .DocSearch-Hit--AskAI .DocSearch-Hit-icon {
     color: var(--brand);
 }
+
+/* ==========================================================================
+   Scope bar
+
+   States the version and variant every query in this modal is filtered to.
+   The tint on the controls implies it; this says it.
+
+   A strip, not a filled banner. The variant colour at full strength under a
+   search field competes with the results for attention, and this is a caption
+   -- the reader glances at it once to confirm where they are and then ignores
+   it. The same color-mix wash as the controls keeps it in that family. The dot
+   carries the brand colour at full strength, which is enough to read at a
+   glance without the text fighting it.
+
+   flex: none because the modal is a flex column whose dropdown shrinks to fit;
+   without it the bar would give up its own height first.
+   ========================================================================== */
+
+.DocSearch-Scope {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem var(--docsearch-spacing);
+    border-bottom: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--brand) 9%, transparent);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.DocSearch-Scope-Dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--brand);
+    flex: none;
+}
+
+.DocSearch-Scope-Label {
+    color: var(--text-color-light);
+}
+
+.DocSearch-Scope-Product {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* Mono, and set apart from the product name: this is the one part a reader
+   may need to read character by character to tell 2.5.18.3 from 2.6.0.0. */
+.DocSearch-Scope-Version {
+    margin-left: 0.125rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-color-light);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+}
+
+/* ==========================================================================
+   One padding for every control
+
+   The controls were sized by fixed heights with padding chosen per control:
+   Clear at 0 12px on a 30px box, key caps at 0 5px on a 22px box with a 22px
+   min-width. That min-width is what made `esc` look cramped -- a single-glyph
+   cap was padded out to the 22px floor and got 10px of side room, while the
+   three-letter `esc` overflowed the floor and kept only its 5px.
+
+   Sizing from padding instead of from a height makes glyph-to-edge distance a
+   stated value rather than a leftover, and it is the same value on all three.
+   ========================================================================== */
+
+.DocSearch-Clear,
+.DocSearch-StopStreaming,
+.DocSearch-Footer .DocSearch-Commands-Key {
+    height: auto;
+    min-height: 0;
+    min-width: 0;
+    padding: 0.4375rem 0.6875rem;   /* 7px 11px, on every control */
+    line-height: 1;
+}
+
+/* The fork pins every key cap to a 24x24 box. With the padding above that
+   leaves a ZERO-width content box, so each cap measured 24px whatever was in
+   it: the arrows sat centred with room to spare while `esc` overflowed its own
+   padding and came within 1px of the border. The declared padding only becomes
+   real once the width is content-driven. */
+.DocSearch-Footer .DocSearch-Commands-Key {
+    width: auto;
+}

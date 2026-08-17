@@ -123,6 +123,32 @@
 
     el.modal.appendChild(bar);
 
+    // -- scope bar
+    //
+    // Every query in this modal -- keyword AND Ask AI -- is filtered to one
+    // version/variant slice, and nothing in the UI said which. Two things made
+    // that worth stating rather than implying:
+    //
+    //   * the tint on the controls says "Union" or "Flyte" only to someone who
+    //     already knows the two brand colours apart;
+    //   * DOC-1408 means a reader on a PINNED tree is answered from that line's
+    //     STABLE instead, because the pins are not indexed. That substitution
+    //     was completely invisible, and it is exactly the case where a reader
+    //     needs to know what they are actually reading.
+    //
+    // Sits directly under the search bar's hairline, above the results, so it
+    // reads as a subtitle to the query rather than as a banner over the modal.
+    var scope = scopeParts();
+    if (scope) {
+      el.scope = h('div', 'DocSearch-Scope');
+      el.scope.innerHTML =
+        '<span class="DocSearch-Scope-Dot" aria-hidden="true"></span>' +
+        '<span class="DocSearch-Scope-Label">Searching</span>' +
+        '<span class="DocSearch-Scope-Product">' + escapeHtml(scope.product) + '</span>' +
+        '<span class="DocSearch-Scope-Version">' + escapeHtml(scope.version) + '</span>';
+      el.modal.appendChild(el.scope);
+    }
+
     // -- results
     el.dropdown = h('div', 'DocSearch-Dropdown');
     // The Ask AI row lives in its own host ABOVE the hits. renderHits() clears
@@ -1004,6 +1030,27 @@
     t.textContent = queries.length
       ? 'Searched for ' + queries.map(function (q) { return '"' + q + '"'; }).join(' and ')
       : 'Searching...';
+  }
+
+  // The product names the site itself uses (hugo.site.toml, params.key.product_name),
+  // so the modal names the variant the same way every page does.
+  var VARIANT_LABELS = { union: 'Union.ai', flyte: 'Flyte' };
+
+  // null when there is nothing true to say -- an unversioned local build, or a
+  // path the version resolver could not place. An empty bar beats a wrong one,
+  // and a bar reading "Searching  " would be worse than no bar at all.
+  function scopeParts() {
+    var variant = CFG.variant;
+    var version = CFG.version;
+    if (!variant && !version) return null;
+
+    var num = version ? (CFG.versionNums || {})[version] : '';
+    return {
+      product: variant ? (VARIANT_LABELS[variant] || variant) : 'all products',
+      // The RESOLVED version, not the served segment -- that is what the filter
+      // actually uses. On a pin the two differ, which is the whole point.
+      version: version ? (num ? version + '  ' + num : version) : 'all versions'
+    };
   }
 
   // Segments whose sentence-case form is not just "capitalise the first letter".
