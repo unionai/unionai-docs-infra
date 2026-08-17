@@ -258,6 +258,29 @@ def strip_leading_emoji(title):
     return cleaned or title
 
 
+# Inline LINK syntax in a heading. The generated section landing pages are
+# link-card indexes, so EVERY one of their headings is `### [Title](url)` --
+# and the raw markdown was going into the index as the result title, e.g.
+# "[Run scaling](https://www.union.ai/docs/v2/union/user-guide/run-scaling/page.md)".
+#
+# slugify() already strips this, which is why the ANCHOR was always correct
+# (#run-scaling). The two just did not share the logic, so the title kept the
+# syntax the anchor had thrown away. Hence clean_title() below, applied at the
+# one place titles are produced.
+#
+# Links only. slugify also drops backticks and emphasis, and neither is safe on
+# a title: the modal renders `identifiers` in a hit title as code (codeSpans in
+# search.js), and stripping [*_] would turn the API reference's `__init__` into
+# `init` and `flyte.*` into `flyte.`.
+INLINE_LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+
+
+def clean_title(title):
+    """Heading markdown -> the text a reader sees. Never returns empty."""
+    cleaned = strip_leading_emoji(INLINE_LINK_RE.sub(r"\1", title).strip())
+    return cleaned or title
+
+
 def parse_sections(md):
     """Split markdown into (level, title, anchor, body) sections.
 
@@ -306,7 +329,7 @@ def parse_sections(md):
             # Details Drawer` is served at #sparkles-task-environment-details-
             # drawer. Stripping first would silently break every deep link into
             # the release notes, which is most of what carries these.
-            current = {"level": level, "title": strip_leading_emoji(title),
+            current = {"level": level, "title": clean_title(title),
                        "anchor": anchor, "body": []}
             sections.append(current)
         elif current is not None:
