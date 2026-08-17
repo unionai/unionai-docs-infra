@@ -773,3 +773,23 @@ body.DocSearch--active div.bd-header-article {
 .DocSearch-Footer .DocSearch-Label {
     font-weight: 400;
 }
+
+/* Spacing controlled by gap alone.
+
+   The fork puts `margin: 0 8px 0 0` on every key cap, which stacked with the
+   flex gap and left the two-key Navigate group 14px from its label while the
+   single-key groups sat at 10px. Zero the margin and let one property own the
+   spacing, so every group measures the same.
+
+   The caps also take the full text colour, matching the Clear button: they were
+   muted grey against Clear's --text-color, so two controls sharing a size and
+   weight still did not look like the same thing. The helper text beside them
+   stays muted and lighter -- it is description, not a control. */
+.DocSearch-Footer .DocSearch-Commands-Key {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.DocSearch-Command {
+    gap: 0.625rem;   /* 10px, label to its own key, in every group */
+}
