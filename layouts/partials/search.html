@@ -18,43 +18,53 @@
 DOC-1408: map each served version segment to one the search index actually carries.
 
 The index is faceted by `version` x `variant`, where `version` is the first path segment
-under /docs/. Not every served segment is indexed: the Algolia crawler excludes the pinned
-version trees (each is a near-complete copy of the corpus, ~37k records apiece), so
-filtering on a pin's own segment matches zero records and the search box comes back empty
--- which is what /docs/latest did until the crawler stopped excluding it.
+under /docs/. This map exists because not every served segment is necessarily indexed, and
+filtering on a segment that carries no records returns an empty search box rather than an
+error.
 
-Rather than hardcode a second list that can drift from the crawler config, derive it from
-the version menu: badged entries (LATEST / STABLE) are the built-and-indexed trees, bare
-numbered entries are the pins. A pin falls back to its own line's stable, so a reader on a
-pinned tree gets that line's results instead of nothing.
+The original premise has expired. The rule used to be "no pin is ever indexed, so send
+every pin to its line's stable", because the Algolia crawler excluded the pinned trees
+outright. We build the records ourselves now (tools/algolia_indexer) and BOTH indices
+carry the pins: the keyword index at page granularity (PIN_MAX_LEVEL = 1) and the Ask AI
+retrieval index at full depth. So a reader on a pin is now searched and answered against
+the tree they are actually reading, which is what they asked for by being there -- rather
+than against a stable that documents different behaviour.
+
+One limit survives, so it is encoded rather than assumed. The indexers keep only the
+newest --keep-pins trees (default 6, since pins accrue and never change). A pin outside
+that window genuinely carries no records, so it still falls back to its line's stable.
+$pinWindow below MUST track that default; if the menu ever enumerates more pins than the
+indexers keep, the ones past the window take the fallback and stay findable.
 */ -}}
+{{- $pinWindow := 6 -}}
 {{- $searchVersions := dict -}}
+{{- $searchVersionLabels := dict -}}
 {{- with site.Params.version_menu -}}
   {{- range $g := (. | transform.Unmarshal) -}}
+    {{- $pins := 0 -}}
     {{- range $it := $g.items -}}
       {{- if $it.badge -}}
         {{- $searchVersions = merge $searchVersions (dict $it.seg $it.seg) -}}
       {{- else -}}
-        {{- $searchVersions = merge $searchVersions (dict $it.seg $g.line) -}}
+        {{- $pins = add $pins 1 -}}
+        {{- if le $pins $pinWindow -}}
+          {{- $searchVersions = merge $searchVersions (dict $it.seg $it.seg) -}}
+        {{- else -}}
+          {{- $searchVersions = merge $searchVersions (dict $it.seg $g.line) -}}
+        {{- end -}}
       {{- end -}}
+      {{- /* How the scope bar names this tree. Keyed by seg, but looked up by the
+             RESOLVED version -- so an out-of-window pin, which resolves to its line,
+             is named for the line it is actually searching, not for the pin the
+             reader is on. The bar states what is being searched, never what would
+             have been. */ -}}
+      {{- $label := $it.seg -}}
+      {{- if $it.num -}}{{- $label = printf "%s %s" $g.line $it.num -}}{{- end -}}
+      {{- $searchVersionLabels = merge $searchVersionLabels (dict $it.seg $label) -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
 
-{{- /* seg -> the release number the selector shows for it, for the SAME badged
-       entries -- these are the only segments a search can resolve to. Used only
-       to label the scope bar; a bare `v2` is accurate but says nothing about
-       which cut it is. `latest` carries no number and is deliberately absent. */ -}}
-{{- $searchVersionNums := dict -}}
-{{- with site.Params.version_menu -}}
-  {{- range $g := (. | transform.Unmarshal) -}}
-    {{- range $it := $g.items -}}
-      {{- if and $it.badge $it.num -}}
-        {{- $searchVersionNums = merge $searchVersionNums (dict $it.seg $it.num) -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
 
 {{- /* DOC-1423: the search UI is ours -- InstantSearch for keyword search plus our
        own Ask AI panel, in assets/js/search.js. We no longer load @docsearch/js.
@@ -90,7 +100,7 @@ pinned tree gets that line's results instead of nothing.
     // seg -> the `version` facet value to filter on. Empty on an unversioned build
     // (local dev, pre-go-live), where the raw segment is used exactly as before.
     const SEARCH_VERSIONS = {{ $searchVersions | jsonify | safeJS }};
-    const SEARCH_VERSION_NUMS = {{ $searchVersionNums | jsonify | safeJS }};
+    const SEARCH_VERSION_LABELS = {{ $searchVersionLabels | jsonify | safeJS }};
 
     const pathParts = window.location.pathname.split('/').filter(Boolean);
 
@@ -139,7 +149,7 @@ pinned tree gets that line's results instead of nothing.
         // the same pair and the indicator shows in both modes.
         version: version,
         variant: variant,
-        versionNums: SEARCH_VERSION_NUMS,
+        versionLabels: SEARCH_VERSION_LABELS,
         placeholder: 'Search docs'{{ if $askAi }},
 
         // Ask AI retrieves from its own index, and is scoped by the SAME version /

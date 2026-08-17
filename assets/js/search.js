@@ -1044,12 +1044,14 @@
     var version = CFG.version;
     if (!variant && !version) return null;
 
-    var num = version ? (CFG.versionNums || {})[version] : '';
     return {
       product: variant ? (VARIANT_LABELS[variant] || variant) : 'all products',
-      // The RESOLVED version, not the served segment -- that is what the filter
-      // actually uses. On a pin the two differ, which is the whole point.
-      version: version ? (num ? version + '  ' + num : version) : 'all versions'
+      // Keyed on the RESOLVED version, not the served segment. They are the
+      // same on every tree the index carries, including the pins; they differ
+      // only for a pin outside the indexers' keep-pins window, which falls back
+      // to its line -- and there the bar must name the line, because that is
+      // what is being searched.
+      version: version ? ((CFG.versionLabels || {})[version] || version) : 'all versions'
     };
   }
 
