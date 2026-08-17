@@ -48,6 +48,11 @@ CATEGORY_MAP = {
     # segment). Grouping it with `guide` keeps "spark"/"snowflake" out of the
     # leftovers bucket, while its own lvl0 label still gives it a display heading.
     "integrations": ("guide", "Integrations"),
+    # Keeps the `other` BUCKET -- the judged-query sets and eval groups are keyed
+    # on the category, and moving release notes out of it would silently shift
+    # every per-group score. Only the display label changes, so the results list
+    # heads these with "Release notes" instead of the catch-all "Other".
+    "release-notes": ("other", "Release notes"),
 }
 CATEGORY_FALLBACK = ("other", "Other")
 
@@ -224,6 +229,35 @@ def strip_markdown(text):
     return text.strip()
 
 
+# Emoji shortcodes leading a heading -- `### :sparkles: Task Environment Drawer`,
+# the release-notes house style. Hugo renders these (enableEmoji = true in
+# hugo.toml), so the PAGE shows a glyph; this tool reads the markdown and never
+# runs Hugo, so the literal `:sparkles:` was going into the index and showing up
+# in search results as a heading nobody wrote.
+#
+# Stripped rather than translated: mapping aliases to glyphs needs the gemoji
+# dataset, which is one more thing to keep in step with Hugo's, and a wrong
+# glyph is worse than none. The emoji carries no retrievable signal either way
+# -- readers search the words -- and it is pure noise in the Ask AI corpus,
+# where it is spent as tokens the model has to look past.
+#
+# Only a run at the START of a heading, so nothing mid-text is touched. The
+# corpus has `:func:` (a Sphinx role) and `:log-group:` (inside an ARN), and
+# both would be eligible under a looser rule; neither ever leads a heading.
+# Verified across content/: all 23 heading-leading shortcodes are real gemoji.
+# `\s+`, not `\s*`: a shortcode must be followed by space to count, which is
+# also Hugo's rule -- `:sparkles:Foo` renders literally there, so leaving it
+# literal here is the faithful result, and `:func:`+backtick is untouched even
+# when it does lead a heading.
+EMOJI_SHORTCODE_RE = re.compile(r"^(?::[a-z0-9][a-z0-9_+-]{1,30}:\s+)+")
+
+
+def strip_leading_emoji(title):
+    """`:sparkles: Foo` -> `Foo`. A title that is ONLY shortcodes is left alone."""
+    cleaned = EMOJI_SHORTCODE_RE.sub("", title).strip()
+    return cleaned or title
+
+
 def parse_sections(md):
     """Split markdown into (level, title, anchor, body) sections.
 
@@ -267,7 +301,13 @@ def parse_sections(md):
                 anchor = f"{anchor}-{seen_anchors[anchor]}"
             else:
                 seen_anchors[anchor] = 0
-            current = {"level": level, "title": title, "anchor": anchor, "body": []}
+            # AFTER the anchor. Hugo derives the heading id from the raw text,
+            # before the emoji substitution -- `:sparkles: Task Environment
+            # Details Drawer` is served at #sparkles-task-environment-details-
+            # drawer. Stripping first would silently break every deep link into
+            # the release notes, which is most of what carries these.
+            current = {"level": level, "title": strip_leading_emoji(title),
+                       "anchor": anchor, "body": []}
             sections.append(current)
         elif current is not None:
             current["body"].append(line)
