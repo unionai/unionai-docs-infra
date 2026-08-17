@@ -57,10 +57,16 @@ indexers keep, the ones past the window take the fallback and stay findable.
              RESOLVED version -- so an out-of-window pin, which resolves to its line,
              is named for the line it is actually searching, not for the pin the
              reader is on. The bar states what is being searched, never what would
-             have been. */ -}}
-      {{- $label := $it.seg -}}
-      {{- if $it.num -}}{{- $label = printf "%s %s" $g.line $it.num -}}{{- end -}}
-      {{- $searchVersionLabels = merge $searchVersionLabels (dict $it.seg $label) -}}
+             have been.
+
+             The three parts stay separate rather than being pre-joined into one
+             string: the bar weights and sets them differently (bold line, the
+             badge word in sans, the release in mono), and the combinations are
+             not uniform -- LATEST carries no release number, a pin carries no
+             badge. Splitting a joined string back apart in the client would have
+             to reconstruct exactly that, from a format nothing enforces. */ -}}
+      {{- $searchVersionLabels = merge $searchVersionLabels (dict $it.seg (dict
+            "line" $g.line "badge" (lower $it.badge) "num" $it.num)) -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}

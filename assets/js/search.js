@@ -147,7 +147,8 @@
         '<span class="DocSearch-Scope-Product">' + escapeHtml(scope.product) + '</span>' +
         '<span class="DocSearch-Scope-Version">' +
           '<span class="DocSearch-Scope-Line">' + escapeHtml(scope.line) + '</span>' +
-          (scope.release ? ' <span class="DocSearch-Scope-Release">' + escapeHtml(scope.release) + '</span>' : '') +
+          (scope.badge ? '<span class="DocSearch-Scope-Badge">' + escapeHtml(scope.badge) + '</span>' : '') +
+          (scope.release ? '<span class="DocSearch-Scope-Release">' + escapeHtml(scope.release) + '</span>' : '') +
         '</span>';
       el.modal.appendChild(el.scope);
     }
@@ -1047,21 +1048,24 @@
     var version = CFG.version;
     if (!variant && !version) return null;
 
-    var label = version ? ((CFG.versionLabels || {})[version] || version) : 'all versions';
-    var sp = label.indexOf(' ');
+    // Keyed on the RESOLVED version, not the served segment. They are the same
+    // on every tree the index carries, including the pins; they differ only for
+    // a pin outside the indexers' keep-pins window, which falls back to its
+    // line -- and there the bar must name the line, because that is what is
+    // actually being searched.
+    //
+    // A version the menu does not describe degrades to naming itself, which is
+    // still true, rather than to nothing.
+    var v = (version && (CFG.versionLabels || {})[version]) ||
+            { line: version || 'all versions', badge: '', num: '' };
     return {
       product: variant ? (VARIANT_LABELS[variant] || variant) : 'all products',
-      // Keyed on the RESOLVED version, not the served segment. They are the
-      // same on every tree the index carries, including the pins; they differ
-      // only for a pin outside the indexers' keep-pins window, which falls back
-      // to its line -- and there the bar must name the line, because that is
-      // what is being searched.
-      // Split at the first space so the LINE (v2 / v1) can be emphasised apart
-      // from the release. The label is built as "<line> <num>" in search.html;
-      // `latest` and any unlabelled segment have no second half, and fall
-      // through as a line with an empty release.
-      line: label.slice(0, sp < 0 ? label.length : sp),
-      release: sp < 0 ? '' : label.slice(sp + 1)
+      line: v.line,
+      // LATEST has no release number -- it is the branch tip, not a cut -- so
+      // its badge is the whole of what there is to say. A pin is the inverse:
+      // a number with no badge. Neither is a missing value to paper over.
+      badge: v.badge || '',
+      release: v.num || ''
     };
   }
 
