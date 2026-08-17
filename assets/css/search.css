@@ -569,3 +569,62 @@ body.DocSearch--active div.bd-header-article {
     padding-block-end: 0.5rem;
     margin-block-end: 0.25rem;
 }
+
+/* Answer text at the docs' own body size.
+
+   The fork walks the answer down through compounding ems -- 16px at the Ask AI
+   screen, 0.8em at the Response, another 0.935em at the content -- landing at
+   11.97px against the site's 14.5px body copy. So the answer, the most
+   substantial prose in the modal, was rendering ~17% smaller than the page
+   behind it.
+
+   Sized in REM from the same tokens body copy uses, so it is immune to whatever
+   the ancestors do and tracks the docs type scale if it changes. Descendants
+   are set in em so headings and small print stay proportional to it. */
+.DocSearch-AskAiScreen-Response {
+    font-size: 1rem;
+}
+
+.DocSearch-Markdown-Content {
+    font-size: var(--type-body);
+    line-height: var(--lh-body);
+    color: var(--text-color);
+}
+
+.DocSearch-Markdown-Content p,
+.DocSearch-Markdown-Content li {
+    font-size: 1em;
+    line-height: var(--lh-body);
+}
+
+.DocSearch-Markdown-Content p { margin: 0 0 0.75em; }
+.DocSearch-Markdown-Content p:last-child { margin-bottom: 0; }
+
+.DocSearch-Markdown-Content h1,
+.DocSearch-Markdown-Content h2,
+.DocSearch-Markdown-Content h3,
+.DocSearch-Markdown-Content h4 {
+    font-size: 1.06em;
+    font-weight: 640;
+    line-height: 1.35;
+    margin: 1.1em 0 0.4em;
+}
+
+.DocSearch-Markdown-Content ul,
+.DocSearch-Markdown-Content ol {
+    margin: 0 0 0.75em;
+    padding-inline-start: 1.25em;
+}
+
+.DocSearch-Markdown-Content li { margin: 0.2em 0; }
+
+/* The question bubble and the retrieval line are secondary to the answer. */
+.DocSearch-AskAiScreen-Message--user {
+    font-size: var(--type-body);
+    line-height: var(--lh-body);
+}
+
+.DocSearch-AskAiScreen-MessageContent-Tool {
+    font-size: var(--type-crumb);
+    line-height: var(--lh-crumb);
+}
