@@ -628,3 +628,109 @@ body.DocSearch--active div.bd-header-article {
     font-size: var(--type-crumb);
     line-height: var(--lh-crumb);
 }
+
+/* ==========================================================================
+   Controls matching the site's top bar
+
+   The header's controls (.version-btn, and #search-trigger above) share one
+   idiom: 1px --border-color, 6px radius, --code-bg, --shadow-hairline, and a
+   hover that goes to --separator + --shadow-card. Icon-only controls
+   (.theme-toggle) drop the border and take a hover background instead. The
+   modal now uses both, so its buttons read as the same family of control as
+   the ones directly above it on the page.
+   ========================================================================== */
+
+.DocSearch-Clear,
+.DocSearch-StopStreaming {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--code-bg);
+    color: var(--text-color);
+    box-shadow: var(--shadow-hairline);
+    font-family: var(--font-sans);
+    font-size: 0.84rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.DocSearch-Clear:hover,
+.DocSearch-StopStreaming:hover {
+    border-color: var(--separator);
+    box-shadow: var(--shadow-card);
+}
+
+/* Icon-only, so it follows .theme-toggle rather than .version-btn. */
+.DocSearch-Close {
+    background: none;
+    border: 0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    box-shadow: none;
+    color: var(--text-color-light);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.DocSearch-Close:hover {
+    background: var(--code-bg);
+    color: var(--text-color);
+}
+
+/* Footer key caps get the same treatment, so the hints read as controls of the
+   same family rather than as bare text with a grey box behind them. */
+.DocSearch-Footer .DocSearch-Commands-Key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--code-bg);
+    box-shadow: var(--shadow-hairline);
+    color: var(--text-color-light);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .DocSearch-Clear,
+    .DocSearch-StopStreaming,
+    .DocSearch-Close { transition: none; }
+}
+
+/* The close control sits beside a bordered Clear button, so at muted grey it
+   read as almost absent. Icon-only still (per .theme-toggle), but at the same
+   optical weight as the text next to it. */
+.DocSearch-Close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: var(--text-color);
+}
+
+.DocSearch-Close svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Headings in the corpus carry raw markdown, so a result title can contain a
+   backticked identifier. Rendered as code it matches how that same heading
+   looks on the page instead of showing literal backticks. */
+.DocSearch-Hit-title code {
+    background: var(--code-bg);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+}

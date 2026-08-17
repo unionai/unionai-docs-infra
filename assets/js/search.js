@@ -367,6 +367,20 @@
   // --------------------------------------------------------------------------
   // Hit rendering -- grouped by hierarchy.lvl0, DocSearch-equivalent markup
   // --------------------------------------------------------------------------
+  // Headings in the corpus carry raw markdown: a section called `ReusePolicy`
+  // parameters arrives with literal backticks and rendered as
+  // "`ReusePolicy` parameters". Render the span as code, matching how the same
+  // heading looks on the page.
+  //
+  // The inner text MUST be allowed to contain markup. The search highlighter
+  // wraps the match first, so by the time this runs the backticked span is
+  // usually `<mark>ReusePolicy</mark>` -- excluding angle brackets, as a first
+  // attempt did, meant the pattern missed precisely the titles that matter.
+  // Length-capped so an unpaired backtick cannot swallow a whole title.
+  function codeSpans(html) {
+    return html.replace(/`([^`]{1,80})`/g, '<code>$1</code>');
+  }
+
   function hitTitle(hit) {
     var hr = hit._highlightResult || {};
     if (hit.type === 'content') {
@@ -428,7 +442,7 @@
           '<div class="DocSearch-Hit-Container">' +
           '<div class="DocSearch-Hit-icon">' + (hit.type === 'lvl1' ? ICON.page : ICON.hash) + '</div>' +
           '<div class="DocSearch-Hit-content-wrapper">' +
-          '<span class="DocSearch-Hit-title">' + hitTitle(hit) + '</span>' +
+          '<span class="DocSearch-Hit-title">' + codeSpans(hitTitle(hit)) + '</span>' +
           '<span class="DocSearch-Hit-path">' + hitPath(hit) + '</span>' +
           '</div>' +
           '<div class="DocSearch-Hit-action">' + ICON.enter + '</div>' +
