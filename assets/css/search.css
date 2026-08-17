@@ -916,3 +916,48 @@ body.DocSearch--active div.bd-header-article {
 .DocSearch-Footer .DocSearch-Commands-Key {
     width: auto;
 }
+
+/* ==========================================================================
+   One surface per modal
+
+   The fork fills the input row and the footer with --docsearch-searchbox- /
+   footer-background, which is #ffffffa6 in light and #000000a6 in dark: 65%
+   white over a white modal, and 65% BLACK over the modal's #15172a.
+
+   In light that is invisible, so the rule looks harmless. In dark it produces
+   two faults at once. The input row and footer go near-black while the strip
+   around the buttons stays navy, splitting one bar into two tones; and
+   near-black is within a few points of the dimmed page behind the modal
+   (#0e0e11 under an 80% scrim), so the field reads as a hole through the
+   modal rather than as part of it.
+
+   Dropping the fills gives the modal a single surface in both themes. Nothing
+   is lost in light -- 65% white over white was already a no-op -- and the
+   structure that fill was carrying is already drawn: the scope bar's hairline
+   under the search bar, --docsearch-footer-shadow above the footer.
+   ========================================================================== */
+
+.DocSearch-Modal {
+    --docsearch-searchbox-background: transparent;
+    --docsearch-searchbox-focus-background: transparent;
+    --docsearch-footer-background: transparent;
+
+    /* The same inversion, one level down. --docsearch-background-color is the
+       modal's RAISED surface -- the Ask AI entry row, a focused hit -- and in
+       dark the fork sets it to #090a11, which is DARKER than the #15172a it
+       sits on. A raised element painted darker than its container reads as a
+       hole punched through the modal, which is what the input was doing.
+
+       Mixing toward --text-color rather than naming a colour makes the
+       direction follow the theme: near-white text lifts the surface in dark,
+       near-black text sinks it slightly in light, which is the correct
+       direction in each and lands within a point or two of the fork's own
+       light value. */
+    --docsearch-background-color: color-mix(in srgb, var(--text-color) 5%, var(--docsearch-modal-background));
+
+    /* Selection is the last place the inversion survives: the dark block pins
+       --docsearch-hit-focus-background to #090a11 rather than deriving it, so
+       selecting a row SANK it below the modal. Point it at the raised surface
+       above and selection lifts, in both themes. */
+    --docsearch-hit-focus-background: var(--docsearch-background-color);
+}
