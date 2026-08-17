@@ -793,3 +793,36 @@ body.DocSearch--active div.bd-header-article {
 .DocSearch-Command {
     gap: 0.625rem;   /* 10px, label to its own key, in every group */
 }
+
+/* Variant tint on the controls.
+
+   The modal can be searching Union.ai or Flyte, and nothing in it said which.
+   The controls now carry a wash of the ACTIVE product's brand colour, so the
+   modal is quietly coloured by what it is searching.
+
+   Uses --brand, not --brand-union/--brand-flyte. Those two are each product's
+   own mark, for places showing both at once (the product toggle); --brand is
+   whichever variant is being READ, and base.css already tracks it per variant
+   and per theme. Pinning to --brand-union is the exact bug the comment beside
+   those tokens records: the Flyte variant then renders in Union's colour.
+
+   A wash rather than a fill: these are still neutral controls that happen to
+   tell you where you are, and a saturated #FCB51D button would shout over the
+   content it sits beside. */
+.DocSearch-Clear,
+.DocSearch-StopStreaming,
+.DocSearch-Footer .DocSearch-Commands-Key {
+    background: color-mix(in srgb, var(--brand) 12%, var(--code-bg));
+    border-color: color-mix(in srgb, var(--brand) 32%, var(--border-color));
+}
+
+.DocSearch-Clear:hover,
+.DocSearch-StopStreaming:hover {
+    border-color: color-mix(in srgb, var(--brand) 55%, var(--separator));
+}
+
+/* The Ask AI entry carries it too -- it is the control that most needs to say
+   which corpus it is about to answer from. */
+.DocSearch-Hit--AskAI .DocSearch-Hit-icon {
+    color: var(--brand);
+}
