@@ -475,3 +475,97 @@ body.DocSearch--active div.bd-header-article {
 
 .DocSearch-Markdown-Content .token.deleted { color: var(--red); }
 .DocSearch-Markdown-Content .token.inserted { color: var(--green); }
+
+/* ==========================================================================
+   Visual hierarchy pass
+
+   Measured before changing anything: section labels and result titles were
+   IDENTICAL -- 13.05px, weight 400, rgb(35,38,59) -- so nothing distinguished
+   a group heading from a result except its position. Meanwhile the footer key
+   hints sat at 12.7px in link-blue, nearly the size of the titles and more
+   saturated, so the least important thing on screen competed with the most.
+   ========================================================================== */
+
+/* Group labels are chrome, not content. */
+.DocSearch-Hit-source,
+.DocSearch-Sources-Title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-color-light);
+    padding-block: 0.75rem 0.35rem;
+}
+
+/* Footer: the quietest thing in the modal, not the loudest. */
+.DocSearch-Footer .DocSearch-Label {
+    color: var(--text-color-light);
+    font-size: 0.75rem;
+}
+
+.DocSearch-Footer .DocSearch-Commands-Key {
+    color: var(--text-color-light);
+}
+
+/* Match highlighting by EMPHASIS, not by recolouring.
+
+   The fork recolours the matched substring. Mid-word matches then read as
+   stripes ("Reusable {container}s"), and when the match starts the title the
+   whole title turns accent-coloured, so some rows look like links and others
+   do not -- a difference driven by where the query happened to match rather
+   than by anything about the row. Keep the text colour, mark the span. */
+.DocSearch-Hits mark,
+.DocSearch-Hit-title mark,
+.DocSearch-Hit-path mark {
+    color: inherit;
+    font-weight: 600;
+    border-radius: 2px;
+    padding: 0 0.1em;
+    background: rgba(180, 83, 9, 0.14);                                  /* fallback */
+    background: color-mix(in srgb, var(--accent-search) 14%, transparent);
+}
+
+/* Proportion: 20px icons beside 13px text made the left rail heavier than the
+   titles, and the 58px gutter was wide for what it carried. */
+.DocSearch-Hit-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.DocSearch-Hit-icon {
+    width: 16px;
+    min-width: 16px;
+    margin-inline-end: 0.6rem;
+    color: var(--text-color-light);
+}
+
+.DocSearch-Hit-title {
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.DocSearch-Hit-path {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: var(--text-color-light);
+}
+
+.DocSearch-Hit-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* The Ask AI row sits in its own section, and the fork's section spacing
+   (24px margin + 12px padding) left 36px of dead space between one row and the
+   first result. Separate the two with a rule instead of a void -- it says
+   "different kind of thing" in 1px rather than in three-quarters of a row. */
+.DocSearch-AskAi-Host .DocSearch-Hits {
+    margin-block-end: 0;
+    padding-block-end: 0;
+}
+
+.DocSearch-AskAi-Host:not(:empty) {
+    border-block-end: 1px solid var(--border-color);
+    padding-block-end: 0.5rem;
+    margin-block-end: 0.25rem;
+}

@@ -379,15 +379,16 @@
     return escapeHtml((hit.hierarchy && hit.hierarchy[lvl]) || '');
   }
 
+  // Where a result lives, from its URL -- the SAME derivation the Ask AI
+  // sources use, so both halves of the modal answer "where is this?" the same
+  // way.
+  //
+  // Was built from hierarchy levels, which produced a breadcrumb on only 12 of
+  // 20 rows and, on one, the raw anchor slug "container-tasks". Most results
+  // carried no location at all and one carried something meaningless. The URL
+  // is always present and always structural.
   function hitPath(hit) {
-    var levels = [];
-    var order = ['lvl1', 'lvl2', 'lvl3', 'lvl4', 'lvl5', 'lvl6'];
-    var stop = hit.type === 'content' ? order.length : order.indexOf(hit.type);
-    for (var i = 0; i < stop; i++) {
-      var v = hit.hierarchy && hit.hierarchy[order[i]];
-      if (v) levels.push(escapeHtml(v));
-    }
-    return levels.join(' &rsaquo; ');
+    return escapeHtml(breadcrumbFor(hit.url || ''));
   }
 
   function renderHits(hits) {
@@ -999,7 +1000,7 @@
   // corpus -- "Resources" is both a user-guide page and an API reference page --
   // so a bare list of titles gives the reader two identical-looking links and no
   // way to tell which is which.
-  function sourceBreadcrumb(url) {
+  function breadcrumbFor(url) {
     var path;
     try { path = new URL(url, location.href).pathname; } catch (e) { return ''; }
     var parts = path.split('/').filter(Boolean);
@@ -1015,7 +1016,7 @@
     var wrap = h('div', 'DocSearch-Sources');
     var html = '<div class="DocSearch-Sources-Title">Sources</div><ul class="DocSearch-Sources-List">';
     sources.slice(0, 6).forEach(function (s) {
-      var crumb = sourceBreadcrumb(s.url);
+      var crumb = breadcrumbFor(s.url);
       html += '<li class="DocSearch-Sources-Item">' +
         '<a class="DocSearch-Sources-Link" href="' + escapeHtml(s.url) + '">' +
         escapeHtml(s.title) + '</a>' +
