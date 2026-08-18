@@ -68,11 +68,33 @@ def browse_slice_ids(client, index, version, variant):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--records", help="records.json from build_records.py")
+    ap.add_argument("--prune",
+                    help="prune.json from the builders: (version, variant) slices "
+                         "to DELETE wholesale -- pins aged out of the --keep-pins "
+                         "window, which are neither rebuilt nor otherwise removed.")
     ap.add_argument("--index", default="union")
     ap.add_argument("--settings", help="apply index settings from this JSON file")
     ap.add_argument("--synonyms", help="apply one-way synonyms from this JSON file")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
+
+    # Read and cross-check the inputs BEFORE touching the network. A slice that
+    # is both built and pruned means the builder is confused about its own
+    # retention window, and continuing would delete records this same run just
+    # wrote. Catching it here makes the failure instant, offline-testable, and
+    # impossible to hit halfway through a push.
+    records = json.loads(Path(args.records).read_text()) if args.records else []
+    by_slice = defaultdict(list)
+    for r in records:
+        by_slice[(r["version"], r["variant"])].append(r)
+
+    prune = json.loads(Path(args.prune).read_text()) if args.prune else []
+    overlap = sorted({(p["version"], p["variant"]) for p in prune} & set(by_slice))
+    if overlap:
+        raise SystemExit(
+            f"ERROR: {len(overlap)} slice(s) are marked for pruning AND present in "
+            f"this build: {overlap}\n"
+            f"       Refusing to run -- this would delete records just written.")
 
     app_id = os.environ.get("ALGOLIA_DOCS_2_APPLICATION_ID")
     api_key = os.environ.get("ALGOLIA_DOCS_2_WRITE_API_KEY")
@@ -104,14 +126,9 @@ def main():
             print(f"applied {len(syns)} synonyms")
 
     if not args.records:
-        if not (args.settings or args.synonyms):
+        if not (args.settings or args.synonyms or args.prune):
             raise SystemExit("nothing to do: pass --records, --settings or --synonyms")
         return 0
-
-    records = json.loads(Path(args.records).read_text())
-    by_slice = defaultdict(list)
-    for r in records:
-        by_slice[(r["version"], r["variant"])].append(r)
 
     print(f"\n{len(records)} records across {len(by_slice)} slice(s) in this build")
     print("slices NOT in this build are left untouched\n")
@@ -137,8 +154,25 @@ def main():
         tot_up += len(recs)
         tot_del += len(stale)
 
+    # Aged-out pins. Deliberately NOT folded into the sync above: that loop is
+    # scoped to slices present in this build, and widening it is what would let
+    # one line delete another's records. This is a separate, explicit pass over
+    # slices the builder named.
+    tot_pruned = 0
+    if prune:
+        print(f"\npruning {len(prune)} aged-out slice(s):")
+        for p in prune:
+            version, variant = p["version"], p["variant"]
+            stale = sorted(browse_slice_ids(client, args.index, version, variant))
+            print(f"  {version}/{variant:<6} delete={len(stale):>6}")
+            if stale and not args.dry_run:
+                client.delete_objects(index_name=args.index, object_ids=stale,
+                                      wait_for_tasks=True)
+            tot_pruned += len(stale)
+
     verb, verb2 = ("would upsert", "would delete") if args.dry_run else ("upserted", "deleted")
-    print(f"\n{verb} {tot_up}, {verb2} {tot_del}")
+    print(f"\n{verb} {tot_up}, {verb2} {tot_del}"
+          + (f", pruned {tot_pruned} from aged-out pins" if tot_pruned else ""))
     return 0
 
 

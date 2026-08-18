@@ -63,6 +63,7 @@ from build_records import (  # noqa: E402  (path shim must precede the import)
     is_pin,
     iter_pages,
     parse_sections,
+    prune_slices,
     strip_markdown,
 )
 
@@ -234,8 +235,17 @@ def main():
                          "tree is answered from that pin, not from its line's "
                          "current docs. Pins accrue every ~1.3 days, hence the "
                          "retention window.")
+    ap.add_argument("--prune-out", default=None,
+                    help="where to write the list of (version, variant) slices "
+                         "that must be DELETED -- pins that have aged out of the "
+                         "--keep-pins window. Defaults to <out>.prune.json.")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
+    if args.prune_out is None:
+        # Append, do NOT use with_suffix(""): the Makefile passes an mktemp name
+        # like search-records.ABC123, whose random tail Path treats as a suffix.
+        # Stripping it would make the builder write a path the pusher never reads.
+        args.prune_out = args.out + ".prune.json"
 
     pins = sorted({v for v, _ in _slices(args.dist) if is_pin(v)},
                   key=_version_key, reverse=True)
@@ -268,6 +278,15 @@ def main():
             "rejection leaves the index partially written.")
 
     Path(args.out).write_text(json.dumps(records, indent=None), encoding="utf-8")
+
+    # Same leak as the keyword index, same fix -- see prune_slices(). It bites
+    # harder here: this index carries pins at FULL depth (~3,150 records each)
+    # where the keyword index holds them at page level (~1,225), so an aged-out
+    # pin strands proportionally more. DOC-1441.
+    prune = prune_slices(args.dist, skipped_pins)
+    Path(args.prune_out).write_text(
+        json.dumps([{"version": v, "variant": var} for v, var in prune], indent=None),
+        encoding="utf-8")
     if args.settings_out:
         Path(args.settings_out).write_text(json.dumps(SETTINGS, indent=2) + "\n",
                                            encoding="utf-8")
