@@ -38,6 +38,7 @@ custom_css = [
   "markdown.css",
   "mermaid.css",
   "plugin.css",
+  "search-modal.css",
   "search.css",
   "sidebar.css",
   "toc.css",
@@ -45,7 +46,6 @@ custom_css = [
 custom_js = [
   "404.js",
   "key.js",
-  "runllm-attachment-guard.js",
   "sidebar.js",
   "theme.js",
   "tags.js",

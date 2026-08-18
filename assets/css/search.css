@@ -115,3 +115,877 @@ body.DocSearch--active div.bd-header-article {
         border-radius: 6px;
     }
 }
+
+/* Ask AI panel (DOC-1423)
+   Rules for the markup our panel introduces. The forked @docsearch/css styles
+   the shared modal chrome; these cover the pieces it has no selector for. */
+
+.DocSearch-AskAiScreen-ExchangesList {
+    list-style: none;   /* exchanges are conversation turns, not a bulleted list */
+    margin: 0;
+    padding: 0;
+}
+
+.DocSearch-AskAiScreen-Exchange + .DocSearch-AskAiScreen-Exchange {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.DocSearch-AskAiScreen-MessageContent-Stopped {
+    color: var(--text-color-light);
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-top: 0.5rem;
+}
+
+.DocSearch-AskAi-Host:empty {
+    display: none;
+}
+
+/* The [hidden] attribute only hides an element via the UA stylesheet's
+   `display: none`, which ANY author `display` rule outranks. The forked
+   stylesheet sets `display: flex` on the Ask AI screen and the dropdown, so
+   toggling `.hidden` in JS had no effect and the Ask AI disclaimer rendered
+   underneath the keyword results. Make the attribute authoritative for the
+   elements we toggle. */
+.DocSearch-AskAiScreen[hidden],
+.DocSearch-Dropdown[hidden],
+.DocSearch-AskAiScreen-MessageContent-Tool[hidden],
+.DocSearch-StopStreaming[hidden] {
+    display: none !important;
+}
+
+/* The Ask AI panel must scroll.
+
+   The forked stylesheet styles .DocSearch-AskAiScreen for DocSearch's EMPTY
+   "new conversation" screen -- centred, 80% wide, max-height:80%, no overflow.
+   A real conversation therefore overflowed the modal with no scrollbar and the
+   answer was unreachable. Re-lay it out as a bounded, scrolling column using the
+   same height math the keyword dropdown uses, so both modes feel identical. */
+.DocSearch-AskAiScreen {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 1rem;
+    font-weight: normal;
+    text-align: start;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: var(--docsearch-modal-variable-height);
+    max-height: calc(var(--docsearch-modal-height)
+                     - var(--docsearch-spacing)
+                     - var(--docsearch-footer-height));
+    overflow: hidden;
+}
+
+.DocSearch-AskAiScreen-Container {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 var(--docsearch-spacing) var(--docsearch-spacing);
+    scrollbar-color: var(--docsearch-muted-color) var(--docsearch-modal-background);
+}
+
+/* The fork has no rule for .DocSearch-Close (v5 markup differs), so style the
+   dismiss control to sit beside Clear rather than as a default button. */
+.DocSearch-Close {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    margin-inline-start: var(--docsearch-spacing);
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--docsearch-muted-color);
+}
+
+.DocSearch-Close:hover { color: var(--docsearch-highlight-color); }
+.DocSearch-Close:focus-visible,
+.DocSearch-Clear:focus-visible {
+    outline: 2px solid var(--docsearch-highlight-color);
+    outline-offset: 2px;
+}
+
+/* Mobile: the modal goes full-screen (height:100dvh) and the fork switches
+   .DocSearch-Dropdown to height:100%/max-height:none to fill it. The Ask AI
+   panel has to track that, or it stays capped at the desktop 60dvh/600px and
+   sits stranded in a full-screen modal with dead space beneath it. Same values
+   the fork uses for the dropdown, for the same reason. */
+@media (width <= 768px) {
+    .DocSearch-AskAiScreen {
+        height: 100%;
+        max-height: none;
+    }
+}
+
+/* Screen-reader-only status text. The Ask AI answer re-renders on every
+   streamed token, so the live region announces STATE ("Searching the
+   documentation", "Answer ready") rather than the answer itself -- a live
+   region on the answer would re-read the whole growing response dozens of
+   times. */
+.DocSearch-VisuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Enter pressed while an answer is still streaming: the question is kept in the
+   box rather than discarded, and the bar flashes so the reader sees why nothing
+   was sent. Respects reduced-motion -- the colour change alone still reads. */
+.DocSearch-SearchBar--busy {
+    box-shadow: inset 0 -2px 0 0 var(--docsearch-highlight-color);
+    transition: box-shadow 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .DocSearch-SearchBar--busy { transition: none; }
+}
+
+/* Sources list.
+
+   Our own markup rather than the fork's .DocSearch-AskAiScreen-RelatedSources-*,
+   which lays items out as a horizontal wrapping row (flex-flow: wrap). That
+   suits short chips; it does not suit page titles, which wrapped mid-phrase and
+   ran together. A source needs two lines anyway -- the title, and where it
+   lives, because titles repeat across the corpus ("Resources" is both a
+   user-guide page and an API reference page) and a bare title list offers no
+   way to tell them apart. */
+
+.DocSearch-Sources {
+    margin-top: 1.25rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.DocSearch-Sources-Title {
+    color: var(--text-color-light);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.DocSearch-Sources-List {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.DocSearch-Sources-Item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    margin: 0;
+    min-width: 0;
+}
+
+.DocSearch-Sources-Link {
+    font-size: 0.9rem;
+    line-height: 1.35;
+    text-decoration: none;
+    color: var(--docsearch-highlight-color);
+}
+
+.DocSearch-Sources-Link:hover { text-decoration: underline; }
+
+.DocSearch-Sources-Crumb {
+    font-size: 0.74rem;
+    line-height: 1.3;
+    color: var(--text-color-light);
+}
+
+/* ==========================================================================
+   Match the docs, not the widget's defaults
+
+   The forked stylesheet ships Algolia's own type and controls. Now that the
+   modal is ours, it should read as part of the site: same faces, same inline
+   code treatment, same button idiom as #search-trigger above.
+   ========================================================================== */
+
+/* Type. The fork sets --docsearch-font-family to a system stack; point it at
+   the docs' own face so the modal stops looking like a third-party overlay. */
+.DocSearch-Container,
+.DocSearch-Modal {
+    --docsearch-font-family: var(--font-sans);
+    font-family: var(--font-sans);
+}
+
+.DocSearch-Input,
+.DocSearch-Hit-title,
+.DocSearch-Hit-path,
+.DocSearch-Hit-source,
+.DocSearch-Footer,
+.DocSearch-Markdown-Content {
+    font-family: var(--font-sans);
+}
+
+/* Inline code, matching base.css's `code` rule exactly -- same background,
+   padding, radius, and the deliberate em-based size so an identifier inside a
+   heading scales with it instead of collapsing to body size. */
+.DocSearch-Markdown-Content code,
+.DocSearch-AskAiScreen-MessageContent-Tool code {
+    background: var(--code-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.86em;
+    font-family: var(--font-mono);
+}
+
+.DocSearch-Markdown-Content pre {
+    background: var(--pre-bg);
+    color: var(--pre-color);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: var(--type-code);
+    line-height: var(--lh-code);
+    overflow-x: auto;
+}
+
+.DocSearch-Markdown-Content pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* The hairline under the input.
+
+   The fork puts `border-block-end` on .DocSearch-Form, which sits INSIDE the
+   bar alongside Clear and the close button -- so the rule stopped short of the
+   modal edge and looked like a mistake. Move it to the bar itself, which spans
+   the full width, and take it off the form. */
+.DocSearch-SearchBar {
+    border-block-end: 1px solid var(--border-color);
+    align-items: center;
+    padding-inline-end: var(--docsearch-spacing);
+}
+
+.DocSearch-Form {
+    border-block-end: 0;
+    box-shadow: none;
+}
+
+/* Controls, matching the #search-trigger idiom above. */
+.DocSearch-StopStreaming {
+    height: 28px;
+    box-sizing: border-box;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: var(--code-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-hairline);
+    color: var(--text-color-light);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.DocSearch-StopStreaming:hover {
+    border-color: var(--separator);
+    box-shadow: var(--shadow-card);
+}
+
+.DocSearch-Clear {
+    font-family: var(--font-sans);
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--text-color-light);
+}
+
+.DocSearch-Clear:hover { color: var(--docsearch-highlight-color); }
+
+@media (prefers-reduced-motion: reduce) {
+    .DocSearch-StopStreaming { transition: none; }
+}
+
+/* Syntax highlighting for Ask AI code blocks.
+
+   Chroma highlights at build time, so it never touches markdown rendered in the
+   browser. Prism does it client-side -- and these rules point its token classes
+   at the SAME --syntax-* variables chroma.css uses, so a code block in an answer
+   is coloured identically to one on any other page. Prism ships no stylesheet
+   of its own here; this is the whole theme. */
+
+.DocSearch-Markdown-Content .token.comment,
+.DocSearch-Markdown-Content .token.prolog,
+.DocSearch-Markdown-Content .token.doctype,
+.DocSearch-Markdown-Content .token.cdata {
+    color: var(--syntax-comment);
+    font-style: italic;
+}
+
+.DocSearch-Markdown-Content .token.keyword,
+.DocSearch-Markdown-Content .token.boolean,
+.DocSearch-Markdown-Content .token.constant,
+.DocSearch-Markdown-Content .token.atrule {
+    color: var(--syntax-kw);
+}
+
+.DocSearch-Markdown-Content .token.string,
+.DocSearch-Markdown-Content .token.char,
+.DocSearch-Markdown-Content .token.attr-value,
+.DocSearch-Markdown-Content .token.regex {
+    color: var(--syntax-str);
+}
+
+.DocSearch-Markdown-Content .token.number,
+.DocSearch-Markdown-Content .token.symbol {
+    color: var(--syntax-num);
+}
+
+.DocSearch-Markdown-Content .token.function,
+.DocSearch-Markdown-Content .token.class-name,
+.DocSearch-Markdown-Content .token.builtin,
+.DocSearch-Markdown-Content .token.attr-name,
+.DocSearch-Markdown-Content .token.tag {
+    color: var(--syntax-fn);
+}
+
+/* Decorators (@env.task) -- chroma gives .nd the accent colour. */
+.DocSearch-Markdown-Content .token.decorator,
+.DocSearch-Markdown-Content .token.annotation {
+    color: var(--accent);
+}
+
+.DocSearch-Markdown-Content .token.operator,
+.DocSearch-Markdown-Content .token.punctuation {
+    color: inherit;
+}
+
+.DocSearch-Markdown-Content .token.deleted { color: var(--red); }
+.DocSearch-Markdown-Content .token.inserted { color: var(--green); }
+
+/* ==========================================================================
+   Visual hierarchy pass
+
+   Measured before changing anything: section labels and result titles were
+   IDENTICAL -- 13.05px, weight 400, rgb(35,38,59) -- so nothing distinguished
+   a group heading from a result except its position. Meanwhile the footer key
+   hints sat at 12.7px in link-blue, nearly the size of the titles and more
+   saturated, so the least important thing on screen competed with the most.
+   ========================================================================== */
+
+/* Group labels are chrome, not content. */
+.DocSearch-Hit-source,
+.DocSearch-Sources-Title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-color-light);
+    padding-block: 0.75rem 0.35rem;
+}
+
+/* Footer: the quietest thing in the modal, not the loudest. */
+.DocSearch-Footer .DocSearch-Label {
+    color: var(--text-color-light);
+    font-size: 0.75rem;
+}
+
+.DocSearch-Footer .DocSearch-Commands-Key {
+    color: var(--text-color-light);
+}
+
+/* Match highlighting by EMPHASIS, not by recolouring.
+
+   The fork recolours the matched substring. Mid-word matches then read as
+   stripes ("Reusable {container}s"), and when the match starts the title the
+   whole title turns accent-coloured, so some rows look like links and others
+   do not -- a difference driven by where the query happened to match rather
+   than by anything about the row. Keep the text colour, mark the span. */
+.DocSearch-Hits mark,
+.DocSearch-Hit-title mark,
+.DocSearch-Hit-path mark {
+    color: inherit;
+    font-weight: 600;
+    border-radius: 2px;
+    padding: 0 0.1em;
+    background: rgba(180, 83, 9, 0.14);                                  /* fallback */
+    background: color-mix(in srgb, var(--accent-search) 14%, transparent);
+}
+
+/* Proportion: 20px icons beside 13px text made the left rail heavier than the
+   titles, and the 58px gutter was wide for what it carried. */
+.DocSearch-Hit-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.DocSearch-Hit-icon {
+    width: 16px;
+    min-width: 16px;
+    margin-inline-end: 0.6rem;
+    color: var(--text-color-light);
+}
+
+.DocSearch-Hit-title {
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.DocSearch-Hit-path {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: var(--text-color-light);
+}
+
+.DocSearch-Hit-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* The Ask AI row sits in its own section, and the fork's section spacing
+   (24px margin + 12px padding) left 36px of dead space between one row and the
+   first result. Separate the two with a rule instead of a void -- it says
+   "different kind of thing" in 1px rather than in three-quarters of a row. */
+.DocSearch-AskAi-Host .DocSearch-Hits {
+    margin-block-end: 0;
+    padding-block-end: 0;
+}
+
+.DocSearch-AskAi-Host:not(:empty) {
+    border-block-end: 1px solid var(--border-color);
+    padding-block-end: 0.5rem;
+    margin-block-end: 0.25rem;
+}
+
+/* Answer text at the docs' own body size.
+
+   The fork walks the answer down through compounding ems -- 16px at the Ask AI
+   screen, 0.8em at the Response, another 0.935em at the content -- landing at
+   11.97px against the site's 14.5px body copy. So the answer, the most
+   substantial prose in the modal, was rendering ~17% smaller than the page
+   behind it.
+
+   Sized in REM from the same tokens body copy uses, so it is immune to whatever
+   the ancestors do and tracks the docs type scale if it changes. Descendants
+   are set in em so headings and small print stay proportional to it. */
+.DocSearch-AskAiScreen-Response {
+    font-size: 1rem;
+}
+
+.DocSearch-Markdown-Content {
+    font-size: var(--type-body);
+    line-height: var(--lh-body);
+    color: var(--text-color);
+}
+
+.DocSearch-Markdown-Content p,
+.DocSearch-Markdown-Content li {
+    font-size: 1em;
+    line-height: var(--lh-body);
+}
+
+.DocSearch-Markdown-Content p { margin: 0 0 0.75em; }
+.DocSearch-Markdown-Content p:last-child { margin-bottom: 0; }
+
+.DocSearch-Markdown-Content h1,
+.DocSearch-Markdown-Content h2,
+.DocSearch-Markdown-Content h3,
+.DocSearch-Markdown-Content h4 {
+    font-size: 1.06em;
+    font-weight: 640;
+    line-height: 1.35;
+    margin: 1.1em 0 0.4em;
+}
+
+.DocSearch-Markdown-Content ul,
+.DocSearch-Markdown-Content ol {
+    margin: 0 0 0.75em;
+    padding-inline-start: 1.25em;
+}
+
+.DocSearch-Markdown-Content li { margin: 0.2em 0; }
+
+/* The question bubble and the retrieval line are secondary to the answer. */
+.DocSearch-AskAiScreen-Message--user {
+    font-size: var(--type-body);
+    line-height: var(--lh-body);
+}
+
+.DocSearch-AskAiScreen-MessageContent-Tool {
+    font-size: var(--type-crumb);
+    line-height: var(--lh-crumb);
+}
+
+/* ==========================================================================
+   Controls matching the site's top bar
+
+   The header's controls (.version-btn, and #search-trigger above) share one
+   idiom: 1px --border-color, 6px radius, --code-bg, --shadow-hairline, and a
+   hover that goes to --separator + --shadow-card. Icon-only controls
+   (.theme-toggle) drop the border and take a hover background instead. The
+   modal now uses both, so its buttons read as the same family of control as
+   the ones directly above it on the page.
+   ========================================================================== */
+
+.DocSearch-Clear,
+.DocSearch-StopStreaming {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--code-bg);
+    color: var(--text-color);
+    box-shadow: var(--shadow-hairline);
+    font-family: var(--font-sans);
+    font-size: 0.84rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.DocSearch-Clear:hover,
+.DocSearch-StopStreaming:hover {
+    border-color: var(--separator);
+    box-shadow: var(--shadow-card);
+}
+
+/* Icon-only, so it follows .theme-toggle rather than .version-btn. */
+.DocSearch-Close {
+    background: none;
+    border: 0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    box-shadow: none;
+    color: var(--text-color-light);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.DocSearch-Close:hover {
+    background: var(--code-bg);
+    color: var(--text-color);
+}
+
+/* Footer key caps get the same treatment, so the hints read as controls of the
+   same family rather than as bare text with a grey box behind them. */
+.DocSearch-Footer .DocSearch-Commands-Key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--code-bg);
+    box-shadow: var(--shadow-hairline);
+    color: var(--text-color-light);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .DocSearch-Clear,
+    .DocSearch-StopStreaming,
+    .DocSearch-Close { transition: none; }
+}
+
+/* The close control sits beside a bordered Clear button, so at muted grey it
+   read as almost absent. Icon-only still (per .theme-toggle), but at the same
+   optical weight as the text next to it. */
+.DocSearch-Close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: var(--text-color);
+}
+
+.DocSearch-Close svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Headings in the corpus carry raw markdown, so a result title can contain a
+   backticked identifier. Rendered as code it matches how that same heading
+   looks on the page instead of showing literal backticks. */
+.DocSearch-Hit-title code {
+    background: var(--code-bg);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+}
+
+/* Footer grouping: a label belongs to the key beside it.
+
+   Tight inside a group, wide between groups. Previously the row had one uniform
+   gap, so "Navigate" sat exactly as far from the arrows it describes as from
+   the Enter key it does not -- proximity said nothing, and the reader had to
+   infer the pairing from order alone. */
+.DocSearch-Footer .DocSearch-Commands {
+    display: flex;
+    align-items: center;
+    gap: 1.35rem;
+}
+
+.DocSearch-Command {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.DocSearch-Command-Keys {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+/* Type harmonised between the modal's two control rows: the Clear button at the
+   top and the key caps at the bottom were 0.84rem/500 against 0.72rem, so the
+   same family of control shouted at one end and whispered at the other. */
+.DocSearch-Clear,
+.DocSearch-StopStreaming,
+.DocSearch-Footer .DocSearch-Commands-Key,
+.DocSearch-Footer .DocSearch-Label {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.DocSearch-Footer .DocSearch-Label {
+    font-weight: 400;
+}
+
+/* Spacing controlled by gap alone.
+
+   The fork puts `margin: 0 8px 0 0` on every key cap, which stacked with the
+   flex gap and left the two-key Navigate group 14px from its label while the
+   single-key groups sat at 10px. Zero the margin and let one property own the
+   spacing, so every group measures the same.
+
+   The caps also take the full text colour, matching the Clear button: they were
+   muted grey against Clear's --text-color, so two controls sharing a size and
+   weight still did not look like the same thing. The helper text beside them
+   stays muted and lighter -- it is description, not a control. */
+.DocSearch-Footer .DocSearch-Commands-Key {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.DocSearch-Command {
+    gap: 0.625rem;   /* 10px, label to its own key, in every group */
+}
+
+/* Variant tint on the controls.
+
+   The modal can be searching Union.ai or Flyte, and nothing in it said which.
+   The controls now carry a wash of the ACTIVE product's brand colour, so the
+   modal is quietly coloured by what it is searching.
+
+   Uses --brand, not --brand-union/--brand-flyte. Those two are each product's
+   own mark, for places showing both at once (the product toggle); --brand is
+   whichever variant is being READ, and base.css already tracks it per variant
+   and per theme. Pinning to --brand-union is the exact bug the comment beside
+   those tokens records: the Flyte variant then renders in Union's colour.
+
+   A wash rather than a fill: these are still neutral controls that happen to
+   tell you where you are, and a saturated #FCB51D button would shout over the
+   content it sits beside. */
+.DocSearch-Clear,
+.DocSearch-StopStreaming,
+.DocSearch-Footer .DocSearch-Commands-Key {
+    background: color-mix(in srgb, var(--brand) 12%, var(--code-bg));
+    border-color: color-mix(in srgb, var(--brand) 32%, var(--border-color));
+}
+
+.DocSearch-Clear:hover,
+.DocSearch-StopStreaming:hover {
+    border-color: color-mix(in srgb, var(--brand) 55%, var(--separator));
+}
+
+/* The Ask AI entry carries it too -- it is the control that most needs to say
+   which corpus it is about to answer from. */
+.DocSearch-Hit--AskAI .DocSearch-Hit-icon {
+    color: var(--brand);
+}
+
+/* ==========================================================================
+   Scope bar
+
+   States the version and variant every query in this modal is filtered to.
+   The tint on the controls implies it; this says it.
+
+   A strip, not a filled banner. The variant colour at full strength under a
+   search field competes with the results for attention, and this is a caption
+   -- the reader glances at it once to confirm where they are and then ignores
+   it. The same color-mix wash as the controls keeps it in that family. The dot
+   carries the brand colour at full strength, which is enough to read at a
+   glance without the text fighting it.
+
+   flex: none because the modal is a flex column whose dropdown shrinks to fit;
+   without it the bar would give up its own height first.
+   ========================================================================== */
+
+.DocSearch-Scope {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem var(--docsearch-spacing);
+    border-bottom: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--brand) 9%, transparent);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.DocSearch-Scope-Dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--brand);
+    flex: none;
+}
+
+.DocSearch-Scope-Label {
+    color: var(--text-color-light);
+}
+
+.DocSearch-Scope-Product {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* Mono, and set apart from the product name: this is the one part a reader
+   may need to read character by character to tell 2.5.18.3 from 2.6.0.0. */
+.DocSearch-Scope-Version {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.375rem;
+    margin-left: 0.125rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-color-light);
+    font-size: 0.72rem;
+}
+
+/* Mono on the release number ONLY. It is the one part a reader may need to
+   read digit by digit to tell 2.5.18.3 from 2.6.0.0; the line and the badge
+   are words and set like words. */
+.DocSearch-Scope-Release {
+    font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   One padding for every control
+
+   The controls were sized by fixed heights with padding chosen per control:
+   Clear at 0 12px on a 30px box, key caps at 0 5px on a 22px box with a 22px
+   min-width. That min-width is what made `esc` look cramped -- a single-glyph
+   cap was padded out to the 22px floor and got 10px of side room, while the
+   three-letter `esc` overflowed the floor and kept only its 5px.
+
+   Sizing from padding instead of from a height makes glyph-to-edge distance a
+   stated value rather than a leftover, and it is the same value on all three.
+   ========================================================================== */
+
+.DocSearch-Clear,
+.DocSearch-StopStreaming,
+.DocSearch-Footer .DocSearch-Commands-Key {
+    height: auto;
+    min-height: 0;
+    min-width: 0;
+    padding: 0.4375rem 0.6875rem;   /* 7px 11px, on every control */
+    line-height: 1;
+}
+
+/* The fork pins every key cap to a 24x24 box. With the padding above that
+   leaves a ZERO-width content box, so each cap measured 24px whatever was in
+   it: the arrows sat centred with room to spare while `esc` overflowed its own
+   padding and came within 1px of the border. The declared padding only becomes
+   real once the width is content-driven. */
+.DocSearch-Footer .DocSearch-Commands-Key {
+    width: auto;
+}
+
+/* ==========================================================================
+   One surface per modal
+
+   The fork fills the input row and the footer with --docsearch-searchbox- /
+   footer-background, which is #ffffffa6 in light and #000000a6 in dark: 65%
+   white over a white modal, and 65% BLACK over the modal's #15172a.
+
+   In light that is invisible, so the rule looks harmless. In dark it produces
+   two faults at once. The input row and footer go near-black while the strip
+   around the buttons stays navy, splitting one bar into two tones; and
+   near-black is within a few points of the dimmed page behind the modal
+   (#0e0e11 under an 80% scrim), so the field reads as a hole through the
+   modal rather than as part of it.
+
+   Dropping the fills gives the modal a single surface in both themes. Nothing
+   is lost in light -- 65% white over white was already a no-op -- and the
+   structure that fill was carrying is already drawn: the scope bar's hairline
+   under the search bar, --docsearch-footer-shadow above the footer.
+   ========================================================================== */
+
+.DocSearch-Modal {
+    --docsearch-searchbox-background: transparent;
+    --docsearch-searchbox-focus-background: transparent;
+    --docsearch-footer-background: transparent;
+
+    /* The same inversion, one level down. --docsearch-background-color is the
+       modal's RAISED surface -- the Ask AI entry row, a focused hit -- and in
+       dark the fork sets it to #090a11, which is DARKER than the #15172a it
+       sits on. A raised element painted darker than its container reads as a
+       hole punched through the modal, which is what the input was doing.
+
+       Mixing toward --text-color rather than naming a colour makes the
+       direction follow the theme: near-white text lifts the surface in dark,
+       near-black text sinks it slightly in light, which is the correct
+       direction in each and lands within a point or two of the fork's own
+       light value. */
+    --docsearch-background-color: color-mix(in srgb, var(--text-color) 5%, var(--docsearch-modal-background));
+
+    /* Selection is the last place the inversion survives: the dark block pins
+       --docsearch-hit-focus-background to #090a11 rather than deriving it, so
+       selecting a row SANK it below the modal. Point it at the raised surface
+       above and selection lifts, in both themes. */
+    --docsearch-hit-focus-background: var(--docsearch-background-color);
+}
+
+/* The version line (v2 / v1) carries the emphasis inside the scope bar's
+   version group -- it is the part a reader checks first; the badge and release
+   beside it are the detail. Mono, because it is read as a version token
+   alongside the number rather than as a word. */
+.DocSearch-Scope-Line {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+/* LATEST / STABLE, lowercased. The same two words the version selector badges
+   a tree with, so the bar and the selector agree on what the reader is on. */
+.DocSearch-Scope-Badge {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.62rem;
+    font-weight: 600;
+}

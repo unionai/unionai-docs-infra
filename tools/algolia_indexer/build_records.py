@@ -48,6 +48,11 @@ CATEGORY_MAP = {
     # segment). Grouping it with `guide` keeps "spark"/"snowflake" out of the
     # leftovers bucket, while its own lvl0 label still gives it a display heading.
     "integrations": ("guide", "Integrations"),
+    # Keeps the `other` BUCKET -- the judged-query sets and eval groups are keyed
+    # on the category, and moving release notes out of it would silently shift
+    # every per-group score. Only the display label changes, so the results list
+    # heads these with "Release notes" instead of the catch-all "Other".
+    "release-notes": ("other", "Release notes"),
 }
 CATEGORY_FALLBACK = ("other", "Other")
 
@@ -224,6 +229,90 @@ def strip_markdown(text):
     return text.strip()
 
 
+# Emoji shortcodes leading a heading -- `### :sparkles: Task Environment Drawer`,
+# the release-notes house style. Hugo renders these (enableEmoji = true in
+# hugo.toml), so the PAGE shows a glyph; this tool reads the markdown and never
+# runs Hugo, so the literal `:sparkles:` was going into the index and showing up
+# in search results as a heading nobody wrote.
+#
+# Stripped rather than translated: mapping aliases to glyphs needs the gemoji
+# dataset, which is one more thing to keep in step with Hugo's, and a wrong
+# glyph is worse than none. The emoji carries no retrievable signal either way
+# -- readers search the words -- and it is pure noise in the Ask AI corpus,
+# where it is spent as tokens the model has to look past.
+#
+# Only a run at the START of a heading, so nothing mid-text is touched. The
+# corpus has `:func:` (a Sphinx role) and `:log-group:` (inside an ARN), and
+# both would be eligible under a looser rule; neither ever leads a heading.
+# Verified across content/: all 23 heading-leading shortcodes are real gemoji.
+# `\s+`, not `\s*`: a shortcode must be followed by space to count, which is
+# also Hugo's rule -- `:sparkles:Foo` renders literally there, so leaving it
+# literal here is the faithful result, and `:func:`+backtick is untouched even
+# when it does lead a heading.
+EMOJI_SHORTCODE_RE = re.compile(r"^(?::[a-z0-9][a-z0-9_+-]{1,30}:\s+)+")
+
+
+def strip_leading_emoji(title):
+    """`:sparkles: Foo` -> `Foo`. A title that is ONLY shortcodes is left alone."""
+    cleaned = EMOJI_SHORTCODE_RE.sub("", title).strip()
+    return cleaned or title
+
+
+# Inline LINK syntax in a heading. The generated section landing pages are
+# link-card indexes, so EVERY one of their headings is `### [Title](url)` --
+# and the raw markdown was going into the index as the result title, e.g.
+# "[Run scaling](https://www.union.ai/docs/v2/union/user-guide/run-scaling/page.md)".
+#
+# slugify() already strips this, which is why the ANCHOR was always correct
+# (#run-scaling). The two just did not share the logic, so the title kept the
+# syntax the anchor had thrown away. Hence clean_title() below, applied at the
+# one place titles are produced.
+#
+# Links only. slugify also drops backticks and emphasis, and neither is safe on
+# a title: the modal renders `identifiers` in a hit title as code (codeSpans in
+# search.js), and stripping [*_] would turn the API reference's `__init__` into
+# `init` and `flyte.*` into `flyte.`.
+INLINE_LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+
+
+def clean_title(title):
+    """Heading markdown -> the text a reader sees. Never returns empty."""
+    cleaned = strip_leading_emoji(INLINE_LINK_RE.sub(r"\1", title).strip())
+    return cleaned or title
+
+
+# A heading that is NOTHING BUT a markdown link is a generated link card, not a
+# section. The section landing pages (/user-guide/, /api-reference/, ...) are
+# card indexes: each card renders as `### [Child page](url)` plus the child's
+# one-line description, so indexing them duplicates every child page's title
+# and blurb under the PARENT's url. Searching "run scaling" returned the real
+# page and, competing with it, an anchor into the index page that merely links
+# there -- strictly the worse destination.
+#
+# This is the rule SKIP_NAMES already states ("Aggregate files restate page
+# content; indexing them duplicates every page's prose under the wrong URL"),
+# applied one level down: a landing page is not wholly an aggregate, so it
+# cannot be skipped by filename. Its own lead prose -- what Union.ai is, BYOC
+# vs Self-managed -- is real content and stays indexed. Only the card sections
+# are dropped.
+#
+# `^[link]$` and nothing else, which is exact on the corpus: NO authored
+# heading is a bare link (checked across content/), and the one authored
+# heading that CONTAINS a link -- "Abide by the [LF's Code of Conduct](...)" --
+# is not one, so it is kept and cleaned by clean_title().
+LINK_CARD_HEADING_RE = re.compile(r"^\[[^\]]*\]\([^)]*\)$")
+
+# `## Subpages` is the same scaffolding in its other shape. layouts/_default/
+# list.md emits it on every section page, and the llms generator then EXPANDS
+# it to carry each child's H2/H3 headings too -- 5 KB on /user-guide/ alone,
+# restating the title of every page and heading in the subtree under the
+# parent's url. It exists to be traversed by an LLM reading page.md, not read;
+# build_llm_docs.py strips it again when it concatenates. Indexed, it means a
+# search for any heading anywhere in a subtree can match the parent landing
+# page. No authored heading is titled "Subpages" (checked across content/).
+SUBPAGES_HEADING_RE = re.compile(r"^subpages$", re.I)
+
+
 def parse_sections(md):
     """Split markdown into (level, title, anchor, body) sections.
 
@@ -267,7 +356,21 @@ def parse_sections(md):
                 anchor = f"{anchor}-{seen_anchors[anchor]}"
             else:
                 seen_anchors[anchor] = 0
-            current = {"level": level, "title": title, "anchor": anchor, "body": []}
+            # AFTER the anchor. Hugo derives the heading id from the raw text,
+            # before the emoji substitution -- `:sparkles: Task Environment
+            # Details Drawer` is served at #sparkles-task-environment-details-
+            # drawer. Stripping first would silently break every deep link into
+            # the release notes, which is most of what carries these.
+            current = {"level": level, "title": clean_title(title),
+                       "anchor": anchor, "body": []}
+            # Deliberately NOT appended. `current` is still reassigned so the
+            # card's body (the child's one-line blurb) lands in a section that
+            # is thrown away, rather than being appended to whichever real
+            # section happened to precede it. The anchor bookkeeping above has
+            # already run, so a later duplicate title still gets Hugo's -1/-2
+            # suffix -- the skipped heading occupies an id on the page either way.
+            if LINK_CARD_HEADING_RE.match(title) or SUBPAGES_HEADING_RE.match(title):
+                continue
             sections.append(current)
         elif current is not None:
             current["body"].append(line)

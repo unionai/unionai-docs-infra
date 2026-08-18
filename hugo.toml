@@ -65,3 +65,25 @@ highlight_active = false
 app_id = "42EK9RXSGL"
 search_key = "0c93bb3130c3134de204cd73bf4e51d3"
 index_name = "union"
+
+# Ask AI. The agent retrieves from its OWN index (page-level chunks) rather than
+# the keyword index (heading-anchor chunks) -- see tools/algolia_indexer/
+# build_markdown_records.py for why the chunking differs.
+ask_ai_agent_id = "392dfe90-c2e5-4c82-9486-1c0fc55e8666"
+ask_ai_index = "union-markdown"
+
+# Ask AI needs a SECOND key, and it cannot be the referrer-restricted one above.
+# The agent's retrieval call happens server-side, on Algolia's infrastructure,
+# and carries no Referer header at all -- verified in the Algolia request logs.
+# A referrer-locked key therefore 403s ("Method not allowed with this referer")
+# on every Ask AI question. This is structural, not a misconfiguration: Algolia
+# does not forward the browser's Referer, confirmed by sending one explicitly.
+#
+# So this key is necessarily referer-less. Keep its blast radius small: search
+# ACL only, restricted to the ask_ai_index alone, so a scraped copy buys an
+# attacker read access to the retrieval index and nothing else -- notably not
+# the main `union` index, which keeps its referrer lock.
+#
+# Ask AI stays OFF until this is set; the partial emits no askAi config without
+# it, so search degrades to keyword-only rather than erroring.
+ask_ai_key = "868f9f518fd9877f03eaca2b8c942851"
