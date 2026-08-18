@@ -285,7 +285,12 @@
     el.askAiScreen.hidden = searching;
     el.input.placeholder = searching
       ? (CFG.placeholder || 'Search docs')
-      : 'Ask another question...';
+      // "another" only once there IS a previous one. Opening Ask AI from the
+      // header starts an empty conversation, where "Ask another question"
+      // implies a first one the reader never asked.
+      : (el.askAiBody && el.askAiBody.children.length
+          ? 'Ask another question...'
+          : 'Ask a question about the docs...');
     if (searching) el.stopBtn.hidden = true;
     paintFooter();
   }
@@ -1150,6 +1155,21 @@
     });
   }
 
+  // Open straight into Ask AI, with an empty conversation ready for a question.
+  // This is the header button's entry point -- distinct from openAskAi(), which
+  // SENDS a question the reader has already typed into the search box.
+  //
+  // Degrades to plain search when Ask AI is not configured (no agent id or key,
+  // e.g. a local build without the secrets). Better a search box than a button
+  // that appears to do nothing.
+  function openAsk() {
+    open('');
+    if (!HAS_ASK_AI) return;
+    setMode('askai');
+    if (!askai.conv) newConversation();
+    el.input.focus();
+  }
+
   // Bind the keyboard shortcut at load, NOT from build(). build() only runs on
   // the first open, so registering there means Cmd/Ctrl-K does nothing until the
   // reader has already opened the modal some other way -- while the trigger
@@ -1172,6 +1192,9 @@
   // reviewer can confirm the pruning invariant after pressing stop.
   window.__search = {
     open: open,
+    // The header's Ask AI button and its Shift-Cmd-L shortcut call this. Public
+    // API, not debugging: layouts/partials/ask-ai-header.html depends on it.
+    openAsk: openAsk,
     close: close,
     setMode: setMode,
     el: el,

@@ -119,7 +119,7 @@
     <link rel="stylesheet" href="{{ partial "asset-url.html" "css/dev_mode.css" }}" />
     {{ end }}
     {{- if not .Site.Params.show_deprecation_message -}}
-    <link rel="stylesheet" href="{{ partial "asset-url.html" "css/runllm.css" }}" />
+    <link rel="stylesheet" href="{{ partial "asset-url.html" "css/ask-ai.css" }}" />
     {{- end -}}
     {{- partial "reo.html" . -}}
   </head>
@@ -187,7 +187,6 @@
         <sl-icon name="x-lg"></sl-icon>
       </button>
     </div>
-    {{- partial "runllm.html" . -}}
   </body>
 </html>
 {{- end -}}

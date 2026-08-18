@@ -1,0 +1,39 @@
+{{- /* The header's Ask AI entry point.
+
+     Was RunLLM: a third-party widget loaded from widget.runllm.com that opened
+     its own chat panel, entirely separate from the search box beside it. The
+     docs now have their own Ask AI, sharing the search modal, the retrieval
+     index and the version/variant scope (DOC-1423), so the second ask surface
+     was retired rather than left to answer the same questions from a different
+     corpus with a different scope.
+
+     The button and Shift-Cmd-L survive the swap deliberately -- what was
+     retired is RunLLM, not the ability to ask. They now open our modal
+     directly in Ask AI mode.
+
+     Gated the same way RunLLM was: a tree showing the deprecation banner does
+     not offer Ask AI. */ -}}
+{{- if not .Site.Params.show_deprecation_message -}}
+<button id="ask-ai-trigger" title="Ask AI" class="header-ask-ai">
+  <span class="ask-ai-sparkle" aria-hidden="true"></span>
+  <span class="ask-ai-label">Ask AI</span>
+  <span class="ask-ai-keys"><kbd>&#x21E7;</kbd><kbd>&#x2318;</kbd><kbd>L</kbd></span>
+</button>
+<script>
+(function () {
+  function ask(e) {
+    // The modal script is loaded at the end of search.html, so on a fast
+    // Shift-Cmd-L it may not have run yet. Nothing to do but ignore it --
+    // never throw out of a global keydown handler.
+    if (!window.__search || !window.__search.openAsk) return;
+    if (e) { e.preventDefault(); e.stopImmediatePropagation(); }
+    window.__search.openAsk();
+  }
+  var btn = document.getElementById('ask-ai-trigger');
+  if (btn) btn.addEventListener('click', function () { ask(null); });
+  document.addEventListener('keydown', function (e) {
+    if (e.shiftKey && (e.metaKey || e.ctrlKey) && e.code === 'KeyL') ask(e);
+  }, true);
+})();
+</script>
+{{- end -}}

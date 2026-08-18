@@ -46,7 +46,6 @@ custom_css = [
 custom_js = [
   "404.js",
   "key.js",
-  "runllm-attachment-guard.js",
   "sidebar.js",
   "theme.js",
   "tags.js",
