@@ -44,11 +44,9 @@
     display: none;
   }
 
-  /* Collapse search, Ask AI, support, and signup to icon-only */
+  /* Collapse search, support, and signup to icon-only */
   #search-trigger .search-label,
   #search-trigger .search-keys,
-  #ask-ai-trigger .ask-ai-label,
-  #ask-ai-trigger .ask-ai-keys,
   #support-trigger .support-label,
   .signup-label {
     display: none;

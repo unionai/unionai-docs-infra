@@ -576,6 +576,16 @@
       isOpen ? close() : open('');
       return;
     }
+    // Shift-Cmd-L opens straight into Ask AI. Inherited from the RunLLM button
+    // that used to sit beside the search box; the button is gone -- Ask AI is
+    // reached from inside the modal now -- but the shortcut costs nothing and
+    // anyone who had it in their fingers keeps it. Uses e.code so it is layout
+    // independent, and because e.key is 'L' once Shift is held.
+    if (e.code === 'KeyL' && e.shiftKey && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      openAsk();
+      return;
+    }
     if (!isOpen) return;
 
     if (e.key === 'Escape') {
@@ -1192,8 +1202,9 @@
   // reviewer can confirm the pruning invariant after pressing stop.
   window.__search = {
     open: open,
-    // The header's Ask AI button and its Shift-Cmd-L shortcut call this. Public
-    // API, not debugging: layouts/partials/ask-ai-header.html depends on it.
+    // Shift-Cmd-L calls this, and it stays exposed so anything else that wants
+    // to open Ask AI directly has one entry point rather than reaching into
+    // open() + setMode().
     openAsk: openAsk,
     close: close,
     setMode: setMode,
