@@ -14,20 +14,29 @@
        Ask AI" on its own. One composite glyph rather than two icons side by
        side, so it still reads at 16px.
 
-       "Search" leads because clicking opens the modal in SEARCH mode -- Ask AI
-       is a mode entered from there. "Ask AI or search" would promise a default
-       the click does not deliver, and "&" would imply both happen at once.
+       "Search" leads because clicking opens the modal in SEARCH mode -- putting
+       Ask AI first would promise a default the click does not deliver.
+
+       "+" rather than "or". The modal is a sequence, not a fork: the Ask AI row
+       is rendered from the query already typed and sends those same words, so
+       the common path is search, scan, then ask -- one input, both features.
+       "or" framed that as a choice to make before clicking, which is a decision
+       the reader never has to take.
+
+       "Ask AI" keeps its capitals as a feature name; style-spec's sentence-case
+       default is for descriptions, and the name/description split is the stated
+       exception.
 
        `title` matters more than usual here: when the label is hidden it is
        hidden from assistive tech too, so the title is the button's only
        accessible name at narrow widths. */ -}}
-<button id="search-trigger" title="Search or ask AI" class="header-search">
+<button id="search-trigger" title="Search + Ask AI" class="header-search">
   <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <circle cx="7.6" cy="10.4" r="4.9"/>
     <line x1="11.1" y1="13.9" x2="15.5" y2="18.3"/>
     <path d="M15.4 0.6 Q16.1 3.9 19.4 4.6 Q16.1 5.3 15.4 8.6 Q14.7 5.3 11.4 4.6 Q14.7 3.9 15.4 0.6 Z" fill="currentColor" stroke="none"/>
   </svg>
-  <span class="search-label">Search or ask AI</span>
+  <span class="search-label">Search + Ask AI</span>
   <span class="search-keys"><kbd>&#x2318;</kbd><kbd>K</kbd></span>
 </button>
 
