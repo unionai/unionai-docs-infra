@@ -383,6 +383,25 @@ def _version_key(v):
     return tuple(int(x) for x in re.findall(r"\d+", v))
 
 
+def prune_slices(dist, dropped):
+    """(version, variant) slices whose records must be DELETED from the index.
+
+    A pin outside the --keep-pins window is skipped by the builders, so it never
+    reaches records.json. push_records syncs only the slices it finds there, by
+    design -- that scoping is what stops main (v2) and the v1 branch wiping each
+    other's records. The two rules compose into a leak: a pin that ages out is
+    neither rebuilt nor deleted, so its records sit in the index forever,
+    pointing at a tree that may no longer be served.
+
+    Reporting it was not enough (the builders already print "outside window, not
+    indexed"), because nothing acted on the report. This makes the deletion an
+    explicit, narrowly-scoped instruction rather than a widening of the sync
+    rule. DOC-1441.
+    """
+    dropped = set(dropped)
+    return sorted((v, variant) for v, variant in _slices(dist) if v in dropped)
+
+
 def _slices(dist):
     """(version, variant) pairs present in a built dist."""
     root = Path(dist) / "docs"
@@ -475,6 +494,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dist", default="dist", help="path to the built dist/ tree")
     ap.add_argument("--out", default="records.json")
+    ap.add_argument("--prune-out", default=None,
+                    help="where to write the list of (version, variant) slices "
+                         "that must be DELETED -- pins that have aged out of the "
+                         "--keep-pins window. Defaults to <out>.prune.json.")
     ap.add_argument("--max-level", type=int, default=6,
                     help="deepest heading level to index (lower = fewer records)")
     ap.add_argument("--keep-pins", type=int, default=6,
@@ -488,6 +511,11 @@ def main():
                          "prior falls back to section+depth.")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
+    if args.prune_out is None:
+        # Append, do NOT use with_suffix(""): the Makefile passes an mktemp name
+        # like search-records.ABC123, whose random tail Path treats as a suffix.
+        # Stripping it would make the builder write a path the pusher never reads.
+        args.prune_out = args.out + ".prune.json"
     popularity = load_popularity(args.popularity)
 
     pins = sorted({v for v, _ in _slices(args.dist) if is_pin(v)},
@@ -533,6 +561,15 @@ def main():
 
     Path(args.out).write_text(json.dumps(all_records, indent=None), encoding="utf-8")
 
+    # Sidecar rather than a new key in records.json: that file is a plain list of
+    # records and other tools read it as one. Always written, even when empty, so
+    # a missing file means "this build did not run the prune logic" rather than
+    # "nothing to prune" -- the two need to stay distinguishable.
+    prune = prune_slices(args.dist, dropped)
+    Path(args.prune_out).write_text(
+        json.dumps([{"version": v, "variant": var} for v, var in prune], indent=None),
+        encoding="utf-8")
+
     if not args.quiet:
         print(f"pages:   {pages}")
         print(f"records: {len(all_records)}")
@@ -554,6 +591,8 @@ def main():
                   f"level (--keep-pins {args.keep_pins})")
             if dropped:
                 print(f"  outside window, not indexed: {', '.join(dropped)}")
+                print(f"  -> {len(prune)} slice(s) queued for deletion in "
+                      f"{args.prune_out}")
         print(f"\nwrote {args.out}")
 
 

@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-links check-generated-content clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content clean clean-generated
 all: usage
 
 usage:
@@ -65,14 +65,14 @@ index-search:
 		$(UV) unionai-docs-infra/tools/algolia_indexer/build_records.py \
 			--dist dist --out "$$records" && \
 		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
-			--records "$$records" --index union; \
+			--records "$$records" --prune "$$records.prune.json" --index union; \
 		status=$$?; \
 		if [ $$status -eq 0 ]; then \
 			echo "== Ask AI retrieval index (union-markdown) =="; \
 			if $(UV) unionai-docs-infra/tools/algolia_indexer/build_markdown_records.py \
 				--dist dist --out "$$md" && \
 			   $(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
-				--records "$$md" --index union-markdown; then \
+				--records "$$md" --prune "$$md.prune.json" --index union-markdown; then \
 				echo "  Ask AI retrieval index updated"; \
 			elif [ -n "$$(sed -n 's/^ask_ai_key *= *"\(..*\)"/\1/p' unionai-docs-infra/hugo.toml 2>/dev/null | head -1)" ]; then \
 				echo "  ****************************************************************"; \
@@ -92,7 +92,7 @@ index-search:
 				echo "  ****************************************************************"; \
 			fi; \
 		fi; \
-		rm -f "$$records" "$$md"; \
+		rm -f "$$records" "$$md" "$$records.prune.json" "$$md.prune.json"; \
 		exit $$status; \
 	fi
 
@@ -239,6 +239,11 @@ check-asset-refs:
 # per-line by build_versions.sh for sibling pages to fetch). Assert they agree.
 check-version-menu-parity:
 	@unionai-docs-infra/scripts/check-version-menu-parity.sh
+
+# The pin-retention window is stated in three places that cannot share a
+# constant (two argparse defaults and a Hugo template). DOC-1441.
+check-pin-window-parity:
+	@unionai-docs-infra/scripts/check-pin-window-parity.sh
 
 update-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --update
