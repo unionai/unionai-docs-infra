@@ -144,16 +144,26 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 MAX_CONTENT_BYTES = 7000
 ALGOLIA_RECORD_LIMIT = 10000
 
-# A pinned version tree is a near-complete copy of its line, so at full anchor
-# granularity each one costs ~10.5K records (v2) or ~23.3K (v1 -- its flytekit
-# reference is heading-dense). Cuts land every ~1.3 days, so indexing every
-# served pin at full granularity crosses Grow's 100K record allowance inside a
-# week and then grows without bound.
+# Pins are indexed at the SAME granularity as latest and stable. They were held
+# at page level; both premises for that have since stopped being true.
 #
-# Page granularity costs ~1.2K per pin instead: a reader on a pinned historical
-# snapshot needs to FIND the page; deep-linking an h4 in an old copy is a
-# luxury. Current surfaces keep full granularity.
-PIN_MAX_LEVEL = 1
+# The cost argument was "cuts land every ~1.3 days, so indexing every served pin
+# at full granularity crosses Grow's 100K allowance inside a week and then grows
+# WITHOUT BOUND". Unbounded growth is what made it decisive, and it no longer
+# happens: --keep-pins caps the set at the six newest, and DOC-1441 made an
+# aged-out pin actually leave the index rather than linger forever. The cost is
+# now bounded -- ~10.5K records per pin, six pins, and the seventh evicts the
+# first.
+#
+# The reader argument was "a reader on a pinned snapshot needs to FIND the page;
+# deep-linking an h4 in an old copy is a luxury". That held while DOC-1408 sent
+# every pin's reader to their line's STABLE, so these records were nearly
+# unreachable. Pins are now searched from their own facet, so the reader sees
+# page-level hits where a reader on stable sees heading-level ones -- the same
+# query answered worse, purely because of which tree they are on.
+#
+# --keep-pins remains the cost lever, and it is the honest one: fewer whole
+# trees, rather than every tree degraded.
 PIN_RE = re.compile(r"^v\d+\.\d+")          # v2.5.16.3 -- a pin, not `v2`/`v1`/`latest`
 
 
@@ -533,7 +543,7 @@ def main():
         if is_pin(version) and version not in keep_pins:
             continue
         md = path.read_text(encoding="utf-8", errors="replace")
-        level = PIN_MAX_LEVEL if is_pin(version) else args.max_level
+        level = args.max_level
         recs = records_for_page(md, version, variant, url_path, level, popularity)
         if not recs:
             continue
@@ -587,8 +597,8 @@ def main():
             for seg in sorted(other_segments, key=lambda s2: -other_segments[s2]):
                 print(f"  {seg or '<root>':<24} {other_segments[seg]:>5} pages")
         if pins:
-            print(f"\npins: {len(keep_pins)} of {len(pins)} indexed, at page "
-                  f"level (--keep-pins {args.keep_pins})")
+            print(f"\npins: {len(keep_pins)} of {len(pins)} indexed, at the same "
+                  f"granularity as latest/stable (--keep-pins {args.keep_pins})")
             if dropped:
                 print(f"  outside window, not indexed: {', '.join(dropped)}")
                 print(f"  -> {len(prune)} slice(s) queued for deletion in "
