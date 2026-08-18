@@ -8,9 +8,26 @@
 
 <link rel="preconnect" href="https://{{ $app }}-dsn.algolia.net" crossorigin />
 
-<button id="search-trigger" title="Search" class="header-search">
-  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8.5" r="6"/><line x1="13" y1="13" x2="18" y2="18"/></svg>
-  <span class="search-label">Search</span>
+{{- /* One control, two modes. The magnifier carries a sparkle because
+       responsive.css hides .search-label and .search-keys below 1200px: on a
+       laptop and down this button is icon-only, so the ICON has to say "also
+       Ask AI" on its own. One composite glyph rather than two icons side by
+       side, so it still reads at 16px.
+
+       "Search" leads because clicking opens the modal in SEARCH mode -- Ask AI
+       is a mode entered from there. "Ask AI or search" would promise a default
+       the click does not deliver, and "&" would imply both happen at once.
+
+       `title` matters more than usual here: when the label is hidden it is
+       hidden from assistive tech too, so the title is the button's only
+       accessible name at narrow widths. */ -}}
+<button id="search-trigger" title="Search or ask AI" class="header-search">
+  <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="7.6" cy="10.4" r="4.9"/>
+    <line x1="11.1" y1="13.9" x2="15.5" y2="18.3"/>
+    <path d="M15.4 0.6 Q16.1 3.9 19.4 4.6 Q16.1 5.3 15.4 8.6 Q14.7 5.3 11.4 4.6 Q14.7 3.9 15.4 0.6 Z" fill="currentColor" stroke="none"/>
+  </svg>
+  <span class="search-label">Search or ask AI</span>
   <span class="search-keys"><kbd>&#x2318;</kbd><kbd>K</kbd></span>
 </button>
 
