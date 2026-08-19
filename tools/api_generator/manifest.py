@@ -53,6 +53,8 @@ from pathlib import Path
 
 from packaging.version import Version
 
+import tomlkit
+
 try:
     import tomllib
 except ModuleNotFoundError:
@@ -264,6 +266,13 @@ def compute_next_version(sdk_version: str) -> dict:
 # --------------------------------------------------------------------------- #
 # --promote: write the version intent into versions.toml
 # --------------------------------------------------------------------------- #
+def _tag_sort_key(tag: str):
+    try:
+        return Version(tag.lstrip("v"))
+    except Exception:
+        return Version("0")
+
+
 def _toml_scalar(v) -> str:
     """Render a scalar back to TOML. Only the types versions.toml actually uses."""
     if isinstance(v, bool):
@@ -302,9 +311,11 @@ def _emit_versions_toml(stable: str, enumerated: list[str],
 
     An absent key stays absent, so the primary line's file does not churn.
 
-    KNOWN LIMITATION: comments are still lost. tomllib does not round-trip them, and
-    v1's file carries real explanation (why v1.16.26.2 is not enumerated; why the line
-    is noindex). Restoring those after a cut is manual until this moves to tomlkit.
+    This renderer is now only the BOOTSTRAP path, used when versions.toml does not
+    yet exist. An existing file is edited in place by ``promote_versions_toml`` via
+    tomlkit, which preserves comments, ordering and layout -- so the generic ``extra``
+    carry-through below is belt-and-braces for the from-scratch case rather than the
+    thing standing between us and a lost key.
     """
     def _key(tag: str):
         try:
@@ -322,8 +333,6 @@ def _emit_versions_toml(stable: str, enumerated: list[str],
         "#              primary line does; a secondary line (v1) sets false.",
         "# indexed    = whether this line's stable tree is search-indexed. Defaults true",
         "#              (the stable tree is normally the line's one canonical surface).",
-        "# NOTE: comments below are NOT preserved across a promote (tomllib cannot",
-        "#       round-trip them). Re-add any explanation the line depends on.",
         f'stable = "{stable}"',
         "enumerated = [",
         *[f'  "{t}",' for t in ordered],
@@ -355,34 +364,50 @@ def promote_versions_toml(decision: dict, path: Path) -> None:
         print(f"promote: WARNING could not verify {decision.get('sdk')} on PyPI "
               "(network?) -- proceeding.", file=sys.stderr)
     tag = decision["tag"]
-    enumerated: list[str] = []
-    old_stable: str | None = None
-    extra: dict = {}
-    if path.exists():
-        existing = tomllib.loads(path.read_text())
-        enumerated = list(existing.get("enumerated", []))
-        old_stable = existing.get("stable") or None
-        # Everything this function does not itself own round-trips untouched. A
-        # promote REWRITES the file, so a key not carried here is silently lost --
-        # which is how the first v1 cut dropped `latest = false` (DOC-1330) and how
-        # the next one would have dropped `indexed = false` (DOC-1291). Carrying the
-        # remainder generically means adding a key to versions.toml needs no change
-        # here at all.
-        extra = {k: v for k, v in existing.items()
-                 if k not in ("stable", "enumerated")}
-    if old_stable and old_stable != tag:
-        enumerated.append(old_stable)          # yesterday's stable becomes an older pin
-    enumerated = [t for t in enumerated if t != tag]  # the new stable is NEVER enumerated
-    path.write_text(_emit_versions_toml(stable=tag, enumerated=enumerated, extra=extra))
-    carried = ", ".join(f"{k}={_toml_scalar(v)}" for k, v in extra.items())
+
+    def _rotate(old_stable: str | None, existing: list[str]) -> list[str]:
+        """The outgoing stable rotates in; the incoming stable is NEVER enumerated."""
+        out = list(existing)
+        if old_stable and old_stable != tag:
+            out.append(old_stable)
+        seen, ordered = set(), []
+        for t in out:
+            if t != tag and t not in seen:
+                seen.add(t)
+                ordered.append(t)
+        return sorted(ordered, key=_tag_sort_key)
+
+    if not path.exists():
+        # Bootstrap: no file to preserve, so render one from the template.
+        path.write_text(_emit_versions_toml(stable=tag, enumerated=[]))
+        print(f"promote: {path.name} created, stable={tag}")
+        return
+
+    # Edit IN PLACE. tomlkit is style-preserving, so every comment, key, blank line
+    # and the key order survive untouched -- the file keeps its own explanation.
+    #
+    # Why this matters (DOC-1457): v1's versions.toml carries 29 comment lines, and
+    # two of them are load-bearing -- why v1.16.26.2 stays un-enumerated, and the
+    # DOC-1291 rationale recording that the line's noindex state was previously
+    # correct only BY ACCIDENT and that v1 is ACTIVE, not frozen. A reader of the
+    # stripped file would draw the opposite, wrong conclusion. Rebuilding from
+    # scratch destroyed all 29 on every cut; they were restored by hand after the
+    # v1.16.26.4 cut, and an sdk-release regen folds --promote into a ~294-file
+    # regen PR where nobody would have seen them go.
+    doc = tomlkit.parse(path.read_text())
+    old_stable = doc.get("stable") or None
+    enumerated = _rotate(old_stable, [str(t) for t in doc.get("enumerated", [])])
+
+    doc["stable"] = tag
+    # Build the array from a literal so it keeps the file's 2-space multiline style.
+    body = "".join(f'  "{t}",\n' for t in enumerated)
+    doc["enumerated"] = tomlkit.parse(f"x = [\n{body}]" if enumerated else "x = []")["x"]
+    path.write_text(tomlkit.dumps(doc))
+
     print(f"promote: {path.name} stable={tag} (was {old_stable or 'none'}; "
-          f"{len(set(enumerated))} older pin(s)"
-          + (f"; carried {carried}" if carried else "") + ")")
+          f"{len(enumerated)} older pin(s); comments preserved)")
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 def _print_manifest(m: dict, ver: dict | None) -> None:
     print(f"\n[{m['variant']}] manifest")
     for name, value in m["components"].items():
