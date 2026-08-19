@@ -152,3 +152,73 @@ def test_emitter_no_longer_claims_comments_are_lost(tmp_path):
     p = tmp_path / "versions.toml"
     manifest.promote_versions_toml(DECISION, p)
     assert "NOT preserved" not in p.read_text()
+
+
+# ---------------------------------------------------------------------------
+# The INVOCATION, not just the function (DOC-1457 follow-up)
+#
+# manifest.py is run by CI as a standalone script:
+#
+#     uv run --quiet unionai-docs-infra/tools/api_generator/manifest.py --check ...
+#
+# so `uv` resolves its deps from the PEP 723 `# /// script` block, NOT from
+# pyproject.toml. Adding `import tomlkit` while declaring the dependency only in
+# pyproject.toml left the script crashing on import under that invocation.
+#
+# It failed SILENTLY: regen-api-docs.yml does `eval "$(manifest.py --check ...)"`,
+# so a crash yields empty output, `eval ""` succeeds, and the fold step reports
+# "Not an SDK-release cut" instead of failing. The v1 1.16.28 regen therefore
+# opened without its versions.toml promote and nobody was told why.
+#
+# Every test above passed throughout, because pytest imports the module through
+# the project venv where tomlkit is present. They tested the function; nothing
+# tested how CI actually calls it.
+# ---------------------------------------------------------------------------
+
+MANIFEST_PY = Path(__file__).resolve().parents[1] / "tools" / "api_generator" / "manifest.py"
+
+
+def _script_deps() -> list[str]:
+    """Parse the PEP 723 dependency list out of the script header."""
+    import re
+    block = re.search(r"# /// script\n(.*?)# ///", MANIFEST_PY.read_text(), re.S)
+    assert block, "manifest.py lost its PEP 723 script block"
+    body = "".join(l.lstrip("#").strip() for l in block.group(1).splitlines())
+    return re.findall(r'"([^"]+)"', body)
+
+
+def test_every_third_party_import_is_declared_for_uv_run():
+    """Guard the whole class, not just tomlkit.
+
+    Any third-party module imported at manifest.py's top level must appear in the
+    PEP 723 block, or `uv run manifest.py` dies on import — silently, given how the
+    workflow evals its output.
+    """
+    import ast
+    import sys
+
+    tree = ast.parse(MANIFEST_PY.read_text())
+    top_level = []
+    for node in tree.body:                      # module scope only
+        if isinstance(node, ast.Import):
+            top_level += [a.name.split(".")[0] for a in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            top_level.append(node.module.split(".")[0])
+
+    declared = {d.split(";")[0].split("[")[0].split(">")[0].split("=")[0].strip().replace("-", "_")
+                for d in _script_deps()}
+    local = {"_versions", "_repo"}              # sys.path-injected siblings
+    missing = sorted(
+        m for m in set(top_level)
+        if m not in sys.stdlib_module_names and m not in declared and m not in local
+    )
+    assert not missing, (
+        f"{missing} imported at module level but absent from manifest.py's PEP 723 "
+        f"block. `uv run manifest.py` will fail on import, and regen-api-docs.yml "
+        f"swallows that failure via eval."
+    )
+
+
+def test_tomlkit_specifically_is_declared():
+    """The instance that broke the v1 1.16.28 regen."""
+    assert any(d.startswith("tomlkit") for d in _script_deps())

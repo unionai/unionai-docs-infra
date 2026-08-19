@@ -3,6 +3,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "packaging",
+#     "tomlkit",
 #     "tomli; python_version < '3.11'",
 # ]
 # ///
