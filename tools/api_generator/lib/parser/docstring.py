@@ -29,8 +29,17 @@ _SECTION_HEADER_RE = re.compile(
 )
 
 # Sphinx cross-reference roles, e.g. :class:`~pkg.mod.Name` or :func:`name`.
+#
+# The domain prefix is matched GENERICALLY (any lowercase domain), not as a list.
+# It was `(?:py:)?`, which accepted the `py` domain only -- so `:std:ref:` matched
+# just its `:ref:` tail and left an orphaned `:std` in reader-facing prose, 30 times
+# across the v1 reference (`:std:ref:` x29, `:std:doc:` x1). Enumerating `py|std`
+# would fix those two and re-break on the next domain (`c`, `cpp`, `js`, `rst`, or a
+# project-defined one), which is the same shape of bug twice. Matching any domain
+# cannot regress that way, and a false positive is harmless: the role names below
+# still have to match, and the result is a code span either way.
 _RST_ROLE_RE = re.compile(
-    r":(?:py:)?(?:class|func|meth|mod|attr|exc|obj|data|const|term|ref|doc):`([^`]+)`"
+    r":(?:[a-z]+:)?(?:class|func|meth|mod|attr|exc|obj|data|const|term|ref|doc):`([^`]+)`"
 )
 
 # An explicit RST role title: :class:`Some Title <pkg.mod.Name>`
