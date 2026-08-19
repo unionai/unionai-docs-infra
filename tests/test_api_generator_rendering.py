@@ -221,3 +221,68 @@ if __name__ == "__main__":
             print(f"FAIL {key}: {exc}")
     print(f"\n{failures} failure(s)")
     sys.exit(1 if failures else 0)
+
+
+# ---------------------------------------------------------------------------
+# RST cross-reference roles (DOC-1452)
+#
+# convert_rst_roles turns Sphinx roles into code spans, which the site then
+# autolinks via the generated linkmaps. Its domain prefix was hardcoded to
+# `py:`, so an explicit `std` domain matched only the role tail and left an
+# orphaned `:std` in reader-facing prose:
+#
+#     :std:ref:`flyte:divedeep-workflows`  ->  :std`flyte:divedeep-workflows`
+#
+# 30 occurrences across the v1 reference (`:std:ref:` x29, `:std:doc:` x1).
+# The prefix now matches any domain, so a domain nobody has used yet cannot
+# reintroduce this.
+# ---------------------------------------------------------------------------
+
+from lib.parser.docstring import convert_rst_roles  # noqa: E402
+
+
+def test_std_domain_role_is_converted():
+    """The regression. Was ':std`flyte:divedeep-workflows`'."""
+    assert (
+        convert_rst_roles(":std:ref:`flyte:divedeep-workflows`")
+        == "`flyte:divedeep-workflows`"
+    )
+
+
+def test_std_doc_role_is_converted():
+    assert convert_rst_roles(":std:doc:`/user_guide/index`") == "`/user_guide/index`"
+
+
+def test_unprefixed_role_still_works():
+    assert convert_rst_roles(":ref:`label`") == "`label`"
+
+
+def test_py_domain_still_works():
+    assert convert_rst_roles(":py:class:`pkg.X`") == "`pkg.X`"
+
+
+def test_an_unused_domain_does_not_regress():
+    """The point of matching any domain: a new one must not need a code change."""
+    assert convert_rst_roles(":cpp:class:`Foo`") == "`Foo`"
+
+
+def test_tilde_shortening_survives_a_domain_prefix():
+    assert convert_rst_roles(":py:class:`~pkg.mod.Name`") == "`Name`"
+
+
+def test_explicit_title_survives_a_domain_prefix():
+    assert (
+        convert_rst_roles(":std:ref:`Some Title <pkg.mod.Name>`") == "`Some Title`"
+    )
+
+
+def test_role_inside_a_code_fence_is_left_alone():
+    text = "```\n:std:ref:`flyte:divedeep-workflows`\n```"
+    assert convert_rst_roles(text) == text
+
+
+def test_prose_around_a_role_is_preserved():
+    assert (
+        convert_rst_roles("Please read :std:ref:`flyte:divedeep-workflows` first")
+        == "Please read `flyte:divedeep-workflows` first"
+    )
