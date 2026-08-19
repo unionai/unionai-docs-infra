@@ -264,20 +264,47 @@ def compute_next_version(sdk_version: str) -> dict:
 # --------------------------------------------------------------------------- #
 # --promote: write the version intent into versions.toml
 # --------------------------------------------------------------------------- #
+def _toml_scalar(v) -> str:
+    """Render a scalar back to TOML. Only the types versions.toml actually uses."""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return repr(v)
+    if isinstance(v, str):
+        return '"' + v.replace('\\', '\\\\').replace('"', '\\"') + '"'
+    raise TypeError(
+        f"versions.toml: cannot re-emit {type(v).__name__} on promote. Teach "
+        f"_toml_scalar about it rather than letting the key be dropped."
+    )
+
+
 def _emit_versions_toml(stable: str, enumerated: list[str],
-                        latest: bool | None = None) -> str:
+                        extra: dict | None = None) -> str:
     """Render versions.toml (kept minimal + deterministic so diffs are clean).
 
-    ``latest`` must be carried through (DOC-1330). This function rebuilds the file
-    from scratch, so any key it cannot express is DESTROYED on every promote. It
-    previously could not express ``latest``, and the first v1 cut duly dropped
-    ``latest = false`` -- which flipped the v1 line to the primary-line default and
-    put a LATEST entry in v1's menu pointing at /docs/latest (a URL the edge routes
-    to v2), while also making the v1 build produce a whole /docs/latest tree it is
-    meant to skip.
+    This function rebuilds the file from scratch, so historically any key it could
+    not express was DESTROYED on every promote. That bit twice:
 
-    Emitted only when False: absent means the default (True), so the primary line's
-    file stays byte-identical to what it was.
+      * ``latest = false`` (DOC-1330) -- the first v1 cut dropped it, flipping the
+        v1 line to the primary-line default and putting a LATEST entry in v1's menu
+        pointing at /docs/latest, a URL the edge routes to v2.
+      * ``indexed = false`` (DOC-1291) -- added to versions.toml after ``latest``
+        was fixed, without being added here. The next v1 cut would have dropped it
+        and put the whole v1 line back into Google.
+
+    Both failures are silent and SECONDARY-LINE ONLY: main carries neither key, so a
+    v2 cut round-trips clean and the bug stays invisible until a v1 cut runs.
+
+    So ``extra`` is now carried through GENERICALLY -- every top-level key other than
+    ``stable`` and ``enumerated`` (the two this function owns) round-trips untouched.
+    Adding a key to versions.toml no longer requires editing this file, which is what
+    makes a third instance of this bug impossible rather than merely unlikely.
+
+    An absent key stays absent, so the primary line's file does not churn.
+
+    KNOWN LIMITATION: comments are still lost. tomllib does not round-trip them, and
+    v1's file carries real explanation (why v1.16.26.2 is not enumerated; why the line
+    is noindex). Restoring those after a cut is manual until this moves to tomlkit.
     """
     def _key(tag: str):
         try:
@@ -293,13 +320,17 @@ def _emit_versions_toml(stable: str, enumerated: list[str],
         "#              enumerated -- no byte-identical duplicate tree.",
         "# latest     = whether this line owns the global /docs/latest URL. Only the",
         "#              primary line does; a secondary line (v1) sets false.",
+        "# indexed    = whether this line's stable tree is search-indexed. Defaults true",
+        "#              (the stable tree is normally the line's one canonical surface).",
+        "# NOTE: comments below are NOT preserved across a promote (tomllib cannot",
+        "#       round-trip them). Re-add any explanation the line depends on.",
         f'stable = "{stable}"',
         "enumerated = [",
         *[f'  "{t}",' for t in ordered],
         "]",
     ]
-    if latest is False:
-        lines.append("latest = false")
+    for key, value in (extra or {}).items():
+        lines.append(f"{key} = {_toml_scalar(value)}")
     lines.append("")
     return "\n".join(lines)
 
@@ -326,23 +357,27 @@ def promote_versions_toml(decision: dict, path: Path) -> None:
     tag = decision["tag"]
     enumerated: list[str] = []
     old_stable: str | None = None
-    latest: bool | None = None
+    extra: dict = {}
     if path.exists():
         existing = tomllib.loads(path.read_text())
         enumerated = list(existing.get("enumerated", []))
         old_stable = existing.get("stable") or None
-        # Carry `latest` through (DOC-1330). A promote REWRITES this file, so any key
-        # not read here is silently lost -- which is exactly how the first v1 cut
-        # dropped `latest = false`. Read as-is rather than defaulting, so an absent
-        # key stays absent and the primary line's file does not churn.
-        latest = existing.get("latest")
+        # Everything this function does not itself own round-trips untouched. A
+        # promote REWRITES the file, so a key not carried here is silently lost --
+        # which is how the first v1 cut dropped `latest = false` (DOC-1330) and how
+        # the next one would have dropped `indexed = false` (DOC-1291). Carrying the
+        # remainder generically means adding a key to versions.toml needs no change
+        # here at all.
+        extra = {k: v for k, v in existing.items()
+                 if k not in ("stable", "enumerated")}
     if old_stable and old_stable != tag:
         enumerated.append(old_stable)          # yesterday's stable becomes an older pin
     enumerated = [t for t in enumerated if t != tag]  # the new stable is NEVER enumerated
-    path.write_text(_emit_versions_toml(stable=tag, enumerated=enumerated, latest=latest))
+    path.write_text(_emit_versions_toml(stable=tag, enumerated=enumerated, extra=extra))
+    carried = ", ".join(f"{k}={_toml_scalar(v)}" for k, v in extra.items())
     print(f"promote: {path.name} stable={tag} (was {old_stable or 'none'}; "
           f"{len(set(enumerated))} older pin(s)"
-          + ("; latest=false preserved" if latest is False else "") + ")")
+          + (f"; carried {carried}" if carried else "") + ")")
 
 
 # --------------------------------------------------------------------------- #
