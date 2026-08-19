@@ -49,6 +49,13 @@ clis:
 # never exposed to this because it regenerates via check_versions.py, which does
 # honour `frozen`; only this target and a direct Makefile.api.plugins call bypassed
 # it. (DOC-1404.)
+#
+# The per-plugin variant override is passed as PAGE_VARIANTS, not VARIANTS.
+# Makefile.api.plugins reads PAGE_VARIANTS, and the parent exports VARIANTS as the
+# unsigned BUILD list ("flyte union"). Passing VARIANTS here set a name nothing
+# reads, so a plugin's override was silently dropped and union-plugin
+# (-flyte +union) generated into BOTH variants. check_versions.py always passed
+# the right name, so only this direct target was affected. (DOC-1394, DOC-1404)
 .PHONY: plugins
 plugins:
 	@PLUGIN_COUNT=$$($(UV) unionai-docs-infra/tools/api_config.py plugin_count); \
@@ -67,7 +74,7 @@ plugins:
 		echo "Generating plugin docs: $$NAME ($$PLUGIN)$${OF:+ -> $$OF}"; \
 		$(MAKE) -f unionai-docs-infra/Makefile.api.plugins \
 			PLUGIN="$$PLUGIN" TITLE="$$TITLE" NAME="$$NAME" \
-			$${OF:+OUTPUT_FOLDER="$$OF"} $${WT:+WEIGHT="$$WT"} $${VAR:+VARIANTS="$$VAR"} \
+			$${OF:+OUTPUT_FOLDER="$$OF"} $${WT:+WEIGHT="$$WT"} $${VAR:+PAGE_VARIANTS="$$VAR"} \
 			SKIP_VENV_SETUP=false; \
 	done
 
