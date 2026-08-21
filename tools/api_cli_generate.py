@@ -16,6 +16,7 @@ When SKIP_VENV_SETUP=true, uses the current environment instead.
 """
 
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -36,6 +37,23 @@ VENV_DIR = REPO_ROOT / ".venv"
 def load_config() -> dict:
     with open(CONFIG_FILE, "rb") as f:
         return tomllib.load(f)
+
+
+# Smoke-test floors for generated CLI docs (DOC-1481 step 3).
+#
+# The walker descends the live click tree through private SDK types --
+# FileGroup by isinstance, TaskFiles and RemoteTaskGroup by class-name STRING.
+# Rename or remove one upstream and nothing raises: the walk just stops
+# descending and the page comes out short. Combined with the warn-and-continue
+# this function used to do, that produced a green regen and a silently gutted
+# reference. Both floors exist to make that loud.
+MIN_COMMANDS = 20
+MIN_RETAINED_FRACTION = 0.6
+
+
+def count_commands(markdown: str, cli_name: str) -> int:
+    """Count rendered command sections, e.g. `### flyte run`, at any heading depth."""
+    return len(re.findall(rf"^#{{2,6}} {re.escape(cli_name)}\b", markdown, re.M))
 
 
 def generate_python_cli(cli: dict, python: Path) -> None:
@@ -71,8 +89,33 @@ def generate_python_cli(cli: dict, python: Path) -> None:
         capture_output=True, text=True, cwd=REPO_ROOT,
     )
     if result.returncode != 0:
-        print(f"  Warning: CLI doc generation failed: {result.stderr}", file=sys.stderr)
-        return
+        sys.exit(
+            f"ERROR: CLI doc generation failed for {cli['name']} (exit {result.returncode}).\n"
+            f"  command: {' '.join(gen_parts)}\n"
+            f"  stderr: {result.stderr.strip() or '(empty)'}\n"
+            "This used to warn and leave the previous page in place, which made a broken\n"
+            "generator look like a clean regen."
+        )
+
+    # Guard against a generator that succeeds but produces almost nothing.
+    new_count = count_commands(result.stdout, cli["name"])
+    if new_count < MIN_COMMANDS:
+        sys.exit(
+            f"ERROR: {cli['name']} CLI docs rendered only {new_count} command section(s), "
+            f"below the floor of {MIN_COMMANDS}.\n"
+            "The generator exited 0, so this is most likely a tree-walk that stopped "
+            "descending -- check whether a private SDK type it matches on was renamed."
+        )
+    if output_file.exists():
+        old_count = count_commands(output_file.read_text(), cli["name"])
+        if old_count and new_count < old_count * MIN_RETAINED_FRACTION:
+            sys.exit(
+                f"ERROR: {cli['name']} CLI docs dropped from {old_count} to {new_count} "
+                f"command section(s), below {MIN_RETAINED_FRACTION:.0%} of the previous page.\n"
+                "Commands do get removed between releases, so this is a floor rather than a\n"
+                "no-change rule -- but a fall this large is far more likely a broken walk.\n"
+                "If the removal is real, regenerate with the floor lowered deliberately."
+            )
 
     # Write combined output
     tmp_file = str(output_file) + ".tmp"
@@ -157,9 +200,11 @@ def main() -> None:
             generate_go_cli(cli)
         else:
             if not skip_venv and not python.exists():
-                print(f"  Warning: venv not found at {VENV_DIR}. "
-                      f"Run SDK generation first or set SKIP_VENV_SETUP=true.")
-                continue
+                sys.exit(
+                    f"ERROR: venv not found at {VENV_DIR}, so {cli['name']} CLI docs cannot be\n"
+                    "generated. Run SDK generation first, or set SKIP_VENV_SETUP=true to use\n"
+                    "the current environment. This used to skip quietly and leave the page stale."
+                )
             generate_python_cli(cli, python)
 
 
