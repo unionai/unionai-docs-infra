@@ -222,3 +222,77 @@ def test_every_third_party_import_is_declared_for_uv_run():
 def test_tomlkit_specifically_is_declared():
     """The instance that broke the v1 1.16.28 regen."""
     assert any(d.startswith("tomlkit") for d in _script_deps())
+
+
+# ---------------------------------------------------------------------------
+# Pin retention (DOC-1448).
+#
+# Cloudflare Pages refuses a deployment above 20,000 files and every enumerated
+# entry materializes another full site tree (~3,400 files). Seven trees broke the
+# deploy on 2026-08-21: the site did not publish for about an hour, and because
+# the search-index step is gated on a successful deploy it was SKIPPED rather
+# than failed, so the index went stale with no red step saying so.
+#
+# Retention is what stops a cut walking back into that. These tests pin the
+# behaviour that matters: the count is bounded, the OLDEST go, the newest stay,
+# and pruning is reported -- a pruned pin 404s until someone adds its redirect.
+# ---------------------------------------------------------------------------
+
+
+def test_retention_keeps_the_newest_and_drops_the_oldest():
+    kept, pruned = manifest._apply_retention(["v2.6.1.0", "v2.6.2.0", "v2.6.3.0", "v2.6.4.0"], 3)
+    assert kept == ["v2.6.2.0", "v2.6.3.0", "v2.6.4.0"]
+    assert pruned == ["v2.6.1.0"]
+
+
+def test_retention_is_a_no_op_below_the_limit():
+    pins = ["v2.6.1.0", "v2.6.2.0"]
+    kept, pruned = manifest._apply_retention(pins, 3)
+    assert kept == pins and pruned == []
+
+
+def test_retention_is_a_no_op_exactly_at_the_limit():
+    # The current main state. A cut today must not silently drop a served pin.
+    pins = ["v2.6.1.0", "v2.6.2.0", "v2.6.3.0"]
+    kept, pruned = manifest._apply_retention(pins, 3)
+    assert kept == pins and pruned == []
+
+
+def test_the_next_cut_prunes_exactly_one(tmp_path):
+    """The scenario retention exists for: main's real state, one cut later.
+
+    Without retention this reaches 4 pins = 6 trees = ~20,600 files, over the cap.
+    """
+    body = 'stable = "v2.6.5.0"\nenumerated = [\n  "v2.6.1.0",\n  "v2.6.2.0",\n  "v2.6.3.0",\n]\n'
+    out = _promote(tmp_path, body)
+    assert out["stable"] == DECISION["tag"]
+    # outgoing stable rotated in, oldest pruned, count held
+    assert "v2.6.5.0" in out["enumerated"]
+    assert "v2.6.1.0" not in out["enumerated"]
+    assert len(out["enumerated"]) == 3
+
+
+def test_max_enumerated_override_is_honoured(tmp_path):
+    body = (
+        'stable = "v2.6.5.0"\nmax_enumerated = 1\n'
+        'enumerated = [\n  "v2.6.1.0",\n  "v2.6.2.0",\n  "v2.6.3.0",\n]\n'
+    )
+    out = _promote(tmp_path, body)
+    assert len(out["enumerated"]) == 1
+    assert out["max_enumerated"] == 1  # the override itself must survive the cut
+
+
+def test_retention_never_drops_the_incoming_stable(tmp_path):
+    """The new stable is served at /docs/<line>; enumerating it would duplicate a tree."""
+    body = 'stable = "v2.6.5.0"\nenumerated = [\n  "v2.6.1.0",\n  "v2.6.2.0",\n  "v2.6.3.0",\n]\n'
+    out = _promote(tmp_path, body)
+    assert DECISION["tag"] not in out["enumerated"]
+
+
+def test_pruning_is_reported_not_silent(tmp_path, capsys):
+    """A pruned pin 404s until a redirect is added, so it cannot go unannounced."""
+    body = 'stable = "v2.6.5.0"\nenumerated = [\n  "v2.6.1.0",\n  "v2.6.2.0",\n  "v2.6.3.0",\n]\n'
+    _promote(tmp_path, body)
+    err = capsys.readouterr().err
+    assert "v2.6.1.0" in err
+    assert "redirect" in err.lower()
