@@ -310,6 +310,9 @@ www.union.ai/_r_/flyte,https://www.union.ai/docs/v2/flyte/,301,TRUE,TRUE,TRUE,TR
 www.union.ai/docs/v1/byoc,https://www.union.ai/docs/v1/union,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/docs/v1/selfmanaged,https://www.union.ai/docs/v1/union,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/docs/v1/serverless,https://www.union.ai/docs/v1/union,302,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v2.5.16.3,https://www.union.ai/docs/v2,301,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v2.5.18.3,https://www.union.ai/docs/v2,301,TRUE,TRUE,TRUE,TRUE
+www.union.ai/docs/v2.6.0.0,https://www.union.ai/docs/v2,301,TRUE,TRUE,TRUE,TRUE
 www.union.ai/docs/v2/byoc,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
 www.union.ai/docs/v2/serverless,https://www.union.ai/docs/v2/union,302,TRUE,TRUE,TRUE,TRUE
