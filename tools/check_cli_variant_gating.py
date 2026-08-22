@@ -46,9 +46,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _repo import get_repo_root  # noqa: E402
+from _repo import INFRA_ROOT, get_repo_root  # noqa: E402
 
 REPO_ROOT = get_repo_root()
+VARIANT_MAP_FILE = INFRA_ROOT / "cli-variants.toml"
 
 try:
     import tomllib
@@ -71,19 +72,34 @@ print(json.dumps(out))
 """
 
 
-def parse_gen_command(gen_command: str) -> tuple[frozenset[str], dict[str, frozenset[str]], frozenset[str]]:
-    """Recover the variant policy from the configured generator invocation.
+def load_variant_map(path: Path) -> dict[str, frozenset[str]]:
+    """Read the distribution -> variants policy from cli-variants.toml.
 
-    Returns (default_plugin_variants, per_distribution_overrides, all_variants).
+    This is deliberately NOT derived from the generator's own arguments. The
+    generator decides gating from where a command's code was defined, and this
+    check exists because that answer can be wrong; reading the policy back out of
+    the same command would make the check agree with the generator by
+    construction, which is how a note-based check passed on the #1483 leak.
+    An independent statement of intent is the whole point of the file.
+    """
+    if not path.exists():
+        return {}
+    raw = tomllib.loads(path.read_text()).get("distributions", {})
+    out: dict[str, frozenset[str]] = {}
+    for dist, variants in raw.items():
+        if isinstance(variants, str):
+            variants = variants.split()
+        out[dist] = frozenset(variants)
+    return out
 
-    The policy is read from the command the pipeline actually runs rather than
-    duplicated here, so the check cannot drift from the generator's inputs.
+
+def parse_all_variants(gen_command: str) -> frozenset[str]:
+    """Recover the variant universe the page publishes to.
+
+    Only the universe comes from the generator invocation; the per-distribution
+    policy comes from cli-variants.toml (see load_variant_map).
     """
     argv = shlex.split(gen_command)
-    default: frozenset[str] = frozenset()
-    all_variants = frozenset({"flyte", "union"})
-    overrides: dict[str, frozenset[str]] = {}
-
     i = 0
     while i < len(argv):
         arg = argv[i]
@@ -92,36 +108,28 @@ def parse_gen_command(gen_command: str) -> tuple[frozenset[str], dict[str, froze
             arg, _, value = arg.partition("=")
         elif i + 1 < len(argv):
             value = argv[i + 1]
-
-        if arg == "--plugin-variants" and value:
-            default = frozenset(value.split())
-        elif arg == "--variants" and value:
-            all_variants = frozenset(value.split())
-        elif arg == "--plugin-variant-map" and value:
-            prefix, _, variants = value.partition("=")
-            if prefix and variants.split():
-                overrides[prefix.strip()] = frozenset(variants.split())
+        if arg == "--variants" and value:
+            return frozenset(value.split())
         i += 1
-
-    return default, overrides, all_variants
+    return frozenset({"flyte", "union"})
 
 
 def expected_variants(
     dist: str | None,
-    default: frozenset[str],
-    overrides: dict[str, frozenset[str]],
+    variant_map: dict[str, frozenset[str]],
+    all_variants: frozenset[str],
 ) -> frozenset[str]:
     """Which variants a distribution's commands belong in.
 
-    Overrides are keyed by module prefix in the generator; distributions map to
-    them by the usual `flyteplugins-x` -> `flyteplugins.x` spelling.
+    An unlisted distribution falls through to every variant, which means the
+    check imposes no constraint on it. That is the deliberate default: a plugin
+    nobody has classified is not assumed to be Union-only (that would hide an
+    open-source plugin, the mirror image of the bug this guards). main() names
+    the unlisted distributions so the gap is visible rather than silent.
     """
-    if dist:
-        module_prefix = dist.replace("-", ".", 1)
-        for prefix in sorted(overrides, key=len, reverse=True):
-            if module_prefix == prefix or module_prefix.startswith(prefix + "."):
-                return overrides[prefix]
-    return default
+    if dist and dist in variant_map:
+        return variant_map[dist]
+    return all_variants
 
 
 def heading_for(entry_point_name: str) -> str:
@@ -178,22 +186,24 @@ def probe_entry_points(python: Path) -> list[dict[str, str | None]]:
     return json.loads(proc.stdout)
 
 
-def check_cli(cli: dict, python: Path) -> list[str]:
-    gen_command = cli.get("gen_command", "")
+def check_cli(
+    cli: dict, python: Path, variant_map: dict[str, frozenset[str]], unlisted: set[str]
+) -> list[str]:
     output_file = REPO_ROOT / cli["output_file"]
     if not output_file.exists():
         return [f"{cli['output_file']}: generated file not found"]
 
-    default, overrides, all_variants = parse_gen_command(gen_command)
+    all_variants = parse_all_variants(cli.get("gen_command", ""))
     gating = gating_by_heading(output_file.read_text())
     problems: list[str] = []
 
     for ep in probe_entry_points(python):
         name, dist = ep["name"], ep["dist"]
-        want = expected_variants(dist, default, overrides)
-        if want == all_variants:
-            # Shipped to every variant; the page needs no gate for it.
+        if not dist or dist not in variant_map:
+            # Unlisted: no policy, so no constraint. Recorded, not enforced.
+            unlisted.add(dist or "(distribution unknown)")
             continue
+        want = expected_variants(dist, variant_map, all_variants)
 
         head = heading_for(name)
         if head not in gating:
@@ -201,17 +211,24 @@ def check_cli(cli: dict, python: Path) -> list[str]:
             # dynamically-built group). Absent is not wrongly-published.
             continue
 
-        got = gating[head]
-        if got is None:
+        # An ungated section renders for every reader, so no gate == all variants.
+        got = gating[head] if gating[head] is not None else all_variants
+
+        if not got <= want:
+            leaked = " ".join(sorted(got - want))
+            where = "EVERY variant" if gating[head] is None else f"variant(s) '{leaked}'"
             problems.append(
-                f"{cli['output_file']}: '{head}' is published to EVERY variant, "
+                f"{cli['output_file']}: '{head}' is published to {where}, "
                 f"but {dist} ships only to {' '.join(sorted(want))}"
             )
-        elif not got <= want:
-            leaked = " ".join(sorted(got - want))
+        elif got < want:
+            # The mirror image, and the reason the policy is stated here rather
+            # than read back out of the generator: a command gated MORE narrowly
+            # than its distribution ships is hidden from readers who can run it.
+            missing = " ".join(sorted(want - got))
             problems.append(
-                f"{cli['output_file']}: '{head}' is published to variant(s) '{leaked}', "
-                f"but {dist} ships only to {' '.join(sorted(want))}"
+                f"{cli['output_file']}: '{head}' is hidden from variant(s) '{missing}', "
+                f"but {dist} ships to {' '.join(sorted(want))}"
             )
 
     return problems
@@ -224,6 +241,12 @@ def main() -> None:
         type=Path,
         default=VENV_PYTHON,
         help="Interpreter whose installed distributions define the expected surface.",
+    )
+    parser.add_argument(
+        "--variant-map",
+        type=Path,
+        default=VARIANT_MAP_FILE,
+        help="TOML file mapping a distribution to the variants its commands publish to.",
     )
     args = parser.parse_args()
 
@@ -238,9 +261,20 @@ def main() -> None:
         print("check-cli-variant-gating: no variant-gated CLI docs configured; nothing to check")
         return
 
+    variant_map = load_variant_map(args.variant_map)
+    unlisted: set[str] = set()
     problems: list[str] = []
     for cli in clis:
-        problems.extend(check_cli(cli, args.python))
+        problems.extend(check_cli(cli, args.python, variant_map, unlisted))
+
+    if unlisted:
+        # Not a failure: an unlisted distribution is published to every variant by
+        # policy. But "docs was never told about this plugin" and "this plugin is
+        # genuinely for everyone" look identical from here, so say which it saw.
+        print(
+            "check-cli-variant-gating: not listed in "
+            f"{args.variant_map.name}, so unconstrained: {', '.join(sorted(unlisted))}"
+        )
 
     if problems:
         print("check-cli-variant-gating: plugin commands published to the wrong variants\n")
