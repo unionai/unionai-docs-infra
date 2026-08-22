@@ -244,6 +244,13 @@ check-api-docs:
 check-api-docs-rendered:
 	@$(UV) unionai-docs-infra/tools/check_generated_api_docs.py $(if $(SDK_SOURCE),--source $(SDK_SOURCE),)
 
+# Fails when a plugin-provided CLI command is published to the wrong variants,
+# e.g. a Union-only command rendered into the open-source docs (DOC-1479).
+# Reads what each distribution registered from the API venv's entry points, so
+# it cannot inherit a misclassification made by the generator itself.
+check-cli-variant-gating:
+	@$(UV) unionai-docs-infra/tools/check_cli_variant_gating.py
+
 check-asset-refs:
 	@unionai-docs-infra/scripts/check-asset-refs.sh
 

@@ -209,12 +209,31 @@ def regenerate(results: list[dict]) -> None:
                 cmd.append(f"PAGE_VARIANTS={r['variants']}")
             subprocess.run(cmd, cwd=REPO_ROOT, check=True)
 
+    # Validate variant gating while the venv still exists. The check reads what
+    # each distribution registered from its entry points, and those are only
+    # visible here -- clean-venv below destroys the only evidence of which
+    # commands came from a Union-only plugin. See tools/check_cli_variant_gating.py.
+    gating_failed = False
+    if has_outdated_cli:
+        print("\nChecking CLI variant gating...")
+        gating = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().parent.parent / "check_cli_variant_gating.py")],
+            cwd=REPO_ROOT,
+        )
+        gating_failed = gating.returncode != 0
+
     # Clean up shared venv
     subprocess.run(
         ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "clean-venv"],
         cwd=REPO_ROOT,
         check=True,
     )
+
+    # Reported after cleanup so a failure does not leave the venv behind, but
+    # still fails the regen: publishing a Union-only command into the
+    # open-source docs is worse than not regenerating.
+    if gating_failed:
+        sys.exit("ERROR: generated CLI docs publish a plugin command to the wrong variants (see above).")
 
 
 def main():
