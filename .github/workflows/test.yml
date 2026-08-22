@@ -1,0 +1,27 @@
+# The repo had no CI at all until now (DOC-1485): 129 tests in tests/ that only
+# ever ran when someone remembered to run them locally. Infra PRs showed "no
+# checks", which reads as "nothing to run here" rather than "the test you just
+# wrote will never run again" -- and the usual infra verify path (a submodule
+# bump on unionai-docs -> Cloudflare preview) exercises the built site, never
+# this tooling.
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main, v1]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Run tests
+        # -ra surfaces the xfail reasons in the summary, so a test parked against
+        # an open issue stays visible instead of reading as a pass.
+        run: uv run --with pytest pytest tests/ -ra
