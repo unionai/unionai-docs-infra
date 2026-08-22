@@ -189,6 +189,48 @@ PR. Merge it to cut.
 - **`layouts/partials/version-footer.html`** stamps each page with the exact component
   versions from `data/version-manifest.json` (SDK, plugins, backend, the `union` SDK).
 
+## Pin retention (how many versions we serve)
+
+Every entry in `enumerated` materializes **another full site tree** in `dist/` -- about 3,400
+files at the current corpus size (719 pages x 2 variants, each emitting an `index.html` plus its
+`page.md` twin, plus ~278 static files). The line also serves `stable`, and the primary line
+serves `/docs/latest`, so:
+
+```
+trees = enumerated + stable + (latest ? 1 : 0)
+```
+
+**Cloudflare Pages refuses a deployment above 20,000 files.** On 2026-08-21 the v2.6.3.0 cut took
+`dist/` to seven trees and the deploy failed outright. The site did not publish for about an hour,
+and because `Update search index` is gated on a successful deploy it was **skipped rather than
+failed** -- one red step, two problems. See DOC-1448.
+
+Note the ceiling is **file count, not bytes**. Shrinking images does not help; only reducing the
+number of trees, or the number of files per tree, does.
+
+`manifest.py --promote` therefore bounds the pin count on every cut. The default holds the primary
+line at five trees (`MAX_ENUMERATED_DEFAULT = 3`); override per line with `max_enumerated` in
+`versions.toml`. Raising it is a deliberate act: check the file count first, and remember the
+per-tree count grows as the corpus does.
+
+When a cut prunes a pin it says so, on stderr and as a GitHub annotation, because **a pruned pin
+404s until it has a redirect**. Add one row per pruned pin to `redirects.csv` with
+`subpath_matching` and `preserve_path_suffix` set, targeting `/docs/<line>`, so deep links keep
+resolving:
+
+```
+www.union.ai/docs/v2.5.16.3,https://www.union.ai/docs/v2,301,TRUE,TRUE,TRUE,TRUE
+```
+
+Promote cannot write that file itself -- `redirects.csv` lives on the far side of a submodule
+boundary from the repo the cut runs in -- so it reports and a human applies.
+
+**Retention is a safety bound, not curation.** It keeps the newest N. Which pins *deserve* to be
+served is a separate judgment, recorded in v1's `versions.toml`: a pinned version earns its place
+by documenting a distinct product state, not by having once been stable (DOC-1357). The two
+usually agree, because a near-duplicate pin is also the older one. Where they disagree, recency
+wins automatically and a human has to intervene.
+
 ## Files at a glance
 
 | File | Where | Role |

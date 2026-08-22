@@ -267,6 +267,43 @@ def compute_next_version(sdk_version: str) -> dict:
 # --------------------------------------------------------------------------- #
 # --promote: write the version intent into versions.toml
 # --------------------------------------------------------------------------- #
+# Pin retention (DOC-1448). Cloudflare Pages refuses a deployment above 20,000
+# files, and EVERY entry in `enumerated` materializes another full site tree --
+# ~3,400 files at the current corpus size (719 pages x 2 variants, each emitting
+# an index.html plus its page.md twin, plus ~278 static files). The line also
+# serves `stable`, and the primary line serves `/docs/latest`, so:
+#
+#     trees = enumerated + stable + (latest ? 1 : 0)
+#
+# Seven trees broke the deploy outright on 2026-08-21, taking the site down for
+# about an hour and silently skipping the search-index push with it (that step is
+# gated on a successful deploy). Five trees is the measured-good count. This keeps
+# a cut from walking back into that: the default holds the primary line at five.
+#
+# Override per line with `max_enumerated` in versions.toml. RAISING it is a
+# deliberate act -- check the file count first, because the ceiling is files, not
+# bytes, and the per-tree count grows with the corpus.
+#
+# This bounds the COUNT by recency. It is not the same question as which pins
+# deserve to be served at all -- v1's versions.toml records that rule ("a pinned
+# version earns its place by documenting a distinct product state, not by having
+# once been stable", DOC-1357). The two usually agree, because a near-duplicate
+# pin is also the older one. Where they disagree, recency wins here and a human
+# has to intervene: prune by hand, or raise `max_enumerated` and drop the pin
+# that documents nothing distinct. Retention is a safety bound, not curation.
+MAX_ENUMERATED_DEFAULT = 3
+
+
+def _apply_retention(enumerated: list[str], limit: int) -> tuple[list[str], list[str]]:
+    """Keep the newest `limit` pins; return (kept, pruned-oldest-first).
+
+    `enumerated` arrives sorted oldest-first, so the newest are at the tail.
+    """
+    if limit < 0 or len(enumerated) <= limit:
+        return enumerated, []
+    return enumerated[len(enumerated) - limit:], enumerated[: len(enumerated) - limit]
+
+
 def _tag_sort_key(tag: str):
     try:
         return Version(tag.lstrip("v"))
@@ -399,11 +436,32 @@ def promote_versions_toml(decision: dict, path: Path) -> None:
     old_stable = doc.get("stable") or None
     enumerated = _rotate(old_stable, [str(t) for t in doc.get("enumerated", [])])
 
+    # Retention: bound the tree count so a cut cannot exceed the Pages file cap.
+    limit = int(doc.get("max_enumerated", MAX_ENUMERATED_DEFAULT))
+    enumerated, pruned = _apply_retention(enumerated, limit)
+
     doc["stable"] = tag
     # Build the array from a literal so it keeps the file's 2-space multiline style.
     body = "".join(f'  "{t}",\n' for t in enumerated)
     doc["enumerated"] = tomlkit.parse(f"x = [\n{body}]" if enumerated else "x = []")["x"]
     path.write_text(tomlkit.dumps(doc))
+
+    if pruned:
+        # Pruned pins stop being served and would 404 without a redirect. That
+        # redirect lives in unionai-docs-infra/redirects.csv, on the far side of a
+        # submodule boundary this script cannot write across, so it is reported
+        # rather than applied. Surfaced as a GitHub annotation because promote's
+        # stdout is otherwise buried in the regen job log.
+        detail = ", ".join(pruned)
+        note = (
+            f"Pin retention pruned {len(pruned)} version(s) from enumerated: {detail}. "
+            f"Add a redirect row per pruned pin to unionai-docs-infra/redirects.csv "
+            f"(subpath_matching + preserve_path_suffix, target /docs/<line>), or the "
+            f"retired URLs will 404."
+        )
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::warning title=Pin retention pruned versions::{note}")
+        print(f"promote: {note}", file=sys.stderr)
 
     print(f"promote: {path.name} stable={tag} (was {old_stable or 'none'}; "
           f"{len(enumerated)} older pin(s); comments preserved)")
