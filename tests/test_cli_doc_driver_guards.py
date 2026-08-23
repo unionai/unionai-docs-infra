@@ -78,3 +78,33 @@ def test_floors_are_set_to_catch_a_collapse_not_normal_churn():
     healthy, collapsed = 93, 4
     assert collapsed < healthy * MIN_RETAINED_FRACTION
     assert 90 >= healthy * MIN_RETAINED_FRACTION  # losing 3 of 93 is fine
+
+
+# --- asking the SDK for data rather than a page (DOC-1481) -------------------
+
+
+def test_the_generator_invocation_is_rewritten_to_request_json():
+    """`gen_command` still describes the page in the old pipeline's terms. The
+    variant arguments are consumed here, not passed on: they describe the page,
+    and the SDK no longer has an opinion about the page."""
+    from api_cli_generate import _as_json_request
+
+    assert _as_json_request(
+        ["flyte", "gen", "docs", "--type", "markdown", "--plugin-variants", "union"]
+    ) == ["flyte", "gen", "docs", "--type", "json"]
+
+
+def test_the_equals_form_is_rewritten_too():
+    from api_cli_generate import _as_json_request
+
+    assert _as_json_request(["flyte", "gen", "docs", "--type=markdown", "--plugin-variants=union"]) == [
+        "flyte", "gen", "docs", "--type", "json",
+    ]
+
+
+def test_the_page_variant_policy_is_read_from_gen_command():
+    from api_cli_generate import _page_variants
+
+    assert _page_variants("flyte gen docs --type markdown --plugin-variants 'union'") == ("union", "flyte union")
+    assert _page_variants("flyte gen docs --type markdown") == (None, "flyte union")
+    assert _page_variants("flyte gen docs --variants 'flyte union oss'")[1] == "flyte union oss"
