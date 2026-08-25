@@ -17,6 +17,7 @@ When SKIP_VENV_SETUP=true, uses the current environment instead.
 
 import os
 import re
+import json
 import shlex
 import subprocess
 import sys
@@ -27,7 +28,8 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
 
-from _repo import get_repo_root, INFRA_ROOT
+import cli_render
+from _repo import INFRA_ROOT, get_repo_root
 
 REPO_ROOT = get_repo_root()
 CONFIG_FILE = REPO_ROOT / "api-packages.toml"
@@ -56,12 +58,63 @@ def count_commands(markdown: str, cli_name: str) -> int:
     return len(re.findall(rf"^#{{2,6}} {re.escape(cli_name)}\b", markdown, re.M))
 
 
+
+def _as_json_request(argv: list[str]) -> list[str]:
+    """Turn the configured generator invocation into a request for JSON.
+
+    `gen_command` in api-packages.toml still describes the page in the terms the
+    old pipeline used -- `--type markdown --plugin-variants union`. The variant
+    arguments are read here rather than passed on, because they describe the
+    page, and the SDK no longer has an opinion about the page.
+    """
+    out: list[str] = []
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        value = None
+        if "=" in arg and arg.startswith("--"):
+            arg, _, value = arg.partition("=")
+        elif i + 1 < len(argv):
+            value = argv[i + 1]
+
+        if arg == "--type":
+            out += ["--type", "json"]
+            i += 1 if "=" in argv[i] else 2
+            continue
+        if arg in ("--plugin-variants", "--variants"):
+            i += 1 if "=" in argv[i] else 2
+            continue
+        out.append(argv[i])
+        i += 1
+    return out
+
+
+def _page_variants(gen_command: str) -> tuple[str | None, str]:
+    """The variant policy the page is built with, read out of `gen_command`."""
+    argv = shlex.split(gen_command)
+    plugin_variants, all_variants = None, "flyte union"
+    i = 0
+    while i < len(argv):
+        arg, value = argv[i], None
+        if "=" in arg and arg.startswith("--"):
+            arg, _, value = arg.partition("=")
+        elif i + 1 < len(argv):
+            value = argv[i + 1]
+        if arg == "--plugin-variants" and value:
+            plugin_variants = value
+        elif arg == "--variants" and value:
+            all_variants = value
+        i += 1
+    return plugin_variants, all_variants
+
+
 def generate_python_cli(cli: dict, python: Path) -> None:
     """Generate CLI docs for a Python-based CLI."""
     include = cli["include"]
     output_file = REPO_ROOT / cli["output_file"]
     import_name = cli.get("import", cli.get("package", cli["name"]))
     gen_command = cli["gen_command"]
+    plugin_variants, all_variants = _page_variants(gen_command)
 
     # Get version
     version_cmd = f"import {import_name}; print({import_name}.__version__)"
@@ -84,6 +137,11 @@ def generate_python_cli(cli: dict, python: Path) -> None:
         if venv_bin.exists():
             gen_parts[0] = str(venv_bin)
 
+    # Ask the SDK for data, not for a page. Everything about how the page looks
+    # -- shortcodes, variant gating, the goldmark workarounds -- is decided here
+    # by cli_render, in the repo that owns the docs site. See DOC-1481.
+    gen_parts = _as_json_request(gen_parts)
+
     result = subprocess.run(
         gen_parts,
         capture_output=True, text=True, cwd=REPO_ROOT,
@@ -97,8 +155,15 @@ def generate_python_cli(cli: dict, python: Path) -> None:
             "generator look like a clean regen."
         )
 
+    rendered = cli_render.render(
+        json.loads(result.stdout),
+        cli_render.load_variant_map(cli_render.VARIANT_MAP_FILE),
+        plugin_variants,
+        frozenset(all_variants.split()),
+    )
+
     # Guard against a generator that succeeds but produces almost nothing.
-    new_count = count_commands(result.stdout, cli["name"])
+    new_count = count_commands(rendered, cli["name"])
     if new_count < MIN_COMMANDS:
         sys.exit(
             f"ERROR: {cli['name']} CLI docs rendered only {new_count} command section(s), "
@@ -122,7 +187,7 @@ def generate_python_cli(cli: dict, python: Path) -> None:
     with open(tmp_file, "w") as f:
         f.write(header)
         f.write("\n")
-        f.write(result.stdout)
+        f.write(rendered)
     os.rename(tmp_file, output_file)
     print(f"  Generated {cli['output_file']}")
 
