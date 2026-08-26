@@ -130,7 +130,7 @@ A single bulk redirect list named "redirects" containing 8,142 entries (as of 20
 
 All bulk redirects use 302 (temporary) status codes with query string preservation.
 
-**Note**: The `_r_/flyte/*` portion of this list is the landing zone for the `docs.flyte.org` / `docs-legacy.flyte.org` catch-all (see Phase 5). After the flyte.org-zone normalization rules rewrite a request to `www.union.ai/_r_/flyte/<canonical-path>`, this list maps it to the canonical v2 destination. Sourced from `unionai-docs-infra/redirects.csv` and deployed by `tools/redirect_generator/deploy_redirects.py` via the `unionai-docs/.github/workflows/deploy-redirects.yml` CI workflow (auto-runs when the infra submodule pointer changes on `main` or `v1` branches).
+**Note**: The `_r_/flyte/*` portion of this list is the landing zone for the `docs.flyte.org` / `docs-legacy.flyte.org` catch-all (see Phase 5). After the flyte.org-zone normalization rules rewrite a request to `www.union.ai/_r_/flyte/<canonical-path>`, this list maps it to the canonical v2 destination. Sourced from `unionai-docs-infra/redirects.csv` and deployed by `tools/redirect_generator/deploy_redirects.py` via the `unionai-docs/.github/workflows/deploy-redirects.yml` CI workflow (auto-runs when the infra submodule pointer or either line's `versions.toml` changes on `main` or `v1`). **Not every item comes from the CSV:** redirects for retired version pins are derived at deploy time from the `retired` list in each line's `versions.toml`, so a pin's retirement and its redirect cannot drift apart — see VERSIONING.md › "Retired pins redirect themselves".
 
 ### Phase 3: AWS CloudFront (Path-Based Reverse Proxy)
 

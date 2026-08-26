@@ -32,6 +32,7 @@ from urllib.error import HTTPError, URLError
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools" / "redirect_generator"))
 from _repo import INFRA_ROOT
 
 # Import the redirect *generator* (pure logic) for unit tests of the
@@ -1119,3 +1120,119 @@ if __name__ == "__main__":
                         help="Run only live HTTP tests")
     args = parser.parse_args()
     sys.exit(run_tests(include_live=args.live, live_only=args.live_only))
+
+
+class TestRetiredPinRedirects:
+    """Retired pins get their redirect derived, not written down (DOC-1497).
+
+    A cut retires the oldest pin every time now, and that pin 404s without a
+    redirect. Writing the row by hand meant the retirement happened in one
+    repository and the redirect in another, days later, if someone remembered:
+    v2.6.1.0 and v2.6.2.0 were both retired with no row, on consecutive days,
+    past a green CI that cannot see redirects at all.
+
+    So `manifest.py --promote` records the pin in `retired` in the same edit that
+    drops it from `enumerated`, and the row is derived from that here.
+    """
+
+    def test_a_pin_maps_to_its_own_line(self):
+        from deploy_redirects import _line_of
+
+        assert _line_of("v2.6.1.0") == "v2"
+        assert _line_of("v1.16.26.3") == "v1"
+        assert _line_of("2.6.1.0") == "v2"
+
+    def test_each_retired_pin_becomes_a_subtree_redirect_to_its_line(self):
+        from deploy_redirects import retired_pin_items
+
+        items = retired_pin_items(["v2.6.1.0", "v1.16.26.3"], set())
+        assert [i["redirect"]["source_url"] for i in items] == [
+            "www.union.ai/docs/v2.6.1.0",
+            "www.union.ai/docs/v1.16.26.3",
+        ]
+        assert [i["redirect"]["target_url"] for i in items] == [
+            "https://www.union.ai/docs/v2",
+            "https://www.union.ai/docs/v1",
+        ]
+        r = items[0]["redirect"]
+        # Subtree + suffix, or only the bare pin URL redirects and every deep
+        # link under it still 404s -- which is most of what a pin is for.
+        assert r["subpath_matching"] and r["preserve_path_suffix"]
+        assert r["status_code"] == 301
+
+    def test_a_row_already_in_the_csv_is_not_duplicated(self):
+        """Cloudflare rejects a list with two items sharing a source, so the
+        derivation has to be idempotent against un-migrated hand-written rows."""
+        from deploy_redirects import retired_pin_items
+
+        items = retired_pin_items(
+            ["v2.6.1.0", "v2.6.2.0"], {"www.union.ai/docs/v2.6.1.0"}
+        )
+        assert [i["redirect"]["source_url"] for i in items] == [
+            "www.union.ai/docs/v2.6.2.0"
+        ]
+
+    def test_both_lines_are_read(self, monkeypatch, tmp_path):
+        """The deploy PUTs the WHOLE list and fires on either branch. A run that
+        saw only its own line would republish a list missing the other's retired
+        pins and silently undo them."""
+        import deploy_redirects as dr
+
+        (tmp_path / "versions.toml").write_text(
+            'stable = "v2.6.9.0"\nretired = ["v2.6.1.0"]\n'
+        )
+        monkeypatch.setattr(dr, "get_repo_root", lambda: tmp_path)
+        seen = []
+
+        def sibling(branch):
+            seen.append(branch)
+            return {"retired": ["v1.16.26.3"]}
+
+        monkeypatch.setattr(dr, "_versions_from_branch", sibling)
+        assert dr.retired_pins() == ["v2.6.1.0", "v1.16.26.3"]
+        assert seen == ["v1"], "a v2 checkout must reach across to v1"
+
+    def test_this_line_is_read_from_the_working_tree(self, monkeypatch, tmp_path):
+        """Not from `origin`. The deploy must act on the file that is checked
+        out, or a dry run and the real thing disagree."""
+        import deploy_redirects as dr
+
+        (tmp_path / "versions.toml").write_text(
+            'stable = "v1.16.28.1"\nretired = ["v1.16.26.3"]\n'
+        )
+        monkeypatch.setattr(dr, "get_repo_root", lambda: tmp_path)
+        monkeypatch.setattr(dr, "_versions_from_branch", lambda b: {"retired": []})
+        assert dr.retired_pins() == ["v1.16.26.3"]
+
+    def test_a_v1_checkout_reaches_across_to_main(self, monkeypatch, tmp_path):
+        import deploy_redirects as dr
+
+        (tmp_path / "versions.toml").write_text('stable = "v1.16.28.1"\nretired = []\n')
+        monkeypatch.setattr(dr, "get_repo_root", lambda: tmp_path)
+        seen = []
+        monkeypatch.setattr(
+            dr, "_versions_from_branch", lambda b: seen.append(b) or {"retired": ["v2.6.1.0"]}
+        )
+        assert dr.retired_pins() == ["v2.6.1.0"]
+        assert seen == ["main"]
+
+    def test_an_unreadable_sibling_is_fatal_rather_than_skipped(self, monkeypatch, tmp_path):
+        """A partial list is not a smaller correct answer, it is a wrong one."""
+        import deploy_redirects as dr
+
+        (tmp_path / "versions.toml").write_text('stable = "v2.6.9.0"\nretired = []\n')
+        monkeypatch.setattr(dr, "get_repo_root", lambda: tmp_path)
+
+        def boom(branch):
+            raise RuntimeError("could not read versions.toml from origin/v1")
+
+        monkeypatch.setattr(dr, "_versions_from_branch", boom)
+        with pytest.raises(RuntimeError):
+            dr.retired_pins()
+
+    def test_no_retired_pin_rows_remain_in_the_csv(self):
+        """One source of truth. A hand-written row would still work, but it would
+        also be a second place to look and a second place to forget."""
+        rows = [r[0] for r in load_rows()]
+        stale = [s for s in rows if re.match(r"^www\.union\.ai/docs/v\d+\.\d+\.\d+\.\d+$", s)]
+        assert not stale, f"retired-pin rows belong in versions.toml `retired`: {stale}"
