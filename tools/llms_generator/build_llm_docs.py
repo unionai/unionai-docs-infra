@@ -758,6 +758,42 @@ class LLMDocBuilder:
         if not self.quiet:
             print(f"Enhanced subpage listings for {variant}")
 
+    def _resolve_from_source_dir(self, current_file: Path, link_path: str) -> Path:
+        """Resolve a relative markdown link written in a Hugo source file against
+        the output tree, given the output file that carries it.
+
+        Two output shapes, and they need different bases:
+
+          * A leaf page `foo.md` is written out as `foo/page.md`, so the output
+            file sits one directory DEEPER than the source file whose directory
+            the link was written relative to. `../bar` resolved from
+            `foo/page.md` lands one level too deep and 404s.
+          * A section index `dir/_index.md` is written out as `dir/page.md`, so
+            for those the output file's own directory is already the right base.
+
+        Resolving literally first and falling back one level up only when the
+        target does not exist covers both without having to know which shape
+        this file is. Used by `absolutize_links()` and `_process_bundle_links()`;
+        keep it that way rather than reintroducing a per-call-site copy (the
+        bundle path carried the only copy for a while, which is exactly how
+        `page.md` shipped every cross-directory link broken -- DOC-1494).
+
+        Distinct from `resolve_link_path()`, which builds a lookup KEY for the
+        title table and still resolves the old way.
+        """
+        # A link may name a section's source file explicitly
+        # (`../task-deployment/_index`). Hugo resolves that to the section
+        # itself; carried through literally it becomes a 404 URL.
+        link_path = re.sub(r'(^|/)_index(\.md)?/?$', r'\1', link_path)
+        link_path = link_path.rstrip('/') or '.'
+
+        resolved = (current_file.parent / link_path).resolve()
+        if not resolved.exists() and not (resolved / 'page.md').exists():
+            alt = (current_file.parent.parent / link_path).resolve()
+            if alt.exists() or (alt / 'page.md').exists():
+                resolved = alt
+        return resolved
+
     def absolutize_links(self, variant: str, version: str = None):
         """Convert all relative links in page.md files to absolute URLs."""
         version = version or self.version
@@ -802,7 +838,7 @@ class LLMDocBuilder:
                     return match.group(0)
 
                 # Resolve relative path to absolute filesystem path
-                resolved = (_file.parent / base_path_part).resolve()
+                resolved = self._resolve_from_source_dir(_file, base_path_part)
 
                 # Convert to path relative to variant dir
                 try:
@@ -883,14 +919,7 @@ class LLMDocBuilder:
             link_path = url.split('#')[0].strip()
             if not link_path:
                 return match.group(0)
-            resolved = (current_file.parent / link_path).resolve()
-            # Leaf page page.md files are one directory level deeper than their
-            # Hugo source files, so ../foo resolves one level too shallow.
-            # If the resolved path doesn't exist, try from one level up.
-            if not resolved.exists() and not (resolved / 'page.md').exists():
-                alt = (current_file.parent.parent / link_path).resolve()
-                if alt.exists() or (alt / 'page.md').exists():
-                    resolved = alt
+            resolved = self._resolve_from_source_dir(current_file, link_path)
 
             # Check if it's within the bundle section
             try:
