@@ -444,20 +444,29 @@ def promote_versions_toml(decision: dict, path: Path) -> None:
     # Build the array from a literal so it keeps the file's 2-space multiline style.
     body = "".join(f'  "{t}",\n' for t in enumerated)
     doc["enumerated"] = tomlkit.parse(f"x = [\n{body}]" if enumerated else "x = []")["x"]
+
+    if pruned:
+        # Record the retirement in the same edit that causes it. The redirect a
+        # retired pin needs is derived from this list at deploy time
+        # (redirect_generator/deploy_redirects.py), so the pin leaving
+        # `enumerated` and the redirect appearing are no longer two acts days
+        # apart in two repositories -- they are one line apart in one file.
+        retired = [str(t) for t in doc.get("retired", [])]
+        retired += [p for p in pruned if p not in retired]
+        body = "".join(f'  "{t}",\n' for t in retired)
+        doc["retired"] = tomlkit.parse(f"x = [\n{body}]")["x"]
+
     path.write_text(tomlkit.dumps(doc))
 
     if pruned:
-        # Pruned pins stop being served and would 404 without a redirect. That
-        # redirect lives in unionai-docs-infra/redirects.csv, on the far side of a
-        # submodule boundary this script cannot write across, so it is reported
-        # rather than applied. Surfaced as a GitHub annotation because promote's
-        # stdout is otherwise buried in the regen job log.
+        # Still announced, because a pin leaving the served set is a real change
+        # to what the site answers -- but it is no longer a request for someone to
+        # go and do something. The row is derived from `retired` at deploy time.
         detail = ", ".join(pruned)
         note = (
             f"Pin retention pruned {len(pruned)} version(s) from enumerated: {detail}. "
-            f"Add a redirect row per pruned pin to unionai-docs-infra/redirects.csv "
-            f"(subpath_matching + preserve_path_suffix, target /docs/<line>), or the "
-            f"retired URLs will 404."
+            f"Recorded in `retired`; the redirect is derived from it at deploy time, "
+            f"so no redirects.csv edit is needed."
         )
         if os.environ.get("GITHUB_ACTIONS"):
             print(f"::warning title=Pin retention pruned versions::{note}")

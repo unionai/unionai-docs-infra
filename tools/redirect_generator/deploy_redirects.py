@@ -19,6 +19,7 @@ import argparse
 import csv
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.request
@@ -26,9 +27,18 @@ import urllib.error
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _repo import INFRA_ROOT
+from _repo import INFRA_ROOT, get_repo_root
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib  # type: ignore[no-redef]
 
 REDIRECTS_FILE = "redirects.csv"
+
+#: Which branch carries the OTHER documentation line's versions.toml. Both must be
+#: read before deploying -- see retired_pins().
+SIBLING_BRANCH = {"v2": "v1", "v1": "main"}
 CF_API_BASE = "https://api.cloudflare.com/client/v4"
 POLL_INTERVAL_SECONDS = 2
 POLL_MAX_ATTEMPTS = 60
@@ -76,6 +86,86 @@ def parse_csv(csv_path: Path) -> list[dict]:
                     }
                 }
             )
+    return items
+
+
+
+def _versions_from_branch(branch: str) -> dict:
+    """Read versions.toml as it stands on `branch`.
+
+    The two lines are branches of one repository, so the sibling's file is a
+    `git show` away rather than another checkout.
+    """
+    result = subprocess.run(
+        ["git", "show", f"origin/{branch}:versions.toml"],
+        capture_output=True,
+        text=True,
+        cwd=get_repo_root(),
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"could not read versions.toml from origin/{branch}: "
+            f"{result.stderr.strip() or 'unknown error'}"
+        )
+    return tomllib.loads(result.stdout)
+
+
+def retired_pins() -> list[str]:
+    """Every pin either line has retired, this line's first.
+
+    BOTH lines, always. This deploy PUTs the entire redirect list and the
+    workflow fires on either branch, so a run that could see only its own
+    retired pins would republish a list missing the other line's and silently
+    undo them -- the same failure as deploying from a stale submodule pointer,
+    reached from a different direction.
+
+    This line is read from the working tree, not from `origin`, so the file the
+    deploy acts on is the one checked out; the sibling has to come from its ref.
+    A sibling that cannot be read is fatal rather than skipped: a partial list is
+    not a smaller correct answer, it is a wrong one.
+    """
+    own = tomllib.loads((get_repo_root() / "versions.toml").read_text())
+    sibling = SIBLING_BRANCH[_line_of(str(own.get("stable", "v2")))]
+
+    pins = [str(p) for p in own.get("retired", [])]
+    for pin in _versions_from_branch(sibling).get("retired", []):
+        if str(pin) not in pins:
+            pins.append(str(pin))
+    return pins
+
+
+def _line_of(pin: str) -> str:
+    """The docs line a pin belongs to: `v2.6.1.0` -> `v2`."""
+    return "v" + pin.lstrip("v").split(".", 1)[0]
+
+
+def retired_pin_items(pins: list[str], existing: set[str]) -> list[dict]:
+    """A redirect item per retired pin, skipping any the CSV already covers.
+
+    Every retired pin gets the same rule -- the line root, permanent, matching
+    the whole subtree and keeping the path suffix -- so there is no judgement to
+    record and nothing to keep in a file. `existing` makes this idempotent
+    against a hand-written row that has not been migrated yet; Cloudflare rejects
+    a list with two items sharing a source.
+    """
+    items = []
+    for pin in pins:
+        source = f"www.union.ai/docs/{pin}"
+        if source in existing:
+            continue
+        items.append(
+            {
+                "redirect": {
+                    "source_url": source,
+                    "target_url": f"https://www.union.ai/docs/{_line_of(pin)}",
+                    "status_code": 301,
+                    "include_subdomains": True,
+                    "subpath_matching": True,
+                    "preserve_query_string": True,
+                    "preserve_path_suffix": True,
+                }
+            }
+        )
     return items
 
 
@@ -170,6 +260,16 @@ def main() -> int:
 
     items = parse_csv(csv_path)
     print(f"Parsed {len(items)} redirect items from {args.csv}")
+
+    # Retired pins are not stored as rows. They are recorded in each line's
+    # versions.toml by the cut that retires them, and their redirect is derived
+    # here, so the retirement and the redirect cannot drift apart.
+    derived = retired_pin_items(retired_pins(), {i["redirect"]["source_url"] for i in items})
+    if derived:
+        print(f"Derived {len(derived)} redirect item(s) for retired pins:")
+        for item in derived:
+            print(f"  {item['redirect']['source_url']} -> {item['redirect']['target_url']}")
+        items += derived
 
     if not items:
         print("No redirect items found. Nothing to deploy.")

@@ -213,17 +213,42 @@ line at five trees (`MAX_ENUMERATED_DEFAULT = 3`); override per line with `max_e
 `versions.toml`. Raising it is a deliberate act: check the file count first, and remember the
 per-tree count grows as the corpus does.
 
-When a cut prunes a pin it says so, on stderr and as a GitHub annotation, because **a pruned pin
-404s until it has a redirect**. Add one row per pruned pin to `redirects.csv` with
-`subpath_matching` and `preserve_path_suffix` set, targeting `/docs/<line>`, so deep links keep
-resolving:
+### Retired pins redirect themselves
 
-```
-www.union.ai/docs/v2.5.16.3,https://www.union.ai/docs/v2,301,TRUE,TRUE,TRUE,TRUE
+A pruned pin stops being served and **404s until it has a redirect**. That redirect is not written
+down anywhere. It is derived.
+
+When `--promote` prunes a pin it records it in `retired` in the same edit that drops it from
+`enumerated`:
+
+```toml
+stable     = "v2.6.9.0"
+enumerated = ["v2.6.3.0", "v2.6.5.0", "v2.6.6.0"]
+retired    = ["v2.5.16.3", "v2.5.18.3", "v2.6.0.0", "v2.6.1.0", "v2.6.2.0"]
 ```
 
-Promote cannot write that file itself -- `redirects.csv` lives on the far side of a submodule
-boundary from the repo the cut runs in -- so it reports and a human applies.
+At deploy time `deploy_redirects.py` reads `retired` and synthesizes one item per pin -- the line
+root, 301, `subpath_matching` and `preserve_path_suffix` on -- and appends them to the items parsed
+from `redirects.csv`. Every retired pin gets the identical rule, so there is no judgement to record
+and nothing to keep in a file.
+
+**Do not add retired-pin rows to `redirects.csv`.** A test fails if one appears. The derivation
+skips any source the CSV already covers, so a stray row is harmless rather than a duplicate-source
+rejection from Cloudflare, but it is a second place to look and a second place to forget.
+
+**Why derived rather than written (DOC-1497).** The pin left `enumerated` in one repository and the
+redirect had to arrive in another, days later, if someone remembered -- and `--promote` cannot write
+across that submodule boundary, so it could only warn. `v2.6.1.0` and `v2.6.2.0` were both retired
+with no row, on consecutive days, past a CI that is green by construction because redirects deploy
+from a separate workflow. A warning that produces no action is not a control. Now the retirement and
+the redirect are one line apart in one file, written by one command.
+
+**Both lines are read, always.** The deploy PUTs the *entire* redirect list and the workflow fires on
+`main` or `v1`, so a run that could see only its own `retired` would republish a list missing the
+other line's and silently undo it -- the same failure as deploying from a stale submodule pointer,
+reached from a different direction. `retired_pins()` reads both branches (`git show origin/<branch>:
+versions.toml`, one repository, two branches) and unions them. A branch it cannot read is **fatal**,
+not skipped: a partial list is not a smaller correct answer, it is a wrong one.
 
 **Retention is a safety bound, not curation.** It keeps the newest N. Which pins *deserve* to be
 served is a separate judgment, recorded in v1's `versions.toml`: a pinned version earns its place
