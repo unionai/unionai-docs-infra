@@ -1236,3 +1236,74 @@ class TestRetiredPinRedirects:
         rows = [r[0] for r in load_rows()]
         stale = [s for s in rows if re.match(r"^www\.union\.ai/docs/v\d+\.\d+\.\d+\.\d+$", s)]
         assert not stale, f"retired-pin rows belong in versions.toml `retired`: {stale}"
+
+
+class TestRateLimitRetry:
+    """A rate-limited redirect deploy waits rather than failing (DOC-1497).
+
+    Replacing this list is a bulk operation against a budget shared per account,
+    not per branch. Landing a change that touches both lines needed five runs in
+    twenty minutes on 2026-08-26 and Cloudflare refused two of them.
+
+    That was harmless only by luck -- the run that failed would have sent a list
+    byte-identical to one already deployed. Had it been the only run carrying a
+    change, the live list would have stayed stale, the workflow would sit red,
+    and the symptom would be 404s nobody connects to a CI failure days earlier.
+    """
+
+    def _patched(self, monkeypatch, responses):
+        """Feed `cf_api_request` a scripted sequence; record the sleeps."""
+        import deploy_redirects as dr
+
+        calls, slept = [], []
+        seq = list(responses)
+
+        def fake(method, path, token, body=None):
+            calls.append(method)
+            r = seq.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        monkeypatch.setattr(dr, "cf_api_request", fake)
+        monkeypatch.setattr(dr.time, "sleep", lambda s: slept.append(s))
+        return dr, calls, slept
+
+    def test_a_rate_limit_in_the_body_is_waited_out(self, monkeypatch):
+        limited = {"success": False, "errors": [{"code": 10040, "message": "ratelimited"}]}
+        dr, calls, slept = self._patched(monkeypatch, [limited, limited, {"success": True}])
+        assert dr.cf_api_request_retrying("PUT", "/x", "t")["success"] is True
+        assert len(calls) == 3
+        assert slept == [15, 45], "backs off, and does not hammer"
+
+    def test_a_429_is_waited_out(self, monkeypatch):
+        import deploy_redirects as dr
+
+        err = dr.CloudflareError(429, '{"errors":[{"code":10040}]}')
+        dr, calls, slept = self._patched(monkeypatch, [err, {"success": True}])
+        assert dr.cf_api_request_retrying("PUT", "/x", "t")["success"] is True
+        assert slept == [15]
+
+    def test_any_other_error_is_raised_at_once(self, monkeypatch):
+        """Retrying a malformed list just spends the budget more slowly."""
+        import deploy_redirects as dr
+
+        err = dr.CloudflareError(400, '{"errors":[{"code":10001,"message":"bad item"}]}')
+        dr, calls, slept = self._patched(monkeypatch, [err])
+        with pytest.raises(dr.CloudflareError):
+            dr.cf_api_request_retrying("PUT", "/x", "t")
+        assert slept == [], "no waiting on an error that will not clear"
+
+    def test_giving_up_says_the_live_list_is_unchanged(self, monkeypatch):
+        """The operator needs to know the edge still has the OLD list, and that
+        re-running is what fixes it."""
+        limited = {"success": False, "errors": [{"code": 10040}]}
+        dr, calls, slept = self._patched(monkeypatch, [limited] * 5)
+        with pytest.raises(RuntimeError, match="UNCHANGED"):
+            dr.cf_api_request_retrying("PUT", "/x", "t")
+        assert len(slept) == len(dr.RETRY_BACKOFF_SECONDS)
+
+    def test_a_successful_call_never_sleeps(self, monkeypatch):
+        dr, calls, slept = self._patched(monkeypatch, [{"success": True}])
+        dr.cf_api_request_retrying("GET", "/x", "t")
+        assert slept == []

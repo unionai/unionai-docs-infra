@@ -43,6 +43,17 @@ CF_API_BASE = "https://api.cloudflare.com/client/v4"
 POLL_INTERVAL_SECONDS = 2
 POLL_MAX_ATTEMPTS = 60
 
+#: Cloudflare's code for "you have been ratelimited please wait and try again".
+#: Replacing this list is a bulk operation, and landing a change that touches both
+#: lines can need several in a few minutes -- five in twenty minutes on 2026-08-26
+#: hit this twice. Transient, so it is waited out rather than failed on.
+RATE_LIMITED_CODE = 10040
+#: Waits between attempts, seconds. The one that eventually succeeded on
+#: 2026-08-26 was seven minutes after the last failure, so this is deliberately
+#: patient: a redirect deploy that gives up leaves the live list stale, and the
+#: symptom is 404s nobody connects to a CI failure days earlier.
+RETRY_BACKOFF_SECONDS = (15, 45, 90, 180)
+
 
 def parse_csv(csv_path: Path) -> list[dict]:
     """Parse redirects.csv into a list of Cloudflare redirect item dicts.
@@ -188,9 +199,58 @@ def cf_api_request(
         with urllib.request.urlopen(req) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        print(f"Cloudflare API error ({e.code}): {error_body}", file=sys.stderr)
-        sys.exit(1)
+        raise CloudflareError(e.code, e.read().decode()) from e
+
+
+class CloudflareError(RuntimeError):
+    """A non-2xx response. Carries enough to decide whether to wait or give up."""
+
+    def __init__(self, status: int, body: str):
+        super().__init__(f"Cloudflare API error ({status}): {body}")
+        self.status = status
+        self.body = body
+
+    @property
+    def rate_limited(self) -> bool:
+        return self.status == 429 or f'"code": {RATE_LIMITED_CODE}' in self.body.replace(
+            '"code":', '"code": '
+        )
+
+
+def _rate_limited_result(result: dict) -> bool:
+    """Cloudflare may report the limit in a 200 body rather than a status code."""
+    if result.get("success"):
+        return False
+    return any(e.get("code") == RATE_LIMITED_CODE for e in result.get("errors", []))
+
+
+def cf_api_request_retrying(method: str, path: str, token: str, body: object = None) -> dict:
+    """`cf_api_request`, waiting out a rate limit instead of failing on it.
+
+    Only the rate limit is retried. Anything else is a real error and is raised
+    immediately -- retrying a malformed list just spends the budget slower.
+    """
+    for wait in (*RETRY_BACKOFF_SECONDS, None):
+        try:
+            result = cf_api_request(method, path, token, body=body)
+            if not _rate_limited_result(result):
+                return result
+            reason = "rate limited (in response body)"
+        except CloudflareError as e:
+            if not e.rate_limited:
+                raise
+            reason = f"rate limited (HTTP {e.status})"
+        if wait is None:
+            break
+        print(f"  {reason}; retrying in {wait}s...", file=sys.stderr)
+        time.sleep(wait)
+
+    raise RuntimeError(
+        "Cloudflare rate limit did not clear after "
+        f"{len(RETRY_BACKOFF_SECONDS)} retries over "
+        f"{sum(RETRY_BACKOFF_SECONDS)}s. The live redirect list is UNCHANGED and "
+        "now lags this branch -- re-run this workflow once the limit clears."
+    )
 
 
 def deploy(items: list[dict], account_id: str, list_id: str, token: str) -> None:
@@ -198,7 +258,7 @@ def deploy(items: list[dict], account_id: str, list_id: str, token: str) -> None
     path = f"/accounts/{account_id}/rules/lists/{list_id}/items"
 
     print(f"Uploading {len(items)} redirect items to Cloudflare...")
-    result = cf_api_request("PUT", path, token, body=items)
+    result = cf_api_request_retrying("PUT", path, token, body=items)
 
     if not result.get("success"):
         errors = result.get("errors", [])
@@ -216,7 +276,7 @@ def deploy(items: list[dict], account_id: str, list_id: str, token: str) -> None
 
     for attempt in range(1, POLL_MAX_ATTEMPTS + 1):
         time.sleep(POLL_INTERVAL_SECONDS)
-        status_result = cf_api_request("GET", poll_path, token)
+        status_result = cf_api_request_retrying("GET", poll_path, token)
         status = status_result.get("result", {}).get("status", "unknown")
         print(f"  Poll {attempt}: {status}")
 
@@ -303,7 +363,14 @@ def main() -> int:
         print("Set these or use --dry-run to test CSV parsing.", file=sys.stderr)
         return 1
 
-    deploy(items, account_id, list_id, token)
+    try:
+        deploy(items, account_id, list_id, token)
+    except (CloudflareError, RuntimeError) as e:
+        # Fail loudly and say what state the live list is in. A redirect deploy
+        # that fails quietly leaves stale redirects, and the symptom is 404s
+        # nobody connects to a red workflow from days earlier.
+        print(str(e), file=sys.stderr)
+        return 1
     return 0
 
 
