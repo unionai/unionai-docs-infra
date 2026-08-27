@@ -261,7 +261,7 @@ If you change the crawler's `exclusionPatterns`, check that derivation still agr
 ## Gotchas
 
 - **Do not make `baseURL` absolute to fix `<loc>`.** `layouts/_default/single.md` and
-  `list.md` already emit `https://www.union.ai{{ .Permalink }}` into the `page.md`/`section.md`
+  `list.md` already emit `https://www.union.ai{{ .Permalink }}` into the `page.md`/`_section.md`
   outputs, so they would double-prefix; and previews and `make serve` would emit production
   URLs from every `.Permalink` consumer, making a preview impossible to check against itself.
   Prefix at the template via `site-host.html` instead.

@@ -30,7 +30,7 @@ from pathlib import Path
 
 # Aggregate files restate page content; indexing them duplicates every page's
 # prose under the wrong URL.
-SKIP_NAMES = {"section.md", "llms.txt", "llms-full.txt", "index.md"}
+SKIP_NAMES = {"_section.md", "llms.txt", "llms-full.txt", "index.md"}
 
 DOCS_BASE = "https://www.union.ai/docs"
 

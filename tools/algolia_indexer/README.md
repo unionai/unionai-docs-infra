@@ -127,7 +127,7 @@ that assumption is ever dropped.
   index partially written and the operator guessing which slices landed.
 - **Anchors must match Hugo's heading IDs** or every deep link lands at the top
   of the page. Validated against the `id` attributes in built HTML.
-- **Aggregates are skipped** (`section.md`, `llms.txt`, `llms-full.txt`) — they
+- **Aggregates are skipped** (`_section.md`, `llms.txt`, `llms-full.txt`) — they
   restate page content and would index the same prose under the wrong URL.
 
 ## Usage
