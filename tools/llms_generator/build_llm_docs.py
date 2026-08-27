@@ -12,6 +12,26 @@ import subprocess
 from pathlib import Path
 from typing import Set, List
 
+# Size cap for one `_section.md`, in bytes of built output.
+#
+# The structural rule alone does not bound size: a section whose children are
+# each ONE large page is fully inlined, because there is no deeper `_section.md`
+# to link onward to. `tutorials/agents` is exactly that shape -- 12 single-page
+# sub-sections at 83K-202K each -- and came out at 1,246K, five times the largest
+# bundle the design anticipated. So bundles are also capped by size, uniformly
+# across the tree. No section, path or subtree is special-cased: it is a property
+# of size alone.
+#
+# ONE place to change it. `LLM_BUNDLE_SIZE_LIMIT` in the environment overrides it
+# for sweeping the threshold when re-measuring the impact table; the constant is
+# what ships.
+BUNDLE_SIZE_LIMIT = 200 * 1024
+
+# Cap on a size-abridged child's excerpt. Long enough to say what the page is
+# about, short enough that abridging actually buys something.
+EXCERPT_MAX_CHARS = 320
+
+
 class LLMDocBuilder:
     def __init__(self, base_path: Path, quiet: bool = False):
         self.base_path = base_path
@@ -26,6 +46,8 @@ class LLMDocBuilder:
         self.page_headings: dict[str, List[str]] = {}  # path_key -> [H2/H3 heading titles]
         self.section_pages: set[str] = set()  # path_keys of pages that have subpages
         self.bundle_sections: dict[str, str] = {}  # dir_path -> bundle URL (populated by generate_bundles)
+        self.bundle_size_limit = int(
+            os.environ.get('LLM_BUNDLE_SIZE_LIMIT', BUNDLE_SIZE_LIMIT))
 
     def _detect_version(self) -> str:
         """Detect version from environment or makefile.inc."""
@@ -913,9 +935,14 @@ class LLMDocBuilder:
             is_internal = str(target_page) in included
 
             if is_internal:
-                # Convert to hierarchical title
+                # Convert to hierarchical title. Key on `target_page`, not on
+                # `resolved`: a link written `./architecture/_index` resolves to a
+                # DIRECTORY, while the title table is keyed `dir/page.md`. Keying
+                # on the directory missed every one of those, and the miss path
+                # returns the link untouched -- so a raw `./architecture/_index`
+                # survived into the bundle, where it resolves one level wrong.
                 try:
-                    lookup_key = str(resolved.relative_to(variant_dir)).lower()
+                    lookup_key = str(target_page.relative_to(variant_dir)).lower()
                 except ValueError:
                     return match.group(0)
                 if lookup_key in self.title_lookup:
@@ -974,16 +1001,97 @@ class LLMDocBuilder:
             source_file = self.base_path / 'content' / '_index.md'
         return source_file.exists()
 
+    def _frontmatter_description(self, dir_path: str) -> str:
+        """The `description` from a section's source `_index.md`, if it has one."""
+        if dir_path:
+            source_file = self.base_path / 'content' / dir_path / '_index.md'
+        else:
+            source_file = self.base_path / 'content' / '_index.md'
+        if not source_file.exists():
+            return ''
+        try:
+            content = source_file.read_text(encoding='utf-8')
+            match = re.match(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
+            if match:
+                for line in match.group(1).split('\n'):
+                    if line.startswith('description:'):
+                        return line.split(':', 1)[1].strip().strip('"').strip("'")
+        except OSError:
+            pass
+        return ''
+
     @staticmethod
-    def _bundle_manifest(section_title: str, section_url: str, own_page_count: int,
-                         subsection_count: int, abridged: List[str]) -> List[str]:
+    def _first_paragraph(text: str) -> str:
+        """The page's first real paragraph, skipping the H1, notes and code."""
+        buf: List[str] = []
+        in_fence = False
+        for line in text.split('\n'):
+            stripped = line.strip()
+            if stripped.startswith('```'):
+                in_fence = not in_fence
+                if buf:
+                    break
+                continue
+            if in_fence:
+                continue
+            if not stripped:
+                if buf:
+                    break
+                continue
+            if stripped.startswith(('#', '>', '|', '<', '===')):
+                if buf:
+                    break
+                continue
+            buf.append(stripped)
+        return ' '.join(buf)
+
+    def _excerpt(self, dir_path: str, content: str) -> str:
+        """What stands in for a child cut on size.
+
+        Frontmatter `description` first -- it is the author's own one-line
+        summary, so it beats anything derived -- and the first paragraph as the
+        fallback.
+        """
+        text = self._frontmatter_description(dir_path) or self._first_paragraph(content)
+        if not text:
+            return '(No summary available.)'
+        if len(text) > EXCERPT_MAX_CHARS:
+            cut = text[:EXCERPT_MAX_CHARS].rsplit(' ', 1)[0].rstrip(' ,.;:')
+            text = cut + '...'
+        return text
+
+    @staticmethod
+    def _block_bytes(parts: List[str]) -> int:
+        """Bytes this block will occupy once the bundle is joined and written.
+
+        `'\n'.join(L) + '\n'` is `sum(len(x)) + len(L)`, so block sizes are
+        additive and the fitting loop can add them up instead of re-rendering the
+        whole file on every iteration.
+        """
+        return sum(len(x.encode('utf-8')) for x in parts) + len(parts)
+
+    @staticmethod
+    def _count(n: int) -> str:
+        return 'is' if n == 1 else 'are'
+
+    def _bundle_manifest(self, section_title: str, section_url: str,
+                         own_page_count: int, subsection_count: int,
+                         structural: List[str], size_cut: List[str],
+                         overflow: bool) -> List[str]:
         """The header block. It states what the bundle holds and what it abridges.
 
         This is the part that survives a truncated fetch, so it carries more
         weight than the onward links do: an agent that knows it is holding 18 of
         21 sub-sections can decide to fetch the rest, whereas one that does not
         know will answer from what it has and never mention the gap.
+
+        It reports the two kinds of abridgement SEPARATELY, because they promise
+        different things. "More beneath it" means fetching onward reaches a
+        structurally deeper tree. "Cut on size" means fetching onward reaches the
+        same one page, in full. A reader who cannot tell them apart cannot tell
+        whether the link leads to more of the same or to something else.
         """
+        limit_kb = self.bundle_size_limit // 1024
         lines = [
             f"# {section_title}",
             "",
@@ -998,54 +1106,125 @@ class LLMDocBuilder:
 
         if not subsection_count:
             lines.append("> It has no sub-sections, so nothing is abridged.")
-        elif not abridged:
+        else:
+            full = subsection_count - len(structural) - len(size_cut)
             lines.append(
                 f"> This bundle contains {subsection_count} sub-section"
-                f"{'s' if subsection_count != 1 else ''},"
-                f" all included in full.")
-        else:
-            full = subsection_count - len(abridged)
+                f"{'s' if subsection_count != 1 else ''}."
+                f" {full} {self._count(full)} included in full.")
+            if structural:
+                lines.append(
+                    f"> {len(structural)} {self._count(len(structural))} summarised"
+                    f" to {'its' if len(structural) == 1 else 'their'} landing page,"
+                    f" because {'it has' if len(structural) == 1 else 'they have'}"
+                    f" more beneath {'it' if len(structural) == 1 else 'them'}:")
+                lines.append(f"> {', '.join(structural)}.")
+            if size_cut:
+                lines.append(
+                    f"> {len(size_cut)} {self._count(len(size_cut))} cut to a short"
+                    f" excerpt, because this bundle reached its {limit_kb} KB"
+                    f" size limit:")
+                lines.append(f"> {', '.join(size_cut)}.")
+        # Hoisted OUT of the else: a section can blow the cap on its own leaf
+        # pages alone, with no sub-sections to cut (`user-guide/apps/build-apps`,
+        # 8 own pages, 351K). Reported inside the else, that case emitted a bundle
+        # over the limit that said nothing about it -- the exact silent failure
+        # the manifest exists to prevent.
+        if overflow:
+            if subsection_count:
+                lines.append(
+                    f"> Every sub-section is cut to a short excerpt and this"
+                    f" bundle is STILL over its {limit_kb} KB size limit.")
+            else:
+                lines.append(
+                    f"> This bundle is over its {limit_kb} KB size limit and has"
+                    f" no sub-sections to abridge.")
             lines.append(
-                f"> This bundle contains {subsection_count} sub-sections."
-                f" {full} {'is' if full == 1 else 'are'} included in full.")
-            lines.append(
-                f"> {len(abridged)}"
-                f" {'is' if len(abridged) == 1 else 'are'} summarised here"
-                f" with a link to {'its' if len(abridged) == 1 else 'their'}"
-                f" full section:")
-            lines.append(f"> {', '.join(abridged)}.")
+                "> What remains is this section's own pages, which are never cut.")
         lines.append("")
         return lines
 
+    def _page_block(self, page_file: Path, page_url: str, included: Set[str],
+                    onward_section: bool) -> List[str]:
+        """A child rendered in full, with its onward link if it has one."""
+        content = page_file.read_text(encoding='utf-8')
+        content = self._strip_subpages_section(content)
+        content = re.sub(r'\n---\n\*\*Source\*\*:.*$', '', content, flags=re.DOTALL)
+        content = self._process_bundle_links(content, page_file, included)
+
+        parts = [f"=== PAGE: {page_url} ===\n", content.strip(), ""]
+        if onward_section:
+            # The onward link belongs HERE, next to the content it abridges --
+            # not in a block at the end that a truncated fetch would remove.
+            parts.extend([f"\u2192 Full section: {page_url}/_section.md", ""])
+        return parts
+
+    def _excerpt_block(self, page_file: Path, page_url: str, dir_path: str,
+                       included: Set[str], onward_section: bool) -> List[str]:
+        """A child cut on size: a short excerpt plus the route to the real thing.
+
+        ONE note, not two. A child can be both structurally and size-abridged, and
+        two separate notes would read as two different destinations.
+        """
+        content = page_file.read_text(encoding='utf-8')
+        content = self._strip_subpages_section(content)
+        excerpt = self._process_bundle_links(
+            self._excerpt(dir_path, content), page_file, included)
+
+        note = f"\u2192 Full page: {page_url}/page.md"
+        if onward_section:
+            note += f" \u00b7 Full section: {page_url}/_section.md"
+        return [f"=== PAGE: {page_url} (abridged on size) ===\n", excerpt, "", note, ""]
+
     def generate_bundles(self, variant: str, version: str = None):
         """Write a `_section.md` for every section that has more than its own
-        landing page, holding exactly one level of the tree.
+        landing page, holding one level of the tree and at most
+        `self.bundle_size_limit` bytes.
 
         Shape, in order: manifest header, the section's landing page in full, the
-        section's own leaf pages in full, then each immediate child section's
-        landing page in full -- each one followed IMMEDIATELY by an onward link to
-        its own `_section.md` when it has more beneath it.
+        section's own leaf pages in full, then each immediate child section --
+        in full, or summarised -- each one followed IMMEDIATELY by a link onward.
 
         Two decisions worth not re-litigating:
 
         * **One level, not the whole subtree.** Bundling the subtree made the root
           bundle a second copy of `llms-full.txt` (4,087K) and repeated every page
-          at every level above it. One level caps the largest bundle at ~263K and
-          holds total duplication to ~1.27x, which is only sub-section landings
-          appearing once in their parent and once atop their own bundle.
+          at every level above it.
         * **Links inline, no trailing block.** A trailing link block is exactly
           what a size-capped fetch cuts: at a 100K cap a third of all onward links
-          vanished from files that still looked complete. Inline links survive up
-          to the cut.
+          vanished from files that still looked complete.
 
         A section whose whole subtree is one `_index.md` gets NO bundle: its
         content already lives at its own page URL and its parent inlines it in
         full, so a bundle there would be a byte-identical third copy.
+
+        **Two independent reasons a child gets summarised**, and they are reported
+        separately because they promise different things:
+
+        1. *Structural* -- the child has more beneath it, so its landing page
+           stands in for its subtree and links to its own `_section.md`.
+        2. *Size* -- the bundle would otherwise blow the cap, so the child's text
+           is replaced by an excerpt linking to its own `page.md`. This is the one
+           that handles a child whose landing page IS its whole content: there is
+           no deeper `_section.md` to point at, so nothing but an excerpt reduces
+           it.
+
+        Size-abridgement is **deterministic**, so two builds of the same content
+        produce identical bytes: children are cut largest-contribution-first, ties
+        broken by path. The section's own landing page and its own leaf pages are
+        NEVER cut -- a bundle that cannot fit even so is emitted over the cap and
+        SAYS so in its manifest, rather than failing the build or silently
+        dropping the section's own content.
         """
         version = version or self.version
-        variant_dir = self.base_path / 'dist' / 'docs' / version / variant
+        # Resolved: child paths come back resolved from `_resolve_from_source_dir()`,
+        # so an unresolved root makes every `relative_to()` below a coin toss on any
+        # filesystem with a symlinked temp or home directory.
+        variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
         base_url = f"https://www.union.ai/docs/{version}/{variant}"
+        limit = self.bundle_size_limit
         bundle_count = 0
+        capped_count = 0
 
         for content_file in sorted(variant_dir.rglob('page.md')):
             try:
@@ -1062,8 +1241,7 @@ class LLMDocBuilder:
             dir_path = rel_path.replace('/page.md', '').replace('page.md', '').strip('/')
             section_url = f"{base_url}/{dir_path}".rstrip('/')
 
-            # Split one level of children into "our own pages" and "sub-sections",
-            # and note which sub-sections continue deeper.
+            # Split one level of children into "our own pages" and "sub-sections".
             own_pages: List[Path] = []
             subsections: List[Path] = []
             for child in children:
@@ -1073,50 +1251,85 @@ class LLMDocBuilder:
                 else:
                     own_pages.append(child)
 
-            abridged = [c.parent.name for c in subsections if self._has_subpages(c)]
+            included = {str(f.resolve())
+                        for f in [content_file] + own_pages + subsections}
 
-            included_files = [content_file] + own_pages + subsections
-            included = {str(f.resolve()) for f in included_files}
+            def url_of(page_file: Path) -> str:
+                page_rel = str(page_file.relative_to(variant_dir))
+                web = page_rel.replace('/page.md', '').replace('page.md', '')
+                return f"{base_url}/{web}".rstrip('/')
+
+            # Head: never abridged, so its size is fixed.
+            head_parts: List[str] = []
+            for page_file in [content_file] + own_pages:
+                head_parts.extend(
+                    self._page_block(page_file, url_of(page_file), included, False))
+
+            # Both renderings of every sub-section, so fitting is arithmetic.
+            full_block: dict[Path, List[str]] = {}
+            short_block: dict[Path, List[str]] = {}
+            deeper: dict[Path, bool] = {}
+            for child in subsections:
+                child_dir = str(child.parent.relative_to(variant_dir))
+                deeper[child] = self._has_subpages(child)
+                url = url_of(child)
+                full_block[child] = self._page_block(child, url, included, deeper[child])
+                short_block[child] = self._excerpt_block(
+                    child, url, child_dir, included, deeper[child])
+
+            # Largest contribution first, ties by path: same input, same output.
+            order = sorted(subsections,
+                           key=lambda c: (-self._block_bytes(full_block[c]), str(c)))
 
             section_title = self._frontmatter_title(rel_path.lower()) or dir_path or variant
+            head_bytes = self._block_bytes(head_parts)
+            size_cut: List[Path] = []
+
+            def total_bytes(cut: List[Path], overflow: bool) -> int:
+                manifest = self._bundle_manifest(
+                    section_title, section_url, len(own_pages), len(subsections),
+                    [c.parent.name for c in subsections
+                     if deeper[c] and c not in cut],
+                    [c.parent.name for c in cut], overflow)
+                body = sum(self._block_bytes(
+                    short_block[c] if c in cut else full_block[c])
+                    for c in subsections)
+                return self._block_bytes(manifest) + head_bytes + body
+
+            while total_bytes(size_cut, False) > limit and len(size_cut) < len(subsections):
+                size_cut.append(next(c for c in order if c not in size_cut))
+            overflow = total_bytes(size_cut, False) > limit
+
+            structural = [c.parent.name for c in subsections
+                          if deeper[c] and c not in size_cut]
+            cut_names = [c.parent.name for c in size_cut]
+
             bundle_parts = self._bundle_manifest(
-                section_title, section_url, len(own_pages),
-                len(subsections), abridged)
-
-            for page_file in included_files:
-                page_content = page_file.read_text(encoding='utf-8')
-                page_content = self._strip_subpages_section(page_content)
-                page_content = re.sub(r'\n---\n\*\*Source\*\*:.*$', '',
-                                      page_content, flags=re.DOTALL)
-                page_content = self._process_bundle_links(
-                    page_content, page_file, included)
-
-                page_rel = str(page_file.relative_to(variant_dir))
-                web_path = page_rel.replace('/page.md', '').replace('page.md', '')
-                page_url = f"{base_url}/{web_path}".rstrip('/')
-                bundle_parts.append(f"=== PAGE: {page_url} ===\n")
-                bundle_parts.append(page_content.strip())
-                bundle_parts.append("")
-
-                # The onward link belongs HERE, next to the content it abridges --
-                # not in a block at the end that a truncated fetch would remove.
-                if page_file is not content_file and self._has_subpages(page_file):
-                    bundle_parts.append(f"\u2192 Full section: {page_url}/_section.md")
-                    bundle_parts.append("")
+                section_title, section_url, len(own_pages), len(subsections),
+                structural, cut_names, overflow)
+            bundle_parts.extend(head_parts)
+            for child in subsections:
+                bundle_parts.extend(
+                    short_block[child] if child in size_cut else full_block[child])
 
             bundle_file = section_dir / '_section.md'
             bundle_file.write_text('\n'.join(bundle_parts) + '\n', encoding='utf-8')
             bundle_count += 1
+            if size_cut:
+                capped_count += 1
 
             self.bundle_sections[dir_path.lower()] = f"{section_url}/_section.md"
 
             if not self.quiet:
                 bundle_size = bundle_file.stat().st_size
+                flag = ' OVER LIMIT' if overflow else ''
                 print(f"  Bundle: {dir_path or '.'}/_section.md ({bundle_size:,} bytes,"
-                      f" {len(included_files)} pages, {len(abridged)} onward links)")
+                      f" {len(subsections)} sub-sections, {len(structural)} onward,"
+                      f" {len(size_cut)} cut on size){flag}")
 
         if not self.quiet:
-            print(f"Generated {bundle_count} section bundles for {variant}")
+            print(f"Generated {bundle_count} section bundles for {variant}"
+                  f" ({capped_count} size-abridged, limit {limit:,} bytes)")
 
     def render_readable_list(self, variant: str, version: str = None):
         """Replace `{{< llm-readable-list >}}` in page.md files with a Markdown bundle list.

@@ -14,6 +14,11 @@ that is wrong still looks like a bundle:
   * **An onward link sits next to the content it abridges**, never in a trailing
     block. At a 100K fetch cap a trailing block lost a third of all onward links,
     from files that still read as complete.
+
+A fourth once the size cap exists: **the two kinds of abridgement must stay
+distinguishable.** "More beneath it" and "cut because this file was too big"
+lead somewhere different, and a manifest that blurs them tells a reader the
+wrong thing about what the link is worth following for.
 """
 
 import sys
@@ -127,8 +132,9 @@ def test_manifest_counts_full_versus_summarised_and_names_the_summarised(tmp_pat
 
     bundle = t.bundle("guide")
     assert "This bundle contains 2 sub-sections. 1 is included in full." in bundle
-    assert "1 is summarised here with a link to its full section:" in bundle
+    assert "1 is summarised to its landing page, because it has more beneath it:" in bundle
     assert "> deep." in bundle
+    assert "size limit" not in bundle, "nothing here was cut on size"
     # The abridged child is present as its landing page only.
     assert "Deep intro." in bundle
     assert "Inner body." not in bundle
@@ -203,3 +209,179 @@ def test_subpages_table_is_not_repeated_inside_the_bundle(tmp_path):
     t.builder().generate_bundles("union")
 
     assert "## Subpages" not in t.bundle("guide")
+
+
+# --------------------------------------------------------------------------
+# Size cap (DOC-1502 round 2). The structural rule alone does not bound size:
+# a section whose children are each ONE large page is inlined whole, because
+# there is no deeper `_section.md` to link onward to. `tutorials/agents` is
+# that shape and came out at 1,246K against a design that expected 263K.
+# --------------------------------------------------------------------------
+
+
+def _fat_tree(tmp_path: Path, sizes: dict[str, int]) -> Tree:
+    """A section whose children are single-page sub-sections of given byte sizes.
+
+    The `tutorials/agents` shape: nothing structural to abridge, so only the size
+    rule can bring the bundle down.
+    """
+    t = Tree(tmp_path)
+    names = list(sizes)
+    t.section("", "Home", "Root.", children=["guide"])
+    t.section("guide", "Guide", "Guide intro.", children=names)
+    for name, size in sizes.items():
+        t.section(f"guide/{name}", name.title(), "x" * size)
+    return t
+
+
+def _build(t: Tree, limit: int) -> str:
+    b = t.builder()
+    b.bundle_size_limit = limit
+    b.generate_bundles("union")
+    return t.bundle("guide")
+
+
+def test_a_bundle_under_the_limit_is_left_alone(tmp_path):
+    t = _fat_tree(tmp_path, {"alpha": 1000, "beta": 1000})
+    bundle = _build(t, 200 * 1024)
+
+    assert "abridged on size" not in bundle
+    assert "size limit" not in bundle
+    assert "This bundle contains 2 sub-sections. 2 are included in full." in bundle
+    assert bundle.count("x" * 1000) == 2
+
+
+def test_over_the_limit_the_largest_child_is_cut_first(tmp_path):
+    t = _fat_tree(tmp_path, {"small": 1000, "huge": 20000, "middle": 5000})
+    bundle = _build(t, 12 * 1024)
+
+    assert "guide/huge (abridged on size)" in bundle
+    assert "x" * 20000 not in bundle
+    # The two that fit are untouched.
+    assert "x" * 5000 in bundle
+    assert "x" * 1000 in bundle
+    assert len(bundle.encode("utf-8")) <= 12 * 1024
+
+
+def test_cutting_continues_until_it_fits(tmp_path):
+    t = _fat_tree(tmp_path, {"a": 9000, "b": 8000, "c": 7000})
+    bundle = _build(t, 10 * 1024)
+
+    assert bundle.count("abridged on size") == 2
+    assert "guide/a (abridged on size)" in bundle
+    assert "guide/b (abridged on size)" in bundle
+    assert "x" * 7000 in bundle, "the smallest child still fits"
+    assert len(bundle.encode("utf-8")) <= 10 * 1024
+
+
+def test_the_sections_own_pages_are_never_cut(tmp_path):
+    """A bundle that cannot fit is emitted over the limit and says so.
+
+    Dropping the section's own content to hit a byte target would make the file
+    lie about what it is. Going over, and saying so, does not.
+    """
+    t = Tree(tmp_path)
+    t.section("", "Home", "Root.", children=["guide"])
+    t.section("guide", "Guide", "G" * 9000, children=["own", "kid"])
+    t.leaf("guide/own", "Own", "O" * 9000)
+    t.section("guide/kid", "Kid", "K" * 9000)
+    bundle = _build(t, 4 * 1024)
+
+    assert "G" * 9000 in bundle, "the landing page survives"
+    assert "O" * 9000 in bundle, "the section's own leaf page survives"
+    assert "K" * 9000 not in bundle, "the child was cut"
+    assert "STILL over its 4 KB size limit" in bundle
+    assert len(bundle.encode("utf-8")) > 4 * 1024
+
+
+def test_manifest_separates_the_two_kinds_of_abridgement(tmp_path):
+    t = Tree(tmp_path)
+    t.section("", "Home", "Root.", children=["guide"])
+    t.section("guide", "Guide", "Guide intro.", children=["fat", "deep", "small"])
+    t.section("guide/fat", "Fat", "F" * 30000)
+    t.section("guide/deep", "Deep", "Deep intro.", children=["inner"])
+    t.leaf("guide/deep/inner", "Inner", "Inner body.")
+    t.section("guide/small", "Small", "Small body.")
+    bundle = _build(t, 8 * 1024)
+
+    assert "This bundle contains 3 sub-sections. 1 is included in full." in bundle
+    assert "1 is summarised to its landing page, because it has more beneath it:" in bundle
+    assert "> deep." in bundle
+    assert "1 is cut to a short excerpt, because this bundle reached its 8 KB size limit:" in bundle
+    assert "> fat." in bundle
+
+
+def test_a_size_cut_child_gets_one_note_carrying_both_routes(tmp_path):
+    """A child can be structurally AND size abridged. Two notes would read as
+    two destinations, so they reconcile into one line."""
+    t = Tree(tmp_path)
+    t.section("", "Home", "Root.", children=["guide"])
+    t.section("guide", "Guide", "Guide intro.", children=["deep"])
+    t.section("guide/deep", "Deep", "D" * 30000, children=["inner"])
+    t.leaf("guide/deep/inner", "Inner", "Inner body.")
+    bundle = _build(t, 4 * 1024)
+
+    note = f"→ Full page: {BASE}/guide/deep/page.md · Full section: {BASE}/guide/deep/_section.md"
+    assert note in bundle
+    assert bundle.count("→ Full") == 1
+
+
+def test_the_excerpt_prefers_the_frontmatter_description(tmp_path):
+    t = _fat_tree(tmp_path, {"fat": 30000})
+    src = t.content / "guide" / "fat" / "_index.md"
+    src.write_text("---\ntitle: Fat\ndescription: What this page is for.\n---\n",
+                   encoding="utf-8")
+    bundle = _build(t, 4 * 1024)
+
+    assert "What this page is for." in bundle
+
+
+def test_the_excerpt_falls_back_to_the_first_paragraph(tmp_path):
+    t = Tree(tmp_path)
+    t.section("", "Home", "Root.", children=["guide"])
+    t.section("guide", "Guide", "Guide intro.", children=["fat"])
+    t.section("guide/fat", "Fat", "The opening paragraph.\n\n" + "x" * 30000)
+    bundle = _build(t, 4 * 1024)
+
+    assert "The opening paragraph." in bundle
+    assert "x" * 30000 not in bundle
+
+
+def test_abridgement_is_deterministic_on_equal_sized_children(tmp_path):
+    """Ties break by path, so the same content always cuts the same children."""
+    t = _fat_tree(tmp_path, {"zulu": 8000, "alpha": 8000, "mike": 8000})
+    first = _build(t, 12 * 1024)
+    second = _build(t, 12 * 1024)
+
+    assert first == second
+    assert "guide/alpha (abridged on size)" in first
+    assert "guide/mike (abridged on size)" in first
+    assert "x" * 8000 in first, "one child still fits"
+
+
+def test_every_size_cut_child_keeps_a_route_to_its_full_text(tmp_path):
+    t = _fat_tree(tmp_path, {"a": 9000, "b": 8000, "c": 7000})
+    bundle = _build(t, 10 * 1024)
+
+    for name in ("a", "b"):
+        assert f"→ Full page: {BASE}/guide/{name}/page.md" in bundle
+
+
+def test_a_section_with_no_sub_sections_still_reports_going_over(tmp_path):
+    """The silent case: nothing to cut, so the cap cannot be met.
+
+    `user-guide/apps/build-apps` is 8 own leaf pages and 351K, with no
+    sub-sections at all. The overflow note used to live inside the
+    has-sub-sections branch, so this shape emitted an over-limit bundle whose
+    manifest claimed nothing was abridged and said nothing about the size.
+    """
+    t = Tree(tmp_path)
+    t.section("", "Home", "Root.", children=["guide"])
+    t.section("guide", "Guide", "Guide intro.", children=["one", "two"])
+    t.leaf("guide/one", "One", "1" * 9000)
+    t.leaf("guide/two", "Two", "2" * 9000)
+    bundle = _build(t, 4 * 1024)
+
+    assert "It has no sub-sections, so nothing is abridged." in bundle
+    assert "This bundle is over its 4 KB size limit and has no sub-sections to abridge." in bundle
+    assert "1" * 9000 in bundle and "2" * 9000 in bundle
