@@ -67,7 +67,6 @@ Deeper topic docs that this README deliberately does not duplicate:
   - [Check Redirects](#check-redirects-check-redirects)
   - [Check Links](#check-links-check-links)
   - [Check Generated Content](#check-generated-content-check-generated-content)
-  - [Check LLM Bundle Notes](#check-llm-bundle-notes-check-llm-bundle-notes)
   - [Check Markdownlint](#check-markdownlint-check-markdownlint)
   - [Check Spelling](#check-spelling-check-spelling)
   - [Pull request build and preview](#pull-request-build-and-preview)
@@ -212,7 +211,7 @@ This is the main production build command. `make dist` runs `scripts/build_dist.
 5. **`make update-redirects`** — detects moved pages and appends to `redirects.csv`. Runs *after* the API/Helm regen so the redirect detector sees the regenerated content dirs and doesn't flag them as removed pages.
 6. **`make check-links`** — internal-link check (non-fatal).
 7. **Hugo builds** — builds every variant in `$(VARIANTS)` (flyte, union) into `dist/`. Runs sequentially by default; set `PARALLEL_HUGO=true` to build variants in parallel. Each variant build also runs `process_shortcodes.py` to emit the per-page `page.md` files.
-8. **`make llm-docs`** — generates the LLM-optimized bundles and indexes (`llms.txt`, `llms-full.txt`, `section.md`) for each variant.
+8. **`make llm-docs`** — generates the LLM-optimized bundles and indexes (`llms.txt`, `llms-full.txt`, `_section.md`) for each variant.
 
 `make dist` is the single command that regenerates everything. If CI checks are failing, running `make dist` locally and committing the changed files will usually fix them.
 
@@ -390,7 +389,7 @@ The build generates LLM-optimized documentation at four levels of granularity, d
 | File | Scope | Description |
 |------|-------|-------------|
 | `page.md` | Per page | Clean Markdown version of every page, with links to other `page.md` files |
-| `section.md` | Per section | Single-file bundle of all pages in a section (where enabled) |
+| `_section.md` | Per section | Single-file bundle holding one level of a section: its own pages in full, plus each sub-section's landing page and a link onward |
 | `llms.txt` | Per variant | Page index with H2/H3 headings, grouped by section |
 | `llms-full.txt` | Per variant | Entire documentation as one file with hierarchical link references |
 
@@ -407,7 +406,7 @@ dist/docs/v2/{variant}/
 │   ├── page.md                             # User Guide landing page
 │   ├── task-configuration/
 │   │   ├── page.md                         # Section landing page
-│   │   ├── section.md                      # Section bundle (all pages concatenated)
+│   │   ├── _section.md                     # Section bundle (one level down)
 │   │   ├── resources/
 │   │   │   └── page.md
 │   │   ├── caching/
@@ -433,20 +432,34 @@ The LLM docs are produced in two stages that run at different points in `make di
 1. **Lookup tables**: Traverses all `page.md` files depth-first via `## Subpages` links, building a lookup table mapping file paths and anchors to hierarchical titles (e.g. `"user-guide/task-configuration/resources/page.md"` → `"Configure tasks > Resources"`).
 2. **`llms-full.txt`**: Processes all pages, converting internal `page.md` links to hierarchical bold references (e.g. `**Configure tasks > Resources**`).
 3. **Subpage enhancement**: Adds H2/H3 headings to `## Subpages` listings in `page.md` files.
-4. **Section bundles**: Generates `section.md` for sections with `llm_readable_bundle: true`.
+4. **Section bundles**: Generates `_section.md` for every section that holds more than its own landing page.
 5. **Link absolutization**: Converts all relative links in `page.md` files to absolute URLs (`https://www.union.ai/docs/...`).
 6. **`llms.txt`**: Creates the page index with headings and bundle references.
 
-### Section bundles (`section.md`)
+### Section bundles (`_section.md`)
 
-To enable a `section.md` bundle for a documentation section, two things are required in the section's `_index.md`:
+Every section that holds more than its own landing page gets a `_section.md`. There is
+no opt-in flag: a bundle appears wherever there is something to bundle. A section whose
+whole subtree is one `_index.md` gets none, because its content already lives at its own
+page URL and its parent inlines it in full.
 
-1. Frontmatter: `llm_readable_bundle: true`
-2. Body: `{{< llm-bundle-note >}}` shortcode (renders a note pointing to the bundle)
+A bundle holds exactly **one level** of the tree, in this order:
 
-A CI check (`check-llm-bundle-notes`) verifies these are always in sync.
+1. a manifest header saying what is included in full and what is abridged
+2. the section's landing page, in full
+3. the section's own leaf pages, in full
+4. each immediate sub-section's landing page, in full, each followed immediately by
+   `→ Full section: <url>/_section.md` when that sub-section has more beneath it
 
-In section bundles, links to pages within the section become hierarchical bold references, while links to pages outside the section become absolute URLs.
+There is no trailing link block. Onward links sit next to the content they abridge
+because a size-capped fetch cuts the tail: at a 100K cap a trailing block lost a third
+of all onward links, from files that still looked complete.
+
+Links to a page the bundle actually carries become hierarchical bold references; every
+other link becomes an absolute URL, so a link deeper into the subtree stays usable.
+
+Bundling the whole subtree instead of one level made the root bundle a second copy of
+`llms-full.txt` (4,087K). One level caps the largest bundle at ~263K.
 
 ### Key implementation details
 
@@ -550,14 +563,6 @@ Then commit the updated `redirects.csv`.
 make dist
 ```
 Then commit the changed files. This single command regenerates all generated content.
-
-### Check LLM Bundle Notes (`check-llm-bundle-notes`)
-
-**What it checks:** That `llm_readable_bundle: true` in frontmatter and the `{{< llm-bundle-note >}}` shortcode in the page body are always in sync for section `_index.md` files.
-
-**Why it fails:** A section has `llm_readable_bundle: true` but is missing the shortcode, or vice versa.
-
-**How to fix:** Either add the missing `{{< llm-bundle-note >}}` shortcode to the page body, or add `llm_readable_bundle: true` to the frontmatter. Both must be present together, or neither.
 
 ### Check Markdownlint (`check-markdownlint`)
 

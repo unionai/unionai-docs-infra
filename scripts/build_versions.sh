@@ -286,7 +286,7 @@ fi
 # The `noindex = true` build param makes Hugo emit <meta name="robots"> into each
 # PAGE, which is all a meta tag can ever cover. But these trees also serve files
 # that have no HTML to put a meta tag in -- llms.txt, llms-full.txt, sitemap.xml,
-# and a page.md / section.md beside every page. Those were fully indexable:
+# and a page.md / _section.md beside every page. Those were fully indexable:
 # probed live 2026-08-10, /docs/latest/union/llms.txt and
 # /docs/v2.5.16.3/union/llms.txt both returned 200 with no X-Robots-Tag at all.
 # Only a header can withhold a non-HTML file, so the two mechanisms are not
