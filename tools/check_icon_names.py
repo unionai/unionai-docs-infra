@@ -132,6 +132,20 @@ def load(path: Path, what: str, remedy: str) -> set[str]:
     return {ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()}
 
 
+
+def unquote_scalar(value: str) -> str:
+    """Strip one matching pair of surrounding quotes from a YAML scalar.
+
+    Bare, 'single' and "double" are the three forms YAML accepts for a string,
+    and Hugo hands all three to the shortcode as the same name. Anything else
+    (an unbalanced quote, a trailing comment) is returned untouched, so it is
+    reported as written rather than silently repaired into something valid.
+    """
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
 def main() -> int:
     if "--update" in sys.argv[1:]:
         return update()
@@ -166,7 +180,14 @@ def main() -> int:
 
     # Frontmatter `icon: name`, in the leading `---` block only. Same <sl-icon>,
     # same silent failure; the API generator emits one per generated page.
-    fm_icon = re.compile(r'^icon:\s*"?([^"\n]*?)"?\s*$')
+    #
+    # The value is captured raw and unquoted afterwards, because YAML accepts
+    # bare, 'single' and "double" and all three reach the shortcode identically.
+    # Quoting is not cosmetic here: a purely numeric name like `123` is a real
+    # Bootstrap icon, and bare it parses as the integer 123, so the correct way
+    # to write it is quoted. A check that only understood double quotes failed
+    # the one form the author was obliged to use.
+    fm_icon = re.compile(r"^icon:\s*(\S.*?)\s*$")
 
     roots = [Path(a) for a in sys.argv[1:] if not a.startswith("-")] or [Path("content")]
     bad: list[tuple[Path, int, str, str, str]] = []
@@ -183,8 +204,9 @@ def main() -> int:
                         in_frontmatter = False
                     else:
                         m = fm_icon.match(line)
-                        if m and m.group(1) and m.group(1) not in shoelace:
-                            bad.append((path, lineno, "frontmatter", m.group(1),
+                        name = unquote_scalar(m.group(1)) if m else ""
+                        if name and name not in shoelace:
+                            bad.append((path, lineno, "frontmatter", name,
                                         f"Bootstrap Icons ({version})"))
                     continue
                 for sc, params in call.findall(line):
