@@ -46,6 +46,28 @@ BUNDLE_SIZE_LIMIT = 200 * 1024
 # about, short enough that abridging actually buys something.
 EXCERPT_MAX_CHARS = 320
 
+# One `## Subpages` entry, as Hugo writes it in `layouts/_default/list.md`:
+#
+#     - [Title](url)
+#     - [Title](url) - the child's front-matter description
+#
+# Anchored to the start of a line, so a markdown link sitting INSIDE a
+# description is not read as a second entry. Everything after the closing paren
+# is captured as one tail that runs to end of line, so a description survives
+# whatever it contains -- brackets, parens, a link, a further ` - `.
+SUBPAGE_ENTRY_RE = re.compile(
+    r'^- \[([^\]]+)\]\(([^)]+)\)(?P<tail>.*)$', re.MULTILINE)
+
+
+def subpage_description(tail: str) -> str:
+    """The description carried by a `## Subpages` entry's tail, or ''.
+
+    The template writes exactly ` - <description>`; anything else after the
+    link is not a description and is dropped, which is what happened to every
+    tail before DOC-1508.
+    """
+    return tail[3:].strip() if tail.startswith(' - ') else ''
+
 
 class LLMDocBuilder:
     def __init__(self, base_path: Path, quiet: bool = False):
@@ -355,16 +377,25 @@ class LLMDocBuilder:
         return headings
 
     def format_subpage_entry(self, title: str, url: str, headings: List[str],
-                             as_index: bool = False) -> str:
+                             as_index: bool = False, description: str = "") -> str:
         """Format a page entry with H2/H3 headings.
 
         as_index=True:  Title|url + indented headings (for llms.txt pipe format)
-        as_index=False: - [Title](url) + indented headings (for markdown subpage tables)
+        as_index=False: - [Title](url)[ - description] + indented headings
+
+        The description is the child page's front-matter `description`, which
+        Hugo has already written into the listing. It is carried through the
+        rewrite, never re-derived. The pipe format has no column for it and its
+        delimiter is a character a description may contain, so `as_index=True`
+        ignores it (DOC-1508).
         """
         if as_index:
             lines = [f"{title}|{url}"]
         else:
-            lines = [f"- [{title}]({url})"]
+            head = f"- [{title}]({url})"
+            if description:
+                head += f" - {description}"
+            lines = [head]
         for heading in headings:
             lines.append(f"  - {heading}")
         return '\n'.join(lines)
@@ -382,9 +413,8 @@ class LLMDocBuilder:
 
         # Extract markdown links
         links = []
-        link_pattern = r'- \[([^\]]+)\]\(([^)]+)\)'
 
-        for link_match in re.finditer(link_pattern, subpages_content):
+        for link_match in SUBPAGE_ENTRY_RE.finditer(subpages_content):
             link_url = link_match.group(2)
             # Clean the URL (remove anchors, etc.)
             link_url = link_url.split('#')[0].strip()
@@ -762,17 +792,20 @@ class LLMDocBuilder:
                 continue
 
             subpages_content = match.group(1).strip()
-            link_pattern = r'- \[([^\]]+)\]\(([^)]+)\)'
 
             enhanced_lines = ["## Subpages\n"]
 
-            for link_match in re.finditer(link_pattern, subpages_content):
+            for link_match in SUBPAGE_ENTRY_RE.finditer(subpages_content):
                 child_title = link_match.group(1)
                 child_url = link_match.group(2)
+                child_desc = subpage_description(link_match.group('tail'))
                 child_path_part = child_url.split('#')[0].strip()
 
                 if not child_path_part or child_path_part.startswith(('http://', 'https://')):
-                    enhanced_lines.append(f"- [{child_title}]({child_url})")
+                    # An external child has no twin to read headings from, but
+                    # its description came from the same template and stays.
+                    enhanced_lines.append(self.format_subpage_entry(
+                        child_title, child_url, [], description=child_desc))
                     continue
 
                 # Resolve the child to get the path key for heading lookup
@@ -783,7 +816,8 @@ class LLMDocBuilder:
                     child_key = ""
 
                 headings = self.page_headings.get(child_key, [])
-                entry = self.format_subpage_entry(child_title, child_url, headings)
+                entry = self.format_subpage_entry(
+                    child_title, child_url, headings, description=child_desc)
                 enhanced_lines.append(entry)
 
             enhanced_table = '\n'.join(enhanced_lines)
