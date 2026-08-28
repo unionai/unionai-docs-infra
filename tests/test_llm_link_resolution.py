@@ -76,7 +76,7 @@ def test_leaf_page_resolves_against_its_source_directory(tmp_path):
     )
     builder.absolutize_links("union")
     assert leaf.read_text(encoding="utf-8") == (
-        f"See [Traces]({BASE}/user-guide/tasks/task-programming/traces) for details.\n"
+        f"See [Traces]({BASE}/user-guide/tasks/task-programming/traces.md) for details.\n"
     )
 
 
@@ -97,8 +97,8 @@ def test_section_landing_resolves_one_level_DOWN_from_where_it_sits(tmp_path):
     )
     builder.absolutize_links("union")
     assert index.read_text(encoding="utf-8") == (
-        f"- [Caching]({BASE}/user-guide/tasks/task-configuration/caching)\n"
-        f"- [Task deployment]({BASE}/user-guide/tasks/task-deployment)\n"
+        f"- [Caching]({BASE}/user-guide/tasks/task-configuration/caching.md)\n"
+        f"- [Task deployment]({BASE}/user-guide/tasks/task-deployment.md)\n"
     )
 
 
@@ -118,7 +118,7 @@ def test_a_childless_section_is_still_a_section(tmp_path):
     )
     builder.absolutize_links("union")
     assert childless.read_text(encoding="utf-8") == (
-        f"- [Caching]({BASE}/user-guide/tasks/task-configuration/caching)\n"
+        f"- [Caching]({BASE}/user-guide/tasks/task-configuration/caching.md)\n"
     )
 
 
@@ -132,7 +132,7 @@ def test_explicit_index_suffix_is_dropped(tmp_path):
     )
     builder.absolutize_links("union")
     assert leaf.read_text(encoding="utf-8") == (
-        f"See [Task deployment]({BASE}/user-guide/tasks/task-deployment#serving).\n"
+        f"See [Task deployment]({BASE}/user-guide/tasks/task-deployment.md#serving).\n"
     )
 
 
@@ -182,4 +182,137 @@ def test_resolve_from_source_dir_covers_both_page_shapes(tmp_path):
     )
     assert builder._resolve_from_source_dir(index, "../task-deployment/_index") == (
         root / "user-guide/tasks/task-deployment"
+    )
+
+
+# --------------------------------------------------------------------------
+# A link to a page publishes that page's `.md` twin (DOC-1507).
+#
+# After the DOC-1432 rename every page is BOTH a twin file and a directory
+# (`ray.md` and `ray/`), so a relative link resolves onto whichever of the two
+# its author happened to write. Publishing the resolved path sent 645 of union's
+# and 503 of flyte's internal links to the HTML page instead of the markdown an
+# agent came for. The twin is therefore derived from the path, not read off
+# where resolution landed.
+# --------------------------------------------------------------------------
+
+
+def test_a_link_landing_on_the_page_directory_publishes_the_twin(tmp_path):
+    """`./caching` resolves to the DIRECTORY `caching/`; the twin is the answer."""
+    builder, root = _tree(tmp_path)
+    index = _page(
+        root,
+        "user-guide/tasks/task-configuration",
+        "[Caching](caching)\n",
+    )
+    builder.absolutize_links("union")
+    assert index.read_text(encoding="utf-8") == (
+        f"[Caching]({BASE}/user-guide/tasks/task-configuration/caching.md)\n"
+    )
+
+
+def test_a_link_landing_on_the_twin_file_is_not_double_suffixed(tmp_path):
+    """`./caching.md` already names the twin. It must not become `caching.md.md`."""
+    builder, root = _tree(tmp_path)
+    index = _page(
+        root,
+        "user-guide/tasks/task-configuration",
+        "[Caching](caching.md)\n",
+    )
+    builder.absolutize_links("union")
+    assert index.read_text(encoding="utf-8") == (
+        f"[Caching]({BASE}/user-guide/tasks/task-configuration/caching.md)\n"
+    )
+
+
+def test_the_anchor_rides_after_the_md_suffix(tmp_path):
+    """`foo#section` becomes `foo.md#section`, never `foo#section.md`."""
+    builder, root = _tree(tmp_path)
+    leaf = _page(
+        root,
+        "user-guide/tasks/task-configuration/caching",
+        "[Traces](../task-programming/traces#inputs)\n",
+    )
+    builder.absolutize_links("union")
+    assert leaf.read_text(encoding="utf-8") == (
+        f"[Traces]({BASE}/user-guide/tasks/task-programming/traces.md#inputs)\n"
+    )
+
+
+def test_a_section_bundle_is_not_a_page_twin(tmp_path):
+    """`_section.md` is a bundle, not a page. It keeps the path it resolved to."""
+    builder, root = _tree(tmp_path)
+    bundle = root / "user-guide/tasks/task-deployment/_section.md"
+    bundle.parent.mkdir(parents=True, exist_ok=True)
+    bundle.write_text("", encoding="utf-8")
+    leaf = _page(
+        root,
+        "user-guide/tasks/task-configuration/caching",
+        "[Everything](../task-deployment/_section.md)\n",
+    )
+    builder.absolutize_links("union")
+    assert leaf.read_text(encoding="utf-8") == (
+        f"[Everything]({BASE}/user-guide/tasks/task-deployment/_section.md)\n"
+    )
+
+
+def test_external_links_never_gain_a_suffix(tmp_path):
+    """An off-site URL is not ours to resolve, even when its tail looks like a page."""
+    builder, root = _tree(tmp_path)
+    leaf = _page(
+        root,
+        "user-guide/tasks/task-configuration/caching",
+        "[Docs](https://example.com/user-guide/tasks/task-deployment)"
+        " [Mail](mailto:docs@union.ai)\n",
+    )
+    builder.absolutize_links("union")
+    assert leaf.read_text(encoding="utf-8") == (
+        "[Docs](https://example.com/user-guide/tasks/task-deployment)"
+        " [Mail](mailto:docs@union.ai)\n"
+    )
+
+
+def test_the_variant_root_has_no_twin(tmp_path):
+    """A link resolving to the variant root must NOT become `<variant>.md`.
+
+    The root's twin would be `/docs/v2/union.md` -- a SIBLING of the whole
+    variant tree, where the site serves an HTML redirect, not markdown
+    (DOC-1432 A2). `llms.txt` is the root's agent surface.
+
+    The `/.` this currently emits is pre-existing and deliberately untouched:
+    no relative link in either built variant resolves to the root (measured, 0
+    occurrences in both corpora), so changing it would be an unverifiable edit.
+    What this test pins is the part that matters -- the root never acquires a
+    `.md`.
+    """
+    builder, root = _tree(tmp_path)
+    # `user-guide` must be a section for `..` to mean the variant root.
+    src = tmp_path / "content" / "user-guide"
+    src.mkdir(parents=True, exist_ok=True)
+    (src / "_index.md").write_text("---\ntitle: x\n---\n", encoding="utf-8")
+    # The decoy: `dist/docs/v2/union.md`, a SIBLING of the variant tree. On the
+    # live site this path serves an HTML redirect. Its existence must not make
+    # the root look like it has a twin.
+    (root.parent / "union.md").write_text("", encoding="utf-8")
+    landing = _page(root, "user-guide", "[Home](..)\n")
+    builder.absolutize_links("union")
+    out = landing.read_text(encoding="utf-8")
+    assert not out.startswith(f"[Home]({BASE}.md")
+    assert ".md)" not in out
+    assert out == f"[Home]({BASE}/.)\n"
+
+
+def test_a_target_with_no_twin_keeps_its_resolved_path(tmp_path):
+    """An asset, or a broken link, is not a page. Do not invent a twin for it."""
+    builder, root = _tree(tmp_path)
+    (root / "user-guide/tasks/task-configuration/diagram.png").write_bytes(b"")
+    leaf = _page(
+        root,
+        "user-guide/tasks/task-configuration/caching",
+        "[Diagram](diagram.png) [Gone](../nonexistent-section)\n",
+    )
+    builder.absolutize_links("union")
+    assert leaf.read_text(encoding="utf-8") == (
+        f"[Diagram]({BASE}/user-guide/tasks/task-configuration/diagram.png)"
+        f" [Gone]({BASE}/user-guide/tasks/nonexistent-section)\n"
     )
