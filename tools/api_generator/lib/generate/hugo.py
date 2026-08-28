@@ -2,6 +2,8 @@ import io
 from typing import List, TypedDict, Optional
 from sys import stderr
 
+from lib.generate.icons import validate_icon
+
 
 version = "0.0.0"
 variants = ""
@@ -36,9 +38,34 @@ class FrontMatterExtra(TypedDict):
     weight: Optional[int]
     expand_sidebar: Optional[bool]
 
-def write_front_matter(title: str, output: io.TextIOWrapper, extra: Optional[FrontMatterExtra] = None):
+
+def yaml_quote(value: str) -> str:
+    """Render a string as a YAML double-quoted scalar.
+
+    A description is prose we did not write: it can open with `#`, carry a
+    colon, a quote or a backslash, and any of those turns an unquoted
+    frontmatter value into a parse error or a silently different string.
+    Quoting every one of them costs nothing and removes the whole class.
+    """
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def write_front_matter(title: str, output: io.TextIOWrapper, extra: Optional[FrontMatterExtra] = None,
+                       description: Optional[str] = None, icon: Optional[str] = None):
+    """Write a generated page's frontmatter.
+
+    `description` and `icon` are OMITTED when absent rather than written empty:
+    a symbol with no docstring has no description, and the consuming card must
+    handle that. An empty string would be a lie the card cannot tell from a
+    real one.
+    """
     output.write("---\n")
     output.write(f"title: {title}\n")
+    if description:
+        output.write(f"description: {yaml_quote(description)}\n")
+    if icon:
+        output.write(f"icon: {validate_icon(icon)}\n")
     output.write(f"version: {version}\n")
     output.write(f"variants: {variants}\n")
     output.write("layout: py_api\n")
