@@ -210,7 +210,7 @@ This is the main production build command. `make dist` runs `scripts/build_dist.
    - **Local (default)**: `make update-api-docs` + `make update-helm-docs` — regenerates both from the pinned package versions.
 5. **`make update-redirects`** — detects moved pages and appends to `redirects.csv`. Runs *after* the API/Helm regen so the redirect detector sees the regenerated content dirs and doesn't flag them as removed pages.
 6. **`make check-links`** — internal-link check (non-fatal).
-7. **Hugo builds** — builds every variant in `$(VARIANTS)` (flyte, union) into `dist/`. Runs sequentially by default; set `PARALLEL_HUGO=true` to build variants in parallel. Each variant build also runs `process_shortcodes.py` to emit the per-page `page.md` files.
+7. **Hugo builds** — builds every variant in `$(VARIANTS)` (flyte, union) into `dist/`. Runs sequentially by default; set `PARALLEL_HUGO=true` to build variants in parallel. Each variant build also runs `process_shortcodes.py` to emit the per-page markdown twins.
 8. **`make llm-docs`** — generates the LLM-optimized bundles and indexes (`llms.txt`, `llms-full.txt`, `_section.md`) for each variant.
 
 `make dist` is the single command that regenerates everything. If CI checks are failing, running `make dist` locally and committing the changed files will usually fix them.
@@ -388,7 +388,7 @@ The build generates LLM-optimized documentation at four levels of granularity, d
 
 | File | Scope | Description |
 |------|-------|-------------|
-| `page.md` | Per page | Clean Markdown version of every page, with links to other `page.md` files |
+| `<path>.md` | Per page | Clean Markdown twin of every page, served at the page's own URL with `.md` appended, with links to other twins. The variant root has none: `llms.txt` is its agent surface |
 | `_section.md` | Per section | Single-file bundle holding one level of a section: its own pages in full, plus each sub-section's landing page and a link onward |
 | `llms.txt` | Per variant | Page index with H2/H3 headings, grouped by section |
 | `llms-full.txt` | Per variant | Entire documentation as one file with hierarchical link references |
@@ -401,39 +401,43 @@ dist/docs/v2/llms.txt                       # Version discovery: lists variants
 dist/docs/v2/{variant}/
 ├── llms.txt                                # Page index with headings
 ├── llms-full.txt                           # Full consolidated doc
-├── page.md                                 # Root page
+├── _section.md                             # Root section bundle (one level down)
+├── user-guide.md                           # User Guide landing page  (/user-guide/)
 ├── user-guide/
-│   ├── page.md                             # User Guide landing page
+│   ├── _section.md                         # Section bundle (one level down)
+│   ├── task-configuration.md               # Section landing page (/user-guide/task-configuration/)
 │   ├── task-configuration/
-│   │   ├── page.md                         # Section landing page
 │   │   ├── _section.md                     # Section bundle (one level down)
-│   │   ├── resources/
-│   │   │   └── page.md
-│   │   ├── caching/
-│   │   │   └── page.md
+│   │   ├── resources.md                    # Leaf page (/user-guide/task-configuration/resources/)
+│   │   ├── caching.md
 │   │   └── ...
 │   └── ...
 └── ...
 ```
 
+The twin for the page served at `<path>/` is the file `<path>.md`, so it sits BESIDE
+that page's directory rather than inside it. A section therefore ends up with both
+`a/b.md` (its landing page) and `a/b/_section.md` (its bundle). The variant root gets
+no twin: it would land outside the variant tree, at `/docs/<version>/<variant>.md`.
+
 ### Processing pipeline
 
 The LLM docs are produced in two stages that run at different points in `make dist`:
 
-**Stage 1: `process_shortcodes.py`** — Generates `page.md` files (runs during each variant's Hugo build, via the `variant` target)
+**Stage 1: `process_shortcodes.py`** — Generates the per-page markdown twins (runs during each variant's Hugo build, via the `variant` target)
 
 1. Reads Hugo's Markdown output from `tmp-md/` (Hugo builds this alongside HTML via the MD output format).
 2. Resolves all shortcodes: `{{< variant >}}`, `{{< code >}}`, `{{< tabs >}}`, `{{< note >}}`, `{{< key >}}`, `{{< llm-bundle-note >}}`, etc.
-3. Writes the result as `page.md` alongside each `index.html` in `dist/`.
-4. Converts all internal links to point to other `page.md` files using relative paths.
+3. Writes the result as `<path>.md`, beside the directory holding that page's `index.html`.
+4. Converts all internal links to point to other twins, using paths relative to the Hugo **source** directory the link was written in (see `page_paths.py`).
 
 **Stage 2: `build_llm_docs.py`** — Generates bundles and indexes (runs via the `llm-docs` target, after all variants are built)
 
-1. **Lookup tables**: Traverses all `page.md` files depth-first via `## Subpages` links, building a lookup table mapping file paths and anchors to hierarchical titles (e.g. `"user-guide/task-configuration/resources/page.md"` → `"Configure tasks > Resources"`).
-2. **`llms-full.txt`**: Processes all pages, converting internal `page.md` links to hierarchical bold references (e.g. `**Configure tasks > Resources**`).
-3. **Subpage enhancement**: Adds H2/H3 headings to `## Subpages` listings in `page.md` files.
+1. **Lookup tables**: Traverses all twins depth-first via `## Subpages` links, building a lookup table mapping URL paths and anchors to hierarchical titles (e.g. `"user-guide/task-configuration/resources"` → `"Configure tasks > Resources"`).
+2. **`llms-full.txt`**: Processes all pages, converting internal twin links to hierarchical bold references (e.g. `**Configure tasks > Resources**`).
+3. **Subpage enhancement**: Adds H2/H3 headings to `## Subpages` listings in the twins.
 4. **Section bundles**: Generates `_section.md` for every section that holds more than its own landing page.
-5. **Link absolutization**: Converts all relative links in `page.md` files to absolute URLs (`https://www.union.ai/docs/...`).
+5. **Link absolutization**: Converts all relative links in the twins to absolute URLs (`https://www.union.ai/docs/...`).
 6. **`llms.txt`**: Creates the page index with headings and bundle references.
 
 ### Section bundles (`_section.md`)
@@ -464,8 +468,8 @@ Bundling the whole subtree instead of one level made the root bundle a second co
 ### Key implementation details
 
 **Link conversion in `llms-full.txt`:**
-- Cross-page: `[Resources](../resources/page.md)` → `**Configure tasks > Resources**`
-- Anchor: `[Caching](../caching/page.md#cache-versions)` → `**Configure tasks > Caching > Cache versions**`
+- Cross-page: `[Resources](resources.md)` → `**Configure tasks > Resources**`
+- Anchor: `[Caching](caching.md#cache-versions)` → `**Configure tasks > Caching > Cache versions**`
 - Same-page: `[Image building](#image-building)` → `**Container images > Image building**`
 - External links preserved unchanged
 

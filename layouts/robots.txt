@@ -23,7 +23,7 @@ Sitemap: {{ $sitemap }}
 Disallow: /admin/
 Disallow: /private/
 Disallow: /_internal/
-Disallow: /*/page.md
+Disallow: /*.md$
 Allow: /*/llms.txt
 Allow: /*/llms-full.txt
 

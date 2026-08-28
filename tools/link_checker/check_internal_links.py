@@ -272,7 +272,7 @@ def resolve_relative_link(link_path: str, source_file: Path, content_dir: Path,
     source_dir = source_file.parent
 
     # For browser-resolved links from non-_index pages, the URL is one level
-    # deeper than the filesystem path (page.md -> page/index.html).
+    # deeper than the filesystem path (<page>.md -> page/index.html).
     if browser_resolves and source_file.name != "_index.md":
         source_dir = source_dir / source_file.stem
 

@@ -27,6 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools" / "llms_generator"))
 
 from build_llm_docs import LLMDocBuilder  # noqa: E402
+from page_paths import root_page  # noqa: E402
 
 BASE = "https://www.union.ai/docs/v2/union"
 
@@ -35,8 +36,9 @@ class Tree:
     """A source `content/` tree and its built `dist/` twin, kept in step.
 
     Both are needed: the built tree cannot tell a childless section from a leaf
-    page (`dir/page.md` either way), so the generator asks the source tree, and
-    so must the fixture.
+    page (Hugo gives both a pretty URL, so both are `<name>.md` beside a
+    same-named directory), so the generator asks the source tree, and so must
+    the fixture.
     """
 
     def __init__(self, tmp_path: Path):
@@ -45,7 +47,7 @@ class Tree:
         self.out = tmp_path / "dist" / "docs" / "v2" / "union"
 
     def section(self, rel: str, title: str, body: str = "", children: list[str] = ()):
-        """A Hugo section: `_index.md` in source, `page.md` in the built tree."""
+        """A Hugo section: `_index.md` in source, `<dir>.md` in the built tree."""
         src = self.content / rel if rel else self.content
         src.mkdir(parents=True, exist_ok=True)
         (src / "_index.md").write_text(f"---\ntitle: {title}\n---\n", encoding="utf-8")
@@ -54,11 +56,11 @@ class Tree:
         if children:
             page += "\n## Subpages\n"
             for child in children:
-                page += f"- [{child}]({child}/page.md)\n"
+                page += f"- [{child}]({child}.md)\n"
         self._write_out(rel, page)
 
     def leaf(self, rel: str, title: str, body: str = ""):
-        """A leaf page: `foo.md` in source, `foo/page.md` in the built tree."""
+        """A leaf page: `foo.md` in source, `foo.md` in the built tree too."""
         src = self.content / rel
         src.parent.mkdir(parents=True, exist_ok=True)
         src.with_suffix(".md").write_text(
@@ -66,7 +68,10 @@ class Tree:
         self._write_out(rel, f"# {title}\n\n{body}\n")
 
     def _write_out(self, rel: str, text: str):
-        f = (self.out / rel / "page.md") if rel else (self.out / "page.md")
+        # The twin for the page served at `<rel>/` is the file `<rel>.md`, so
+        # it sits BESIDE that page's directory. The variant root has no twin;
+        # its rendering is stage 1's ROOT_INTERMEDIATE hand-off.
+        f = (self.out / (rel + ".md")) if rel else root_page(self.out)
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(text, encoding="utf-8")
 
@@ -167,9 +172,9 @@ def test_a_childless_child_gets_no_onward_link(tmp_path):
 
 def test_link_to_a_page_the_bundle_carries_becomes_a_title(tmp_path):
     t = _leaf_only_tree(tmp_path)
-    t.leaf("guide/alpha", "Alpha", "See [Beta](../beta/page.md).")
+    t.leaf("guide/alpha", "Alpha", "See [Beta](beta.md).")
     b = t.builder()
-    b.build_lookup_tables(t.out, "page.md", t.out, [])
+    b.build_lookup_tables(root_page(t.out), t.out, [])
     b.generate_bundles("union")
 
     assert "See **Home > Guide > Beta**." in t.bundle("guide")
@@ -184,13 +189,13 @@ def test_link_deeper_than_the_bundle_stays_a_url(tmp_path):
     would delete the only route there.
     """
     t = _mixed_tree(tmp_path)
-    t.section("guide/deep", "Deep", "See [Inner](inner/page.md).", children=["inner"])
+    t.section("guide/deep", "Deep", "See [Inner](inner.md).", children=["inner"])
     b = t.builder()
-    b.build_lookup_tables(t.out, "page.md", t.out, [])
+    b.build_lookup_tables(root_page(t.out), t.out, [])
     b.generate_bundles("union")
 
     bundle = t.bundle("guide")
-    assert f"[Inner]({BASE}/guide/deep/inner/page.md)" in bundle
+    assert f"[Inner]({BASE}/guide/deep/inner.md)" in bundle
     assert "**Inner**" not in bundle
 
 
@@ -321,7 +326,7 @@ def test_a_size_cut_child_gets_one_note_carrying_both_routes(tmp_path):
     t.leaf("guide/deep/inner", "Inner", "Inner body.")
     bundle = _build(t, 4 * 1024)
 
-    note = f"→ Full page: {BASE}/guide/deep/page.md · Full section: {BASE}/guide/deep/_section.md"
+    note = f"→ Full page: {BASE}/guide/deep.md · Full section: {BASE}/guide/deep/_section.md"
     assert note in bundle
     assert bundle.count("→ Full") == 1
 
@@ -364,7 +369,7 @@ def test_every_size_cut_child_keeps_a_route_to_its_full_text(tmp_path):
     bundle = _build(t, 10 * 1024)
 
     for name in ("a", "b"):
-        assert f"→ Full page: {BASE}/guide/{name}/page.md" in bundle
+        assert f"→ Full page: {BASE}/guide/{name}.md" in bundle
 
 
 def test_a_section_with_no_sub_sections_still_reports_going_over(tmp_path):
