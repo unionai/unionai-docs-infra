@@ -243,12 +243,25 @@ def main():
                        help="Check versions and exit with status code")
     group.add_argument("--update", action="store_true",
                        help="Check versions and prompt to regenerate if outdated")
+    group.add_argument("--all", action="store_true", dest="regen_all",
+                       help="Regenerate every item regardless of version, for a "
+                            "generator change that no version bump would pick up")
     args = parser.parse_args()
 
     config = load_config()
     print("Checking API doc versions against PyPI...")
     results = check_all(config)
     print_results(results)
+
+    # A generator change reaches no committed page on its own. Regeneration is
+    # driven by the PyPI version moving, so an improvement to how a page is
+    # rendered sits unpublished until each package happens to release -- which
+    # for a stable plugin can be never. `--all` is the way to publish one.
+    if args.regen_all:
+        print(f"\nRegenerating all {len(results)} item(s), ignoring versions.")
+        regenerate(results)
+        print("\nDone. Review and commit the updated docs.")
+        return
 
     outdated = [r for r in results if r["outdated"]]
 
