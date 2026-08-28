@@ -30,7 +30,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools" / "api_generator"))
 
-from lib.generate.docstring import docstring_description  # noqa: E402
+from lib.generate.docstring import docstring_description, docstring_summary  # noqa: E402
 from lib.generate.hugo import write_front_matter, yaml_quote  # noqa: E402
 from lib.generate import hugo  # noqa: E402
 from lib.generate.icons import (  # noqa: E402
@@ -249,6 +249,146 @@ def test_frontmatter_field_order_and_existing_fields_survive():
     assert parsed["variants"] == "+flyte +union"
     assert parsed["layout"] == "py_api"
     assert parsed["weight"] == 4
+
+
+# --------------------------------------------------------------------------
+# The Directory table cells derive from the SAME extractor (DOC-1508 follow-up)
+#
+# They used not to. `docstring_summary` took the first LINE up to the first
+# PERIOD, so one symbol got a clean sentence in its frontmatter and a fragment
+# in its parent's Directory table -- "flyte." for `flyte.ai`, "## IO data
+# types." for `flyte.io`. Two extractors reading one docstring and disagreeing
+# is the DOC-1494 shape, so there is now one extractor and a cell-safety layer
+# on top of it.
+# --------------------------------------------------------------------------
+
+CELL_CASES = [
+    # (docstring, expected cell)  -- each was a broken cell before the change.
+    ("flyte.ai — AI utilities for Flyte.", "flyte.ai — AI utilities for Flyte."),
+    ("Agent protocol for the flyte.ai.agents module.",
+     "Agent protocol for the flyte.ai.agents module."),
+    ("# Syncify Module\nThis module provides `syncify`.", "This module provides `syncify`."),
+    ("## IO data types\n\nA sentence that wraps\nacross two lines.",
+     "A sentence that wraps across two lines."),
+    ("Base class for execution environments, shared by `TaskEnvironment` and\n"
+     "`AppEnvironment`.",
+     "Base class for execution environments, shared by `TaskEnvironment` and `AppEnvironment`."),
+]
+
+
+@pytest.mark.parametrize("doc,expected", CELL_CASES)
+def test_table_cell_is_a_whole_sentence(doc, expected):
+    assert docstring_summary(doc) == expected
+
+
+@pytest.mark.parametrize("doc,expected", CELL_CASES)
+def test_cell_and_frontmatter_cannot_disagree(doc, expected):
+    """The invariant, not just the outputs: one docstring, one answer."""
+    assert docstring_summary(doc) == docstring_description(doc)
+
+
+def test_cell_escapes_a_literal_pipe_which_would_end_the_cell():
+    assert docstring_summary("Accepts `a | b` unions.") == r"Accepts `a \| b` unions."
+    assert docstring_summary("Either | or.") == r"Either \| or."
+    # GFM honours the escape inside a code span too, so escaping there is right.
+    assert "|" not in docstring_summary("Accepts `a | b` unions.").replace(r"\|", "")
+
+
+def test_cell_is_empty_string_not_none_when_there_is_no_docstring():
+    """The row must still render. A missing cell is worse than an empty one."""
+    for empty in (None, "", "   "):
+        assert docstring_summary(empty) == ""
+    assert docstring_summary("# Heading only\n") == ""
+
+
+def test_cell_is_not_truncated_to_fit_a_column():
+    # 188 chars, one sentence, from flyte.io.DataFrame. Cutting it here is the
+    # defect being removed; a table cell wraps.
+    doc = ("A Flyte meta DataFrame object, that wraps all other dataframe types "
+           "(usually available as plugins, pandas.DataFrame and pyarrow.Table are "
+           "supported natively, just install these libraries).")
+    assert docstring_summary(doc) == doc
+    assert len(docstring_summary(doc)) == len(doc)
+
+
+def test_unpunctuated_paragraph_prefers_the_join_over_the_line():
+    # flyteplugins.bigquery.BigQueryTask.pre: one statement, hard-wrapped, no
+    # period. The first line alone is a fragment; the join is the sentence.
+    doc = "This is the preexecute function that will be\ncalled before the task is executed"
+    assert docstring_summary(doc) == \
+        "This is the preexecute function that will be called before the task is executed."
+
+
+def test_unpunctuated_statements_stacked_on_separate_lines_are_not_run_together():
+    """A new statement opens with a capital; a continuation does not.
+
+    Joining `Image.with_pip_packages`'s two lines produces "... on top of the
+    current image Cannot be used in conjunction with conda." -- a run-on with a
+    missing period in the middle, which reads worse than either line alone.
+    """
+    doc = ("Use this method to create a new image with the specified pip packages "
+           "layered on top of the current image\n"
+           "Cannot be used in conjunction with conda")
+    assert docstring_summary(doc) == (
+        "Use this method to create a new image with the specified pip packages "
+        "layered on top of the current image.")
+    # flyte.Image.with_uv_project: three statements on three lines.
+    doc = ("Use this method to create a new image with the specified uv.lock file "
+           "layered on top of the current image\n"
+           "Must have a corresponding pyproject.toml file in the same directory\n"
+           "Cannot be used in conjunction with conda")
+    assert docstring_summary(doc) == (
+        "Use this method to create a new image with the specified uv.lock file "
+        "layered on top of the current image.")
+
+
+def test_a_lead_in_keeps_the_line_it_leads_into():
+    # flyte.models.ActionID.unique_id_str. Stopping at the colon promises a
+    # format and never gives it.
+    doc = ("Generate a unique ID string for this action in the format:\n"
+           "{project}-{domain}-{run_name}-{action_name}\n\n"
+           "This is optimized for performance assuming all fields are available.")
+    assert docstring_summary(doc) == (
+        "Generate a unique ID string for this action in the format: "
+        "{project}-{domain}-{run_name}-{action_name}.")
+
+
+def test_a_list_under_a_label_is_not_run_into_the_label():
+    assert docstring_summary("Options\n- alpha\n- beta") == "Options."
+
+
+def test_a_docstring_that_opens_on_a_bullet_list_yields_no_summary():
+    # flyteplugins.mlflow and flyteplugins.wandb both do this. One item of a
+    # list is not a description of the whole, and "## Key features:." -- what
+    # the old extractor emitted -- is a heading, not a description either.
+    doc = ("## Key features:\n\n"
+           "- Automatic MLflow run management with `@mlflow_run` decorator\n"
+           "- Built-in autologging support via `autolog=True` parameter\n"
+           "- Auto-generated MLflow UI links via `link_host` config\n"
+           "- Parent/child task support with run sharing\n"
+           "- Distributed training support (only rank 0 logs to MLflow)\n")
+    assert docstring_summary(doc) == ""
+    assert docstring_description(doc) is None
+
+
+def test_every_docstring_summary_caller_is_a_table_cell():
+    """If a non-table caller ever appears, this change needs re-justifying.
+
+    All nine call sites write into a `| ... | ... |` row. That is why cell
+    safety (pipe escaping) belongs in the function rather than at each site.
+    """
+    gen = Path(__file__).resolve().parents[1] / "tools" / "api_generator"
+    sites = []
+    for path in sorted(gen.rglob("*.py")):
+        if path.name == "docstring.py":
+            continue          # where it is defined and self-tested, not consumed
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+            if "docstring_summary(" in line and not line.lstrip().startswith(
+                    ("def ", "from ", "import ", "#")):
+                sites.append((path.name, lineno, line.strip()))
+    assert sites, "no call sites found -- the test is looking in the wrong place"
+    for name, lineno, line in sites:
+        assert "|" in line, f"{name}:{lineno} is not a table row: {line}"
 
 
 # --------------------------------------------------------------------------
