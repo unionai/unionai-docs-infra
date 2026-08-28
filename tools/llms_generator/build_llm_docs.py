@@ -831,6 +831,51 @@ class LLMDocBuilder:
         base = source_dir_of(self.variant_root, current_file, self.content_root)
         return (base / link_path).resolve()
 
+    def _published_path(self, resolved: Path) -> Optional[str]:
+        """The variant-relative path an internal link should publish, from a
+        resolved filesystem target. `None` when the target is outside the
+        variant tree, i.e. not ours to rewrite.
+
+        **A link to a page publishes that page's `.md` twin.** After the
+        DOC-1432 rename every page exists in the built tree as BOTH a twin file
+        and a directory -- `ray.md` AND `ray/` -- so a resolved path lands on
+        whichever of the two the author happened to write:
+
+            [Ray](./ray)          -> the DIRECTORY  ray/     -> `.../ray`
+            [Ray](./ray/_index)   -> the DIRECTORY  ray/     -> `.../ray`
+            [Ray](./ray.md)       -> the twin FILE  ray.md   -> `.../ray.md`
+
+        All three mean the same page, and all three are legitimate authoring.
+        Publishing the resolved path made a quarter of the corpus's internal
+        links point at the nav-first HTML page instead of the markdown an agent
+        came for (DOC-1507). So the twin is derived from the path rather than
+        read off where resolution landed, and the `_index` form is not special-
+        cased -- any resolution that lands on a page directory yields the twin.
+
+        Three targets deliberately keep the path they resolved to:
+
+          * a **`_section.md` bundle**, which is not a page twin;
+          * the **variant root**, which has no twin at all (DOC-1432 A2) -- its
+            twin would be `<variant>.md`, a sibling of the whole variant tree,
+            where the site serves an HTML redirect;
+          * a target with **no twin on disk** (a broken link, an image, an
+            asset), which stays a visible 404 rather than being relocated onto
+            some other page (the DOC-1499 wrong-200).
+        """
+        try:
+            rel = str(resolved.relative_to(self.variant_root))
+        except ValueError:
+            return None
+        rel = rel.replace('\\', '/').strip('/')
+        if rel in ('', '.'):
+            # The variant root. No twin exists; emit what resolution produced.
+            return rel
+        if resolved.suffix == PAGE_SUFFIX:
+            # Already a twin, or a bundle. Either way, publish it as it is.
+            return rel
+        twin = page_for(self.variant_root, rel)
+        return rel + PAGE_SUFFIX if twin.is_file() else rel
+
     def absolutize_links(self, variant: str, version: str = None):
         """Convert all relative links in the page twins to absolute URLs."""
         version = version or self.version
@@ -878,10 +923,11 @@ class LLMDocBuilder:
                 # Resolve relative path to absolute filesystem path
                 resolved = self._resolve_from_source_dir(_file, base_path_part)
 
-                # Convert to path relative to variant dir
-                try:
-                    rel_to_variant = resolved.relative_to(variant_dir)
-                except ValueError:
+                # The page's twin, not whichever of the twin/directory pair the
+                # link happened to resolve to. The anchor rides on the END of
+                # the URL, after the `.md`.
+                rel_to_variant = self._published_path(resolved)
+                if rel_to_variant is None:
                     return match.group(0)
 
                 absolute_url = f"{base_url}/{rel_to_variant}{anchor}"
@@ -963,10 +1009,11 @@ class LLMDocBuilder:
                     return f"**{title}**"
                 return match.group(0)
             else:
-                # External to bundle — absolutize the URL
-                try:
-                    rel_to_variant = str(resolved.relative_to(variant_dir))
-                except ValueError:
+                # External to bundle — absolutize the URL. Same twin rule as
+                # `absolutize_links()`; bundles never reach that pass, so
+                # without this a bundle's outward links point at HTML.
+                rel_to_variant = self._published_path(resolved)
+                if rel_to_variant is None:
                     return match.group(0)
                 abs_url = f"{base_url}/{rel_to_variant}"
                 return f"[{text}]({abs_url})"
