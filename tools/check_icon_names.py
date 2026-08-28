@@ -32,6 +32,11 @@ value emits no icon at all. It is redundant, not broken.
 Both name lists are vendored per pinned version rather than fetched, so the check
 is deterministic and works offline; a network hiccup can never turn it green.
 
+Frontmatter `icon:` is checked too, against Bootstrap Icons. It reaches the same
+<sl-icon> and fails the same silent way, and the API generator now writes one on
+every page it emits (DOC-1508), so an unchecked bad name would be a blank slot on
+hundreds of pages rather than one.
+
 Usage:
   check_icon_names.py [content-dir ...]     (default: content)
   check_icon_names.py --update              refresh the vendored lists
@@ -159,6 +164,10 @@ def main() -> int:
     call = re.compile(r"\{\{[<%](?:/\*)?\s*([a-zA-Z0-9_-]+)\b([^}]*?)(?:\*/)?[>%]\}\}", re.S)
     attr = re.compile(r'icon="([^"]*)"')
 
+    # Frontmatter `icon: name`, in the leading `---` block only. Same <sl-icon>,
+    # same silent failure; the API generator emits one per generated page.
+    fm_icon = re.compile(r'^icon:\s*"?([^"\n]*?)"?\s*$')
+
     roots = [Path(a) for a in sys.argv[1:] if not a.startswith("-")] or [Path("content")]
     bad: list[tuple[Path, int, str, str, str]] = []
     for root in roots:
@@ -166,7 +175,18 @@ def main() -> int:
             print(f"check-icon-names: no such directory: {root}", file=sys.stderr)
             return 2
         for path in sorted(root.rglob("*.md")):
-            for lineno, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+            lines = path.read_text(encoding="utf-8").split("\n")
+            in_frontmatter = lines[:1] == ["---"]
+            for lineno, line in enumerate(lines, 1):
+                if in_frontmatter:
+                    if lineno > 1 and line.rstrip() == "---":
+                        in_frontmatter = False
+                    else:
+                        m = fm_icon.match(line)
+                        if m and m.group(1) and m.group(1) not in shoelace:
+                            bad.append((path, lineno, "frontmatter", m.group(1),
+                                        f"Bootstrap Icons ({version})"))
+                    continue
                 for sc, params in call.findall(line):
                     m = attr.search(params)
                     if not m or not m.group(1):
@@ -179,7 +199,7 @@ def main() -> int:
 
     if not bad:
         print(f"check-icon-names: OK (sl-icon: {', '.join(sorted(sl_codes))}; "
-              f"gemoji: {', '.join(sorted(emoji_codes))})")
+              f"gemoji: {', '.join(sorted(emoji_codes))}; plus frontmatter `icon:`)")
         return 0
 
     print("FATAL: these icon names do not exist in the set their shortcode resolves against.")
@@ -187,7 +207,8 @@ def main() -> int:
     print("       Bootstrap Icons: https://icons.getbootstrap.com/   gemoji: https://api.github.com/emojis")
     print("")
     for path, lineno, sc, name, want in bad:
-        print(f'  {path}:{lineno}: {{{{< {sc} … icon="{name}" >}}}}  — not a {want}')
+        where = f'icon: {name}' if sc == "frontmatter" else f'{{{{< {sc} … icon="{name}" >}}}}'
+        print(f'  {path}:{lineno}: {where}  — not a {want}')
     print("")
     return 1
 

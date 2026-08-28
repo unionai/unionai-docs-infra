@@ -2,14 +2,39 @@ import os
 from typing import Dict, List
 
 from lib.generate.classes import ProtocolBaseClass, generate_classes
-from lib.generate.docstring import docstring_summary
+from lib.generate.docstring import docstring_description, docstring_summary
 from lib.generate.helper import generate_anchor_from_name
 from lib.generate.hugo import FrontMatterExtra, set_variants, set_version, write_front_matter
+from lib.generate.icons import icon_for
 from lib.generate.packages import generate_package_folders
 from lib.generate.linkmap import generate_linkmap_metadata
 from lib.ptypes import ParsedInfo
 
 PackageTree = Dict[str, List[str]]
+
+
+def section_root_doc(source: ParsedInfo) -> str | None:
+    """The docstring of the package the whole section documents, if it has one.
+
+    The landing page has no docstring of its own -- it is a page we invent. But a
+    section is the API reference for ONE distribution, so when every package in
+    it hangs off a single root (`flyte`, `flyteplugins.ray`, `flytekit`), that
+    root's docstring describes the section exactly, and it is a real docstring
+    rather than a summary we made up. When there is no single root -- two
+    unrelated top-level packages in one section -- there is nothing honest to
+    say, and the landing page gets no description.
+    """
+    packages = source.get("packages", [])
+    names = [pkg["name"] for pkg in packages if pkg.get("name")]
+    if not names:
+        return None
+    root = sorted(names, key=lambda n: (len(n), n))[0]
+    if not all(n == root or n.startswith(root + ".") for n in names):
+        return None
+    for pkg in packages:
+        if pkg["name"] == root:
+            return pkg.get("doc")
+    return None
 
 
 def generate_home_directory(source: ParsedInfo, output, ignore_types: List[str],
@@ -152,7 +177,7 @@ def generate_home(
         write_front_matter(title, output, {
             "expand_sidebar": expanded,
             "weight": weight,
-        })
+        }, description=docstring_description(section_root_doc(source)), icon=icon_for("section"))
         output.write(f"# {title}\n\n")
 
         for inc in include:

@@ -2,8 +2,9 @@ import io
 import os
 from typing import Dict, List, Tuple, Optional
 
-from lib.generate.docstring import docstring_summary
+from lib.generate.docstring import docstring_description, docstring_summary
 from lib.generate.hugo import FrontMatterExtra, write_front_matter
+from lib.generate.icons import class_icon_kind, icon_for
 from lib.generate.methods import (
     escape_html_preserve_code_blocks,
     generate_examples,
@@ -154,7 +155,12 @@ def generate_class(fullname: str, info: ClassDetails, pkg_root: str,
     class_file = generate_class_filename(fullname=fullname, pkg_root=pkg_root,
                                          single_package_flat=single_package_flat)
     with open(class_file, "w") as output:
-        write_front_matter(info["name"], output)
+        write_front_matter(
+            info["name"],
+            output,
+            description=docstring_description(info.get("doc")),
+            icon=icon_for(class_icon_kind(info)),
+        )
 
         output.write(f"# {info['name']}\n\n")
         output.write(f"**Package:** `{'.'.join(info['path'].split('.')[:-1])}`\n\n")

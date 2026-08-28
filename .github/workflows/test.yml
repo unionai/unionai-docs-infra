@@ -24,4 +24,9 @@ jobs:
       - name: Run tests
         # -ra surfaces the xfail reasons in the summary, so a test parked against
         # an open issue stays visible instead of reading as a pass.
-        run: uv run --with pytest pytest tests/ -ra
+        #
+        # pyyaml is not a project dependency (the api_generator gets it from its
+        # own venv), but the frontmatter tests parse what the generator writes to
+        # assert it is valid YAML. Without it here those two tests SKIP, and a
+        # skipped test guarding a quoting bug is the same as no test.
+        run: uv run --with pytest --with pyyaml pytest tests/ -ra
