@@ -2,7 +2,7 @@
 """Generate the Ask AI retrieval index from the built docs.
 
 A SECOND index, alongside the keyword index built by build_records.py, from the
-same dist/**/page.md source. The two differ in chunking and schema because they
+same dist/**/<path>.md twin source. The two differ in chunking and schema because they
 serve different consumers:
 
     build_records.py  ->  `union`            keyword search, read by DocSearch

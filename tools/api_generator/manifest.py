@@ -270,7 +270,7 @@ def compute_next_version(sdk_version: str) -> dict:
 # Pin retention (DOC-1448). Cloudflare Pages refuses a deployment above 20,000
 # files, and EVERY entry in `enumerated` materializes another full site tree --
 # ~3,400 files at the current corpus size (719 pages x 2 variants, each emitting
-# an index.html plus its page.md twin, plus ~278 static files). The line also
+# an index.html plus its markdown twin, plus ~278 static files). The line also
 # serves `stable`, and the primary line serves `/docs/latest`, so:
 #
 #     trees = enumerated + stable + (latest ? 1 : 0)

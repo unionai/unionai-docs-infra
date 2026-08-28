@@ -4,7 +4,7 @@ Generates the on-site search index from the **built docs** rather than by
 crawling the published site, and pushes it to Algolia.
 
 ```
-build_records.py   dist/**/page.md  ->  records.json
+build_records.py   dist/**/<path>.md ->  records.json
 push_records.py    records.json     ->  Algolia (scoped per line)
 build_synonyms.py  migration tables ->  synonyms.draft.json
 settings.json      index settings for the search index
@@ -27,12 +27,12 @@ a page can be `noindex` for Google and fully searchable on-site.
 
 ## Index membership follows the build
 
-Whatever `dist/docs/<version>/<variant>/**/page.md` contains gets indexed. Not
+Whatever `dist/docs/<version>/<variant>/**/<path>.md` contains gets indexed. Not
 what `versions.toml` declares, not what the CDN still serves from cache. Served
 implies searchable; unserved cuts produce no pages and are skipped by
 construction.
 
-`page.md` is the **served** markdown artifact, so records carry resolved prose
+The `<path>.md` twin is the **served** markdown artifact, so records carry resolved prose
 rather than raw shortcode markup.
 
 ## Granularity: full for current surfaces, page-level for pins

@@ -158,7 +158,7 @@ two sitemaps have an exact ownership split, zero overlap, and neither is hand-cu
 
 **The `robots.txt` this build emits governs nothing.** It lands at
 `/docs/<version>/<variant>/robots.txt`, and crawlers only read `robots.txt` at the **host
-root**. That includes its `Disallow: /*/page.md` directive, which has never had any effect.
+root**. That includes its `Disallow: /*.md$` directive, which has never had any effect.
 The file is kept valid and copy-pasteable, not operative.
 
 Why `robots.txt` rather than having marketing's `sitemap.xml` point at ours: **sitemap indexes
@@ -261,7 +261,7 @@ If you change the crawler's `exclusionPatterns`, check that derivation still agr
 ## Gotchas
 
 - **Do not make `baseURL` absolute to fix `<loc>`.** `layouts/_default/single.md` and
-  `list.md` already emit `https://www.union.ai{{ .Permalink }}` into the `page.md`/`_section.md`
+  `list.md` already emit `https://www.union.ai{{ .Permalink }}` into the `<path>.md`/`_section.md`
   outputs, so they would double-prefix; and previews and `make serve` would emit production
   URLs from every `.Permalink` consumer, making a preview impossible to check against itself.
   Prefix at the template via `site-host.html` instead.

@@ -12,8 +12,21 @@ Usage:
 import argparse
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from page_paths import (  # noqa: E402  (path shim must precede the import)
+    PAGE_SUFFIX,
+    iter_page_twins,
+    iter_pages,
+    page_for,
+    root_page,
+    source_dir_of,
+    url_dir_of,
+)
 
 # Handle TOML parsing with fallbacks
 try:
@@ -214,7 +227,7 @@ class ShortcodeProcessor:
 
         Kept for the same reason as the Hugo template: already-cut tags still call it,
         and every served version is processed by the branch tip's tooling. Without this
-        the raw shortcode would leak into page.md for those cuts.
+        the raw shortcode would leak into the twin for those cuts.
         """
         return re.sub(r'\{\{<\s*llm-bundle-note\s*>\}\}\n?', '', content)
 
@@ -475,7 +488,7 @@ class ShortcodeProcessor:
         Headings use the percent form on purpose (DOC-1357) -- Hugo resolves it
         before goldmark computes the heading id, which is what keeps the anchor
         stable across builds. Missing that form here would leave raw shortcode
-        text in the generated page.md / llms-full.txt output.
+        text in the generated markdown twin / llms-full.txt output.
         """
         pattern = r'\{\{(?:<\s*key\s+([^>]*?)\s*>|%\s*key\s+([^%]*?)\s*%)\}\}'
 
@@ -497,7 +510,7 @@ class ShortcodeProcessor:
         def replace_docs_home(match):
             # Must match layouts/shortcodes/docs_home.html exactly: absolute host, and NO
             # trailing slash. Content writes `{{< docs_home union v2 >}}/some/path`, so a
-            # trailing slash here yields `//some/path` in every page.md that uses it.
+            # trailing slash here yields `//some/path` in every twin that uses it.
             args = match.group(1).strip().split()
             base = "https://www.union.ai/docs"
             if len(args) >= 2:
@@ -674,17 +687,28 @@ def main():
     quiet = args.quiet
 
     input_dir = Path(args.input_dir)
-    output_dir = Path(args.output_dir)
+    # Absolute: link resolution below compares resolved link targets against
+    # this root, and `Path.relative_to()` between a resolved absolute path and
+    # a relative root raises -- which the link fixer would swallow, silently
+    # leaving every link unrewritten.
+    output_dir = Path(args.output_dir).resolve()
 
     if not input_dir.exists():
         print(f"Error: Input directory {input_dir} does not exist")
         return 1
 
-    # Clean up any existing page.md files in the output tree
-    # (cannot rmtree since output_dir is the HTML dist tree)
+    content_root = (Path(args.base_path or '.') / 'content').resolve()
+
+    # Clean up any page files this stage owns, so a rebuild over an existing
+    # tree cannot leave a stale twin behind (cannot rmtree -- output_dir is the
+    # HTML dist tree). Section bundles are written later by build_llm_docs.py
+    # and are not twins, so they stay.
     if output_dir.exists():
-        for llm_file in output_dir.rglob('page.md'):
+        for llm_file in iter_page_twins(output_dir):
             llm_file.unlink()
+        stale_root = root_page(output_dir)
+        if stale_root.exists():
+            stale_root.unlink()
 
     processor = ShortcodeProcessor(args.variant, args.version, args.base_path, args.input_dir)
 
@@ -699,14 +723,23 @@ def main():
             str(rel_path).startswith('__docs_builder__/')):
             continue
 
-        # Write page.md alongside index.html in the same directory
-        output_file = output_dir / rel_path.parent / 'page.md'
+        # The twin for the page served at URL path `p` is the file `p + '.md'`,
+        # so it sits BESIDE the page's directory rather than inside it
+        # (`a/b/foo/index.html` -> `a/b/foo.md`). See page_paths.py.
+        url_dir = '' if rel_path.parent == Path('.') else str(rel_path.parent)
+
+        # The variant root deliberately has no twin (DOC-1432 A2): it would land
+        # outside the variant tree, at /docs/<version>/<variant>.md, and
+        # llms.txt is the root's agent surface. It is still rendered, because
+        # build_llm_docs.py walks the whole tree from it -- it goes to the
+        # ROOT_INTERMEDIATE hand-off file, which stage 2 deletes.
+        output_file = page_for(output_dir, url_dir)
 
         # Create output directory if needed (should already exist from HTML build)
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
         if not quiet:
-            print(f"Processing: {rel_path} -> {rel_path.parent / 'page.md'}")
+            print(f"Processing: {rel_path} -> {output_file.relative_to(output_dir)}")
 
         try:
             processed_content = processor.process_file(md_file)
@@ -721,16 +754,24 @@ def main():
         except Exception as e:
             print(f"Error processing {rel_path}: {e}")
 
-    # Create root page.md if it doesn't exist
-    root_index = output_dir / 'page.md'
+    # Synthesize the variant root's page. Hugo emits no markdown for the home
+    # page, and the root is where build_llm_docs.py starts its depth-first walk
+    # of the whole tree, so without it there is no llms.txt, no llms-full.txt
+    # and no root bundle.
+    #
+    # It is written to ROOT_INTERMEDIATE rather than to a twin: the variant root
+    # deliberately has no twin (DOC-1432 A2) -- its twin would land outside the
+    # variant tree at /docs/<version>/<variant>.md, and llms.txt is the root's
+    # agent surface. build_llm_docs.py deletes this file once it has walked it.
+    root_index = root_page(output_dir)
     if not root_index.exists():
         if not quiet:
-            print("Creating root page.md...")
+            print(f"Creating root page intermediate ({root_index.name})...")
 
-        # Get top-level directories that have page.md (doc sections only)
+        # Top-level directories that have a page twin (doc sections only)
         top_level_dirs = []
         for item in output_dir.iterdir():
-            if item.is_dir() and (item / 'page.md').exists():
+            if item.is_dir() and page_for(output_dir, item.name).exists():
                 top_level_dirs.append(item.name)
 
         # Sort directories by priority (User Guide first, Release Notes last)
@@ -777,10 +818,10 @@ Welcome to the documentation.
         with open(root_index, 'w', encoding='utf-8') as f:
             f.write(root_content)
 
-    # Fix all internal links to point to page.md files
+    # Fix all internal links to point to the markdown twins
     if not quiet:
-        print("Converting internal links to page.md references...")
-    fix_internal_links_post_processing(output_dir, args.variant, quiet)
+        print("Converting internal links to markdown-twin references...")
+    fix_internal_links_post_processing(output_dir, args.variant, content_root, quiet)
 
     # Note: Link checking is now done in build_llm_docs.py during llms-full.txt generation
     # where it can track actual resolution failures for hierarchical references
@@ -790,23 +831,30 @@ Welcome to the documentation.
     return 0
 
 
-def fix_internal_links_post_processing(output_dir: Path, variant: str, quiet: bool = False):
-    """
-    Fix all internal links after the final file structure is in place.
+def fix_internal_links_post_processing(output_dir: Path, variant: str,
+                                       content_root: Path, quiet: bool = False):
+    """Point every internal link at the markdown twin of the page it names.
+
+    A link is authored against the Hugo SOURCE directory, so it is resolved
+    against `source_dir_of()` and re-expressed relative to that same directory.
+    Stage 2 resolves with the identical base, so the two stages cannot disagree
+    about where a link points -- which is how `page.md` once shipped every
+    cross-directory link broken (DOC-1494).
     """
     link_pattern = r'\[([^\]]*)\]\(([^)]+)\)'
     fixed_count = 0
     total_files = 0
 
-    for llm_file in output_dir.rglob('page.md'):
+    for llm_file in iter_pages(output_dir):
         total_files += 1
         try:
             with open(llm_file, 'r', encoding='utf-8') as f:
                 content = f.read()
 
             original_content = content
+            source_dir = source_dir_of(output_dir, llm_file, content_root)
 
-            def replace_link(match):
+            def replace_link(match, _source_dir=source_dir):
                 nonlocal fixed_count
                 link_text, link_url = match.groups()
 
@@ -826,40 +874,32 @@ def fix_internal_links_post_processing(output_dir: Path, variant: str, quiet: bo
                 if not base_url:  # Empty base URL means anchor-only
                     return match.group(0)
 
-                # Skip if it already points to a page.md file
-                if base_url.endswith('page.md'):
+                # Already a twin reference
+                if base_url.endswith(PAGE_SUFFIX):
                     return match.group(0)
 
-                # Convert Hugo-style path to page.md file reference
-                current_dir = llm_file.parent
                 try:
                     if base_url.startswith('/'):
-                        # Absolute path - convert to relative from current file
-                        base_url = base_url.lstrip('/')
-                        target_path = output_dir / base_url
+                        # Absolute path from the variant root
+                        target_dir = (output_dir / base_url.strip('/')).resolve()
                     else:
-                        # Relative path from current file
-                        target_path = (current_dir / base_url).resolve()
+                        target_dir = (_source_dir / base_url.rstrip('/')).resolve()
 
-                    # Every page is {dir}/page.md — check if target dir has one
-                    if target_path.is_dir() and (target_path / 'page.md').exists():
-                        rel_path = os.path.relpath(target_path / 'page.md', current_dir)
-                        fixed_count += 1
-                        return f'[{link_text}]({rel_path}{anchor})'
+                    url_dir = url_dir_of(output_dir, target_dir)
+                except (ValueError, OSError):
+                    return match.group(0)
 
-                    # For trailing-slash links, strip and try as directory
-                    if str(base_url).endswith('/'):
-                        clean_path = target_path.parent / target_path.name.rstrip('/')
-                        if clean_path.is_dir() and (clean_path / 'page.md').exists():
-                            rel_path = os.path.relpath(clean_path / 'page.md', current_dir)
-                            fixed_count += 1
-                            return f'[{link_text}]({rel_path}{anchor})'
+                if not url_dir:
+                    # The variant root has no twin to link to.
+                    return match.group(0)
 
-                except Exception as e:
-                    pass
+                twin = page_for(output_dir, url_dir)
+                if not twin.is_file():
+                    return match.group(0)
 
-                # If we can't resolve it, keep the original
-                return match.group(0)
+                rel_path = os.path.relpath(twin, _source_dir)
+                fixed_count += 1
+                return f'[{link_text}]({rel_path}{anchor})'
 
             # Apply the replacements
             content = re.sub(link_pattern, replace_link, content)

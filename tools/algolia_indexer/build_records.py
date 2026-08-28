@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Generate Algolia search records from the built docs.
 
-Reads the SERVED markdown artifact -- dist/docs/<version>/<variant>/**/page.md --
-rather than crawling the site or reading the pre-shortcode tmp-md tree:
+Reads the SERVED markdown artifact -- the per-page markdown twin at
+dist/docs/<version>/<variant>/<path>.md -- rather than crawling the site or
+reading the pre-shortcode tmp-md tree:
 
-  * page.md is post-shortcode-processing, so records hold resolved prose
+  * the twin is post-shortcode-processing, so records hold resolved prose
     rather than raw shortcode markup.
   * The dist path carries both facets, so `variant` and `version` never have
     to be re-derived from a URL by regex.
@@ -271,7 +272,7 @@ def strip_leading_emoji(title):
 # Inline LINK syntax in a heading. The generated section landing pages are
 # link-card indexes, so EVERY one of their headings is `### [Title](url)` --
 # and the raw markdown was going into the index as the result title, e.g.
-# "[Run scaling](https://www.union.ai/docs/v2/union/user-guide/run-scaling/page.md)".
+# "[Run scaling](https://www.union.ai/docs/v2/union/user-guide/run-scaling.md)".
 #
 # slugify() already strips this, which is why the ANCHOR was always correct
 # (#run-scaling). The two just did not share the logic, so the title kept the
@@ -316,7 +317,7 @@ LINK_CARD_HEADING_RE = re.compile(r"^\[[^\]]*\]\([^)]*\)$")
 # list.md emits it on every section page, and the llms generator then EXPANDS
 # it to carry each child's H2/H3 headings too -- 5 KB on /user-guide/ alone,
 # restating the title of every page and heading in the subtree under the
-# parent's url. It exists to be traversed by an LLM reading page.md, not read;
+# parent's url. It exists to be traversed by an LLM reading the twin, not read;
 # build_llm_docs.py strips it again when it concatenates. Indexed, it means a
 # search for any heading anywhere in a subtree can match the parent landing
 # page. No authored heading is titled "Subpages" (checked across content/).
@@ -412,32 +413,44 @@ def prune_slices(dist, dropped):
     return sorted((v, variant) for v, variant in _slices(dist) if v in dropped)
 
 
+def _twins(docs_root):
+    """Every per-page markdown twin under a built docs tree, sorted.
+
+    The twin for the page served at `<path>/` is the file `<path>.md`, so the
+    glob is `*.md` minus the aggregates SKIP_NAMES names. Globbing a fixed
+    file name would silently match nothing after the DOC-1432 rename, and a
+    glob that matches nothing does not error -- it indexes an empty corpus and
+    reports success. Hence the count assertion in the caller.
+    """
+    for path in sorted(docs_root.rglob("*.md")):
+        if path.name not in SKIP_NAMES:
+            yield path
+
+
 def _slices(dist):
     """(version, variant) pairs present in a built dist."""
     root = Path(dist) / "docs"
     return {(p.parts[0], p.parts[1])
-            for p in (q.relative_to(root) for q in root.rglob("page.md"))
+            for p in (q.relative_to(root) for q in _twins(root))
             if len(p.parts) >= 3}
 
 
 def iter_pages(dist):
-    """Yield (page_md_path, version, variant, url_path) for every built page."""
+    """Yield (twin_path, version, variant, url_path) for every built page."""
     docs_root = Path(dist) / "docs"
     if not docs_root.is_dir():
         raise SystemExit(f"no docs tree under {docs_root}")
 
-    for path in sorted(docs_root.rglob("page.md")):
-        if path.name in SKIP_NAMES:
-            continue
+    for path in _twins(docs_root):
         rel = path.relative_to(docs_root)
         parts = rel.parts
-        # <version>/<variant>/<...>/page.md
+        # <version>/<variant>/<...>/<page>.md
         if len(parts) < 3:
             continue
         version, variant = parts[0], parts[1]
         if variant not in ("union", "flyte"):
             continue
-        url_path = "/".join(parts[:-1])
+        url_path = "/".join(parts[:-1] + (parts[-1][: -len(".md")],))
         yield path, version, variant, url_path
 
 

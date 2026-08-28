@@ -9,8 +9,23 @@ Usage: python build_llm_docs.py
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
-from typing import Set, List
+from typing import Optional, Set, List
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from page_paths import (  # noqa: E402  (path shim must precede the import)
+    BUNDLE_NAME,
+    PAGE_SUFFIX,
+    is_section_landing,
+    iter_page_twins,
+    iter_pages,
+    page_for,
+    root_page,
+    source_dir_of,
+    url_dir_of,
+)
 
 # Size cap for one `_section.md`, in bytes of built output.
 #
@@ -42,6 +57,9 @@ class LLMDocBuilder:
         self.resolution_issues: List[dict] = []  # Track failed link resolutions
         self.current_source_file: str = ""  # Track current file being processed
         self.variant_root: Path = Path()  # Set per-variant in build_consolidated_doc
+        # Hugo sources. The leaf/section discriminator lives here, not in the
+        # output tree, which cannot tell the two apart -- see page_paths.py.
+        self.content_root: Path = base_path / 'content'
         self.index_entries: List[tuple] = []  # (hierarchical_title, page_url, path_key) for index
         self.page_headings: dict[str, List[str]] = {}  # path_key -> [H2/H3 heading titles]
         self.section_pages: set[str] = set()  # path_keys of pages that have subpages
@@ -140,7 +158,7 @@ class LLMDocBuilder:
             if url.startswith('#'):
                 anchor = url[1:]  # Remove the # prefix
                 try:
-                    rel_path = str(current_file_path.relative_to(self.variant_root)).lower()
+                    rel_path = url_dir_of(self.variant_root, current_file_path).lower()
                 except ValueError:
                     rel_path = current_file_path.name.lower()
                 anchor_key = f"{rel_path}#{anchor}"
@@ -152,8 +170,14 @@ class LLMDocBuilder:
                     current_page_title = self.strip_common_prefix(' > '.join(current_hierarchy))
                     return f"**{current_page_title} > {text}**"
 
-            # For internal page.md links (with or without anchors), convert to hierarchical reference
-            if 'page.md' in url and not url.startswith(('http://', 'https://')):
+            # For internal twin links (with or without anchors), convert to a
+            # hierarchical reference. Stage 1 rewrote every resolvable page link
+            # to `<path>.md`, so that suffix is the marker -- as `page.md` was
+            # before the rename. Bundles are not pages and stay links.
+            link_target = url.split('#', 1)[0]
+            if (link_target.endswith(PAGE_SUFFIX)
+                    and not link_target.endswith(BUNDLE_NAME)
+                    and not url.startswith(('http://', 'https://'))):
                 hierarchical_title = self.resolve_hierarchical_title(url, current_file_path, current_hierarchy, text)
                 return f"**{hierarchical_title}**"
 
@@ -217,7 +241,19 @@ class LLMDocBuilder:
         return title
 
     def resolve_link_path(self, url: str, current_file_path: Path) -> str:
-        """Resolve a relative URL to an absolute path key."""
+        """Resolve a relative URL to the lookup key of the page it names.
+
+        Keys are URL directories relative to the variant root (`''` for the
+        root), which is what `build_lookup_tables()` stores.
+
+        The base is `source_dir_of()`, the same base every other resolver in
+        the generator uses. Before the rename `current_file_path.parent` was
+        that base for every page, so this function agreed with the rest by
+        coincidence; the rename breaks the coincidence for section landings,
+        whose twin sits one level above their source directory. This keeps the
+        function doing exactly what it did (link-issues.txt: 0 before, 0 after)
+        rather than fixing the separate defect DOC-1499 tracks in it.
+        """
         # Split URL and anchor
         if '#' in url:
             file_part, anchor = url.split('#', 1)
@@ -225,17 +261,14 @@ class LLMDocBuilder:
             file_part, anchor = url, None
 
         try:
-            # Handle relative paths
-            if file_part.startswith('../') or file_part.startswith('./'):
-                resolved = (current_file_path.parent / file_part).resolve()
-            elif file_part:  # Non-empty file part
-                resolved = (current_file_path.parent / file_part).resolve()
+            if file_part:
+                resolved = self._resolve_from_source_dir(current_file_path, file_part)
             else:  # Just anchor, same file
                 resolved = current_file_path
 
-            # Get path relative to variant root (matches our lookup table keys)
+            # Get the URL directory relative to the variant root
             try:
-                key = str(resolved.relative_to(self.variant_root)).lower()
+                key = url_dir_of(self.variant_root, resolved).lower()
             except ValueError:
                 # Fallback to filename only
                 key = str(resolved.name).lower()
@@ -244,7 +277,7 @@ class LLMDocBuilder:
                 key = f"{key}#{anchor}"
 
             return key
-        except:
+        except Exception:
             return url.lower()
 
     def extract_page_title(self, content: str, file_path: Path) -> str:
@@ -363,7 +396,7 @@ class LLMDocBuilder:
     def build_consolidated_doc(self, variant: str, version: str = None) -> str:
         """Build consolidated document by following subpage links depth-first."""
         version = version or self.version
-        variant_dir = self.base_path / 'dist' / 'docs' / version / variant
+        variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
 
         if not variant_dir.exists():
             print(f"Error: Directory not found: {variant_dir}")
@@ -385,13 +418,14 @@ class LLMDocBuilder:
         if not self.quiet:
             print("  First pass: Building lookup tables...")
         self.visited_files.clear()  # Reset for first pass
-        self.build_lookup_tables(variant_dir, 'page.md', variant_dir, [])
+        self.build_lookup_tables(root_page(variant_dir), variant_dir, [])
 
         # Second pass: Process content with lookup tables populated
         if not self.quiet:
             print("  Second pass: Processing content...")
         consolidated_content = []
-        self.process_page_depth_first(variant_dir, 'page.md', consolidated_content, variant_dir, [], variant, version)
+        self.process_page_depth_first(root_page(variant_dir), consolidated_content,
+                                      variant_dir, [], variant, version)
 
         return '\n'.join(consolidated_content)
 
@@ -411,26 +445,22 @@ class LLMDocBuilder:
 
         return report_file
 
-    def build_lookup_tables(self, base_dir: Path, relative_path: str, md_root: Path, hierarchy: List[str] = None):
+    def _page_for_link(self, current_file: Path, link: str) -> Optional[Path]:
+        """The page file a `## Subpages` link names, or None if there is none."""
+        resolved = self._resolve_from_source_dir(current_file, link)
+        if resolved.suffix == PAGE_SUFFIX:
+            return resolved if resolved.is_file() else None
+        try:
+            url_dir = url_dir_of(self.variant_root, resolved)
+        except ValueError:
+            return None
+        page = page_for(self.variant_root, url_dir)
+        return page if page.is_file() else None
+
+    def build_lookup_tables(self, file_path: Path, md_root: Path, hierarchy: List[str] = None):
         """Build lookup tables for all pages without processing content."""
         if hierarchy is None:
             hierarchy = []
-
-        # Resolve the full path — every page is {dir}/page.md
-        if relative_path.endswith('/'):
-            file_path = base_dir / relative_path / 'page.md'
-            relative_path = relative_path + 'page.md'
-        elif relative_path.endswith('page.md'):
-            file_path = base_dir / relative_path
-        else:
-            # Relative path is a directory name, look for page.md inside
-            if (base_dir / relative_path / 'page.md').exists():
-                file_path = base_dir / relative_path / 'page.md'
-                relative_path = f"{relative_path}/page.md"
-            else:
-                if not self.quiet:
-                    print(f"Warning: Could not find page.md for: {relative_path}")
-                return
 
         # Avoid infinite loops
         canonical_path = str(file_path.resolve())
@@ -443,10 +473,11 @@ class LLMDocBuilder:
                 print(f"Warning: File not found: {file_path}")
             return
 
-        # Get relative path from variant root for the lookup key
-        # Normalize to lowercase for case-insensitive matching (macOS filesystem is case-insensitive)
+        # Lookup key: the URL directory this page serves, relative to the
+        # variant root. Lowercased for case-insensitive matching (the macOS
+        # filesystem is case-insensitive).
         try:
-            relative_from_root = str(file_path.relative_to(md_root)).lower()
+            relative_from_root = url_dir_of(md_root, file_path).lower()
         except ValueError:
             relative_from_root = str(file_path).lower()
 
@@ -478,11 +509,14 @@ class LLMDocBuilder:
         if subpage_links:
             self.section_pages.add(relative_from_root)
         for link in subpage_links:
-            # Resolve relative to the current file's directory
-            current_dir = file_path.parent
-            self.build_lookup_tables(current_dir, link, md_root, current_hierarchy)
+            child = self._page_for_link(file_path, link)
+            if child is None:
+                if not self.quiet:
+                    print(f"Warning: Could not find a page for: {link}")
+                continue
+            self.build_lookup_tables(child, md_root, current_hierarchy)
 
-    def process_page_depth_first(self, base_dir: Path, relative_path: str,
+    def process_page_depth_first(self, file_path: Path,
                                 consolidated: List[str], md_root: Path, hierarchy: List[str] = None,
                                 variant: str = None, version: str = None):
         """Process a page and its subpages in depth-first order."""
@@ -490,30 +524,14 @@ class LLMDocBuilder:
         if hierarchy is None:
             hierarchy = []
 
-        # Resolve the full path — every page is {dir}/page.md
-        if relative_path.endswith('/'):
-            file_path = base_dir / relative_path / 'page.md'
-            relative_path = relative_path + 'page.md'
-        elif relative_path.endswith('page.md'):
-            file_path = base_dir / relative_path
-        else:
-            # Relative path is a directory name, look for page.md inside
-            if (base_dir / relative_path / 'page.md').exists():
-                file_path = base_dir / relative_path / 'page.md'
-                relative_path = f"{relative_path}/page.md"
-            else:
-                if not self.quiet:
-                    print(f"Warning: Could not find page.md for: {relative_path}")
-                return
-
         if not file_path.exists():
             if not self.quiet:
                 print(f"Warning: File not found: {file_path}")
             return
 
-        # Get relative path from variant root for the delimiter
+        # The URL directory this page serves, relative to the variant root
         try:
-            relative_from_root = str(file_path.relative_to(md_root))
+            relative_from_root = url_dir_of(md_root, file_path)
         except ValueError:
             relative_from_root = str(file_path)
 
@@ -540,17 +558,16 @@ class LLMDocBuilder:
 
         # Add page delimiter with URL
         if variant and version:
-            # Convert page.md path to web path
-            web_path = relative_from_root.replace('/page.md', '').replace('page.md', '')
-            if not web_path or web_path == '/':
-                web_path = ''
+            web_path = relative_from_root
 
             url = f"https://www.union.ai/docs/{version}/{variant}/{web_path}".rstrip('/')
             consolidated.append(f"\n=== PAGE: {url} ===\n")
 
-            # Collect index entry (with path_key for heading lookup)
+            # Collect index entry (with path_key for heading lookup). The
+            # variant root has no twin, so it advertises its HTML URL; the
+            # index skips it anyway (depth 0).
             stripped_title = self.strip_common_prefix(' > '.join(current_hierarchy))
-            llm_url = f"{url}/page.md" if web_path else f"{url}/page.md"
+            llm_url = f"{url}{PAGE_SUFFIX}" if web_path else url
             self.index_entries.append((stripped_title, llm_url, relative_from_root.lower()))
         else:
             consolidated.append(f"\n=== PAGE: {relative_from_root} ===\n")
@@ -560,9 +577,11 @@ class LLMDocBuilder:
         for link in subpage_links:
             if not self.quiet:
                 print(f"    Following: {link}")
-            # Resolve relative to the current file's directory
-            current_dir = file_path.parent
-            self.process_page_depth_first(current_dir, link, consolidated, md_root, current_hierarchy, variant, version)
+            child = self._page_for_link(file_path, link)
+            if child is None:
+                continue
+            self.process_page_depth_first(child, consolidated, md_root,
+                                          current_hierarchy, variant, version)
 
     def find_variants(self) -> List[str]:
         """Find available variants in the dist directory."""
@@ -572,24 +591,23 @@ class LLMDocBuilder:
 
         variants = []
         for item in dist_path.iterdir():
-            if item.is_dir() and (item / 'page.md').exists():
+            if item.is_dir() and root_page(item).exists():
                 variants.append(item.name)
 
         return sorted(variants)
 
     def _path_depth(self, path_key: str) -> int:
-        """Get the directory depth of a path_key (0 = root page.md)."""
-        parts = path_key.replace('page.md', '').strip('/').split('/')
-        parts = [p for p in parts if p]
+        """Get the directory depth of a path_key (0 = the variant root)."""
+        parts = [p for p in path_key.strip('/').split('/') if p]
         return len(parts)
 
     def _frontmatter_title(self, path_key: str) -> str:
         """Extract frontmatter title from the source _index.md file."""
-        dir_path = path_key.replace('/page.md', '').replace('page.md', '').strip('/')
+        dir_path = path_key.strip('/')
         if dir_path:
-            source_file = self.base_path / 'content' / dir_path / '_index.md'
+            source_file = self.content_root / dir_path / '_index.md'
         else:
-            source_file = self.base_path / 'content' / '_index.md'
+            source_file = self.content_root / '_index.md'
 
         if not source_file.exists():
             return ''
@@ -636,7 +654,8 @@ class LLMDocBuilder:
             "",
             "Each entry below is `- [Page title](URL)` followed by the"
             " H2/H3 headings found on that page."
-            " Pages link to individual `page.md` files."
+            " Each page's markdown is served at its own URL with `.md`"
+            " appended, e.g. `/integrations/hydra.md`."
             " Sections marked with a \"Section bundle\" link have a `_section.md`"
             " holding that section one level down: its own pages in full, plus"
             " each sub-section's landing page and a link onward to that"
@@ -685,7 +704,7 @@ class LLMDocBuilder:
             # A top-level section can carry its own bundle. Without this the bundle is
             # generated and served but never advertised here, so the index disagrees with
             # the rest of the build (tutorials, integrations).
-            section_dir = section['path_key'].replace('/page.md', '').replace('page.md', '').strip('/')
+            section_dir = section['path_key'].strip('/')
             if section_dir in self.bundle_sections:
                 lines.append(f"> Section bundle (one level): {self.bundle_sections[section_dir]}")
                 lines.append("")
@@ -702,7 +721,7 @@ class LLMDocBuilder:
                     lines.append(entry)
 
                     # Add bundle reference if this child has a section bundle
-                    child_dir = child_key.replace('/page.md', '').replace('page.md', '').strip('/')
+                    child_dir = child_key.strip('/')
                     if child_dir in self.bundle_sections:
                         lines.append(f"  > Section bundle (one level): {self.bundle_sections[child_dir]}")
 
@@ -719,13 +738,14 @@ class LLMDocBuilder:
         return '\n'.join(lines)
 
     def enhance_subpage_listings(self, variant: str, version: str = None):
-        """Post-process page.md files to enhance ## Subpages sections with H2/H3 headings."""
+        """Post-process page twins to enhance ## Subpages sections with H2/H3 headings."""
         version = version or self.version
-        variant_dir = self.base_path / 'dist' / 'docs' / version / variant
+        variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
+        self.variant_root = variant_dir
 
-        for content_file in variant_dir.rglob('page.md'):
+        for content_file in iter_pages(variant_dir):
             try:
-                relative_key = str(content_file.relative_to(variant_dir)).lower()
+                relative_key = url_dir_of(variant_dir, content_file).lower()
             except ValueError:
                 continue
 
@@ -755,14 +775,10 @@ class LLMDocBuilder:
                     enhanced_lines.append(f"- [{child_title}]({child_url})")
                     continue
 
-                # Resolve child path to get the path key for heading lookup
-                if child_path_part.endswith('page.md'):
-                    child_path = (content_file.parent / child_path_part).resolve()
-                else:
-                    child_path = (content_file.parent / child_path_part.rstrip('/') / 'page.md').resolve()
-
+                # Resolve the child to get the path key for heading lookup
+                child_path = self._resolve_from_source_dir(content_file, child_path_part)
                 try:
-                    child_key = str(child_path.relative_to(variant_dir)).lower()
+                    child_key = url_dir_of(variant_dir, child_path).lower()
                 except ValueError:
                     child_key = ""
 
@@ -785,24 +801,26 @@ class LLMDocBuilder:
         """Resolve a relative markdown link written in a Hugo source file against
         the output tree, given the output file that carries it.
 
-        Two output shapes, and they need different bases:
+        The base is the SOURCE directory the link was authored against, which
+        `page_paths.source_dir_of()` derives from the Hugo source tree:
 
-          * A leaf page `foo.md` is written out as `foo/page.md`, so the output
-            file sits one directory DEEPER than the source file whose directory
-            the link was written relative to. `../bar` resolved from
-            `foo/page.md` lands one level too deep and 404s.
-          * A section index `dir/_index.md` is written out as `dir/page.md`, so
-            for those the output file's own directory is already the right base.
+          * a leaf page `content/a/b/foo.md` is written out as `a/b/foo.md`, so
+            its source directory is the twin's own parent, `a/b`;
+          * a section landing `content/a/b/_index.md` is written out as
+            `a/b.md`, so its source directory is `a/b` -- one level DEEPER than
+            the file sits.
 
-        Resolving literally first and falling back one level up only when the
-        target does not exist covers both without having to know which shape
-        this file is. Used by `absolutize_links()` and `_process_bundle_links()`;
-        keep it that way rather than reintroducing a per-call-site copy (the
-        bundle path carried the only copy for a while, which is exactly how
-        `page.md` shipped every cross-directory link broken -- DOC-1494).
+        Before the rename the offset ran the other way and this resolved
+        literally, falling back one level UP when the target did not exist. That
+        guard cannot survive the rename: it goes the wrong direction for every
+        section landing, and being an existence check it would not error -- it
+        would silently point links at the wrong page. So the shape of the output
+        path is no longer consulted at all; the source tree decides.
 
-        Distinct from `resolve_link_path()`, which builds a lookup KEY for the
-        title table and still resolves the old way.
+        Used by every resolver here and by stage 1; keep it that way rather than
+        reintroducing a per-call-site copy (the bundle path carried the only
+        copy for a while, which is exactly how `page.md` shipped every
+        cross-directory link broken -- DOC-1494).
         """
         # A link may name a section's source file explicitly
         # (`../task-deployment/_index`). Hugo resolves that to the section
@@ -810,23 +828,20 @@ class LLMDocBuilder:
         link_path = re.sub(r'(^|/)_index(\.md)?/?$', r'\1', link_path)
         link_path = link_path.rstrip('/') or '.'
 
-        resolved = (current_file.parent / link_path).resolve()
-        if not resolved.exists() and not (resolved / 'page.md').exists():
-            alt = (current_file.parent.parent / link_path).resolve()
-            if alt.exists() or (alt / 'page.md').exists():
-                resolved = alt
-        return resolved
+        base = source_dir_of(self.variant_root, current_file, self.content_root)
+        return (base / link_path).resolve()
 
     def absolutize_links(self, variant: str, version: str = None):
-        """Convert all relative links in page.md files to absolute URLs."""
+        """Convert all relative links in the page twins to absolute URLs."""
         version = version or self.version
-        variant_dir = self.base_path / 'dist' / 'docs' / version / variant
+        variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
+        self.variant_root = variant_dir
         base_url = f"https://www.union.ai/docs/{version}/{variant}"
         link_pattern = r'\[([^\]]*)\]\(([^)]+)\)'
         fixed_count = 0
         total_files = 0
 
-        for content_file in variant_dir.rglob('page.md'):
+        for content_file in iter_page_twins(variant_dir):
             total_files += 1
             try:
                 content = content_file.read_text(encoding='utf-8')
@@ -865,7 +880,7 @@ class LLMDocBuilder:
 
                 # Convert to path relative to variant dir
                 try:
-                    rel_to_variant = resolved.relative_to(variant_dir.resolve())
+                    rel_to_variant = resolved.relative_to(variant_dir)
                 except ValueError:
                     return match.group(0)
 
@@ -891,7 +906,7 @@ class LLMDocBuilder:
         carries become hierarchical bold titles, everything else becomes an
         absolute URL. Runs before absolutize_links().
 
-        `included` is the set of resolved page.md paths (as strings) that this
+        `included` is the set of resolved twin paths (as strings) that this
         bundle inlines. Membership, not "is under the section directory", is the
         test: a one-level bundle holds only the landing page, its own pages and
         its children's landings, so a link deeper into the subtree must stay a
@@ -916,7 +931,7 @@ class LLMDocBuilder:
             # Anchor-only links
             if url.startswith('#'):
                 try:
-                    rel_path = str(current_file.relative_to(variant_dir)).lower()
+                    rel_path = url_dir_of(variant_dir, current_file).lower()
                 except ValueError:
                     return match.group(0)
                 anchor_key = f"{rel_path}#{url[1:]}"
@@ -931,18 +946,16 @@ class LLMDocBuilder:
             resolved = self._resolve_from_source_dir(current_file, link_path)
 
             # Is the target actually inlined in this bundle?
-            target_page = resolved if resolved.name == 'page.md' else resolved / 'page.md'
+            target_page = (resolved if resolved.suffix == PAGE_SUFFIX
+                           else Path(str(resolved) + PAGE_SUFFIX))
             is_internal = str(target_page) in included
 
             if is_internal:
                 # Convert to hierarchical title. Key on `target_page`, not on
                 # `resolved`: a link written `./architecture/_index` resolves to a
-                # DIRECTORY, while the title table is keyed `dir/page.md`. Keying
-                # on the directory missed every one of those, and the miss path
-                # returns the link untouched -- so a raw `./architecture/_index`
-                # survived into the bundle, where it resolves one level wrong.
+                # DIRECTORY, and only the twin path names the page itself.
                 try:
-                    lookup_key = str(target_page.relative_to(variant_dir)).lower()
+                    lookup_key = url_dir_of(variant_dir, target_page).lower()
                 except ValueError:
                     return match.group(0)
                 if lookup_key in self.title_lookup:
@@ -961,7 +974,7 @@ class LLMDocBuilder:
         return re.sub(r'\[([^\]]+)\]\(([^)]+)\)', replace_link, content)
 
     def _immediate_children(self, content_file: Path) -> List[Path]:
-        """The page.md files one level below a section landing page.
+        """The page twins one level below a section landing page.
 
         Read off the landing page's own `## Subpages` table, so the order is
         Hugo's weight order rather than the filesystem's. Paths are resolved with
@@ -972,9 +985,8 @@ class LLMDocBuilder:
         content = content_file.read_text(encoding='utf-8')
         children: List[Path] = []
         for link in self.extract_subpage_links(content):
-            resolved = self._resolve_from_source_dir(content_file, link)
-            child_page = resolved if resolved.name == 'page.md' else resolved / 'page.md'
-            if child_page.exists() and child_page not in children:
+            child_page = self._page_for_link(content_file, link)
+            if child_page is not None and child_page not in children:
                 children.append(child_page)
         return children
 
@@ -988,25 +1000,23 @@ class LLMDocBuilder:
             return False
 
     def _is_source_section(self, dir_path: str) -> bool:
-        """True when this output directory came from a Hugo section (`_index.md`)
-        rather than from a leaf page (`foo.md` -> `foo/page.md`).
+        """True when this URL directory came from a Hugo section (`_index.md`)
+        rather than from a leaf page.
 
-        The output tree cannot tell the two apart -- a childless section and a
-        leaf page are both `dir/page.md` -- and the manifest header has to,
-        because it counts sub-sections. So ask the source tree.
+        The output tree cannot tell the two apart -- Hugo gives every page a
+        pretty URL, so a leaf twin sits beside a same-named directory exactly as
+        a section landing does -- and the manifest header has to, because it
+        counts sub-sections. So ask the source tree. Same test the link
+        resolver uses; one implementation, in page_paths.py.
         """
-        if dir_path:
-            source_file = self.base_path / 'content' / dir_path / '_index.md'
-        else:
-            source_file = self.base_path / 'content' / '_index.md'
-        return source_file.exists()
+        return is_section_landing(self.content_root, dir_path)
 
     def _frontmatter_description(self, dir_path: str) -> str:
         """The `description` from a section's source `_index.md`, if it has one."""
         if dir_path:
-            source_file = self.base_path / 'content' / dir_path / '_index.md'
+            source_file = self.content_root / dir_path / '_index.md'
         else:
-            source_file = self.base_path / 'content' / '_index.md'
+            source_file = self.content_root / '_index.md'
         if not source_file.exists():
             return ''
         try:
@@ -1171,7 +1181,7 @@ class LLMDocBuilder:
         excerpt = self._process_bundle_links(
             self._excerpt(dir_path, content), page_file, included)
 
-        note = f"\u2192 Full page: {page_url}/page.md"
+        note = f"\u2192 Full page: {page_url}{PAGE_SUFFIX}"
         if onward_section:
             note += f" \u00b7 Full section: {page_url}/_section.md"
         return [f"=== PAGE: {page_url} (abridged on size) ===\n", excerpt, "", note, ""]
@@ -1204,7 +1214,7 @@ class LLMDocBuilder:
         1. *Structural* -- the child has more beneath it, so its landing page
            stands in for its subtree and links to its own `_section.md`.
         2. *Size* -- the bundle would otherwise blow the cap, so the child's text
-           is replaced by an excerpt linking to its own `page.md`. This is the one
+           is replaced by an excerpt linking to its own twin. This is the one
            that handles a child whose landing page IS its whole content: there is
            no deeper `_section.md` to point at, so nothing but an excerpt reduces
            it.
@@ -1221,14 +1231,15 @@ class LLMDocBuilder:
         # so an unresolved root makes every `relative_to()` below a coin toss on any
         # filesystem with a symlinked temp or home directory.
         variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
+        self.variant_root = variant_dir
         base_url = f"https://www.union.ai/docs/{version}/{variant}"
         limit = self.bundle_size_limit
         bundle_count = 0
         capped_count = 0
 
-        for content_file in sorted(variant_dir.rglob('page.md')):
+        for content_file in sorted(iter_pages(variant_dir)):
             try:
-                rel_path = str(content_file.relative_to(variant_dir))
+                dir_path = url_dir_of(variant_dir, content_file)
             except ValueError:
                 continue
 
@@ -1237,16 +1248,17 @@ class LLMDocBuilder:
                 # Nothing beyond the landing page -- no bundle (see docstring).
                 continue
 
-            section_dir = content_file.parent
-            dir_path = rel_path.replace('/page.md', '').replace('page.md', '').strip('/')
+            # The bundle stays where it has always been: inside the section's
+            # own URL directory, beside the children it holds. Only the twin
+            # moved out of that directory.
+            section_dir = variant_dir / dir_path if dir_path else variant_dir
             section_url = f"{base_url}/{dir_path}".rstrip('/')
 
             # Split one level of children into "our own pages" and "sub-sections".
             own_pages: List[Path] = []
             subsections: List[Path] = []
             for child in children:
-                child_dir = str(child.parent.relative_to(variant_dir))
-                if self._is_source_section(child_dir):
+                if self._is_source_section(url_dir_of(variant_dir, child)):
                     subsections.append(child)
                 else:
                     own_pages.append(child)
@@ -1255,9 +1267,7 @@ class LLMDocBuilder:
                         for f in [content_file] + own_pages + subsections}
 
             def url_of(page_file: Path) -> str:
-                page_rel = str(page_file.relative_to(variant_dir))
-                web = page_rel.replace('/page.md', '').replace('page.md', '')
-                return f"{base_url}/{web}".rstrip('/')
+                return f"{base_url}/{url_dir_of(variant_dir, page_file)}".rstrip('/')
 
             # Head: never abridged, so its size is fixed.
             head_parts: List[str] = []
@@ -1265,12 +1275,16 @@ class LLMDocBuilder:
                 head_parts.extend(
                     self._page_block(page_file, url_of(page_file), included, False))
 
+            def _name_of(page_file: Path) -> str:
+                """A sub-section's directory name -- the twin's stem now names it."""
+                return page_file.stem
+
             # Both renderings of every sub-section, so fitting is arithmetic.
             full_block: dict[Path, List[str]] = {}
             short_block: dict[Path, List[str]] = {}
             deeper: dict[Path, bool] = {}
             for child in subsections:
-                child_dir = str(child.parent.relative_to(variant_dir))
+                child_dir = url_dir_of(variant_dir, child)
                 deeper[child] = self._has_subpages(child)
                 url = url_of(child)
                 full_block[child] = self._page_block(child, url, included, deeper[child])
@@ -1281,16 +1295,16 @@ class LLMDocBuilder:
             order = sorted(subsections,
                            key=lambda c: (-self._block_bytes(full_block[c]), str(c)))
 
-            section_title = self._frontmatter_title(rel_path.lower()) or dir_path or variant
+            section_title = self._frontmatter_title(dir_path.lower()) or dir_path or variant
             head_bytes = self._block_bytes(head_parts)
             size_cut: List[Path] = []
 
             def total_bytes(cut: List[Path], overflow: bool) -> int:
                 manifest = self._bundle_manifest(
                     section_title, section_url, len(own_pages), len(subsections),
-                    [c.parent.name for c in subsections
+                    [_name_of(c) for c in subsections
                      if deeper[c] and c not in cut],
-                    [c.parent.name for c in cut], overflow)
+                    [_name_of(c) for c in cut], overflow)
                 body = sum(self._block_bytes(
                     short_block[c] if c in cut else full_block[c])
                     for c in subsections)
@@ -1300,9 +1314,9 @@ class LLMDocBuilder:
                 size_cut.append(next(c for c in order if c not in size_cut))
             overflow = total_bytes(size_cut, False) > limit
 
-            structural = [c.parent.name for c in subsections
+            structural = [_name_of(c) for c in subsections
                           if deeper[c] and c not in size_cut]
-            cut_names = [c.parent.name for c in size_cut]
+            cut_names = [_name_of(c) for c in size_cut]
 
             bundle_parts = self._bundle_manifest(
                 section_title, section_url, len(own_pages), len(subsections),
@@ -1312,7 +1326,7 @@ class LLMDocBuilder:
                 bundle_parts.extend(
                     short_block[child] if child in size_cut else full_block[child])
 
-            bundle_file = section_dir / '_section.md'
+            bundle_file = section_dir / BUNDLE_NAME
             bundle_file.write_text('\n'.join(bundle_parts) + '\n', encoding='utf-8')
             bundle_count += 1
             if size_cut:
@@ -1332,7 +1346,7 @@ class LLMDocBuilder:
                   f" ({capped_count} size-abridged, limit {limit:,} bytes)")
 
     def render_readable_list(self, variant: str, version: str = None):
-        """Replace `{{< llm-readable-list >}}` in page.md files with a Markdown bundle list.
+        """Replace `{{< llm-readable-list >}}` in the page twins with a Markdown bundle list.
 
         The Hugo shortcode of the same name walks the site's section tree, so it can only be
         resolved once the tree is known. process_shortcodes.py (stage 1) runs too early and has
@@ -1342,7 +1356,8 @@ class LLMDocBuilder:
         Must run after generate_bundles() (which populates self.bundle_sections).
         """
         version = version or self.version
-        variant_dir = self.base_path / 'dist' / 'docs' / version / variant
+        variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
+        self.variant_root = variant_dir
         pattern = re.compile(r'\{\{<\s*llm-readable-list\s*>\}\}')
 
         # Order bundles the way llms.txt orders pages (depth-first, Hugo weight order),
@@ -1351,19 +1366,19 @@ class LLMDocBuilder:
         group_order: list[str] = []
 
         for _title, _url, path_key in self.index_entries:
-            section_dir = path_key.replace('/page.md', '').replace('page.md', '').strip('/')
+            section_dir = path_key.strip('/')
             bundle_url = self.bundle_sections.get(section_dir)
             if not bundle_url:
                 continue
 
             top = section_dir.split('/')[0]
-            group_name = self._frontmatter_title(f"{top}/page.md") or top
+            group_name = self._frontmatter_title(top) or top
             if group_name not in groups:
                 groups[group_name] = []
                 group_order.append(group_name)
 
-            title = self._frontmatter_title(f"{section_dir}/page.md") or section_dir
-            bundle_file = variant_dir / section_dir / '_section.md'
+            title = self._frontmatter_title(section_dir) or section_dir
+            bundle_file = variant_dir / section_dir / BUNDLE_NAME
             tokens_k = max(1, bundle_file.stat().st_size // 4000) if bundle_file.exists() else 1
             groups[group_name].append((title, bundle_url, tokens_k))
 
@@ -1377,7 +1392,7 @@ class LLMDocBuilder:
         replacement = '\n'.join(lines).rstrip()
 
         replaced = 0
-        for content_file in variant_dir.rglob('page.md'):
+        for content_file in iter_pages(variant_dir):
             content = content_file.read_text(encoding='utf-8')
             if not pattern.search(content):
                 continue
@@ -1503,7 +1518,7 @@ def main():
                 file_size = len(consolidated_content)
                 print(f"Saved: {output_file} ({file_size:,} characters)")
 
-            # Enhance page.md subpage listings with H2/H3 headings
+            # Enhance the twins' subpage listings with H2/H3 headings
             builder.enhance_subpage_listings(variant)
 
             # Generate section bundles (before absolutize so subpage links are still relative)
@@ -1539,6 +1554,13 @@ def main():
                 print(f"No link resolution issues for {variant}")
         else:
             print(f"Error: No content generated for {variant}")
+
+        # The variant root's rendering was stage 1's hand-off, not a served
+        # artifact (DOC-1432 A2). Everything downstream of it has been written,
+        # so remove it before the tree is deployed.
+        root_file = root_page(base_path / 'dist' / 'docs' / builder.version / variant)
+        if root_file.exists():
+            root_file.unlink()
 
     # Step 4: Create hierarchical discovery files
     builder.create_discovery_files(base_path, variants)

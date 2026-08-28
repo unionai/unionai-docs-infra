@@ -193,7 +193,7 @@ PR. Merge it to cut.
 
 Every entry in `enumerated` materializes **another full site tree** in `dist/` -- about 3,400
 files at the current corpus size (719 pages x 2 variants, each emitting an `index.html` plus its
-`page.md` twin, plus ~278 static files). The line also serves `stable`, and the primary line
+markdown twin, plus ~278 static files). The line also serves `stable`, and the primary line
 serves `/docs/latest`, so:
 
 ```
