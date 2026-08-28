@@ -1,0 +1,31 @@
+# Which docs variants each CLI-contributing distribution is published to.
+#
+# A distribution that registers `flyte.plugins.cli.commands` entry points adds
+# commands to the generated CLI reference. Some of those commands exist for every
+# reader; some only exist if you have installed a particular plugin and, in the
+# Union case, are backed by a service an open-source install does not have.
+#
+# The generator cannot tell the difference on its own. It classifies a command by
+# where the code was defined, which says nothing about who the command is FOR --
+# that is a docs decision, so it is recorded here rather than inferred.
+#
+# Key: the distribution name exactly as installed (`importlib.metadata`).
+# Value: the variant, or a list of variants, the distribution's commands belong
+#        to. Values must be names the docs site actually publishes.
+#
+# NOT LISTED = published to every variant, and skipped by the gating check.
+# Adding a plugin here is what brings it under the check; a plugin nobody adds is
+# unconstrained, so `check-cli-variant-gating` names the unlisted distributions it
+# saw rather than passing over them in silence.
+
+[distributions]
+# Proprietary Union extensions (BSL 1.1). `flyte fork`, `flyte debug`, and 31
+# subcommands injected into core verb groups -- none of which an open-source
+# install can run. Leaking these into the `flyte` variant is DOC-1478.
+flyteplugins-union = "union"
+
+# For reference, an entry that would be wrong to add:
+#   flyteplugins-hydra = "union"
+# Hydra ships inside flyte-sdk and is available to open-source users, so gating it
+# to `union` would hide it from the readers who can actually use it -- the same
+# conflation as DOC-1478, pointing the other way.

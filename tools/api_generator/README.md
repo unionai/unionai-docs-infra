@@ -172,3 +172,35 @@ You can specify notes and warnings in your documentation:
 > your warning goes here. this is a
 > markdown block.
 ```
+
+## Version manifest (`manifest.py`)
+
+`manifest.py` resolves the **docs-version manifest** and computes the version the
+next *cut* would produce, for the `v2.x.y.z` docs-versioning scheme (DOC-1245,
+prds `docs_versioning`). It is the resolver + `z` arithmetic — the display layer
+(footer / API-ref) and the tag-cutting workflow are separate.
+
+Two triggers cut a version: a `flyte-sdk` release (`x.y.z.0`, automatic) or a
+maintainer **manual cut** (`x.y.z.(z+1)`). Every other sub-part (backend,
+`flyteplugins-union`, examples, infra, docs content) is a *passenger* — its
+current value is **collected into the manifest at cut time**, never a trigger.
+
+```bash
+# Read-only: resolve both variants + report the next cut version.
+REPO_ROOT=<unionai-docs root> uv run tools/api_generator/manifest.py --check
+
+# Write one variant's manifest.json.
+REPO_ROOT=<unionai-docs root> uv run tools/api_generator/manifest.py \
+    --write --variant union --out manifest.json
+```
+
+Sub-part sources (per prds §8): `flyte-sdk` + `flyteplugins-union` from committed
+frontmatter (`api-packages.toml` registry); the flyte-variant backend from the
+newest `flyteorg/flyte` `v2.0.x` release (the union variant has **no backend
+leg** — the control plane is continuously deployed and deployment-dependent,
+so no single version is true for every reader; DOC-1276); `examples` / `infra` from submodule
+gitlinks; `content` from `HEAD`. The in-repo `flyteplugins-*` are lockstep with
+`flyte`, so they share the SDK version and need no separate entry.
+
+> A `flyteorg/flyte` release lookup uses the GitHub REST API; set `GITHUB_TOKEN`
+> in CI to avoid the unauthenticated rate limit.

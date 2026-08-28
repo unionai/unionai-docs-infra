@@ -1,6 +1,16 @@
-<div>
-<sl-alert open>
-    <sl-icon slot="icon" name="info-circle"></sl-icon>
-    An LLM-optimized bundle of this entire section is available at <a href="section.md"><code>section.md</code></a>. This single file contains all pages in this section, optimized for AI coding agent context.
-</sl-alert>
-</div>
+{{/*
+  llm-bundle-note: RETIRED (DOC-1358). Renders nothing.
+
+  The LLM-optimized files are no longer surfaced as links on the pages they cover;
+  they exist in the build and are reached through llms.txt. Current content no longer
+  calls this shortcode.
+
+  This template MUST NOT be deleted. Under the versioning policy (DOC-1329) content is
+  versioned but chrome is promoted: every served version tree — latest, stable, and all
+  pins — is built with the infra named by the BRANCH TIP's submodule pointer. Already-cut
+  tags still contain `{{< llm-bundle-note >}}` in their snapshotted content (v2.5.16.3 has
+  29 call sites), and Hugo fails the whole build on an unknown shortcode. Deleting this
+  file breaks every historical cut.
+
+  It can go once no served cut still calls it.
+*/}}

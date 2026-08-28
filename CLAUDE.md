@@ -42,7 +42,11 @@ The repo separates **version-specific content/config** (top level) from **shared
 - `api-packages.toml` — API package registry
 - `content/`, `data/`, `linkmap/`, `include/` — Content and generated data
 
-**`unionai-docs-infra/`** — shared build infrastructure (identical across branches):
+**`unionai-docs-infra/`** — shared build infrastructure (identical across branches).
+**Policy (DOC-1329): content is versioned; chrome is promoted.** Cut tags snapshot content only;
+builds wrap every version tree (latest, stable, all pins) in the infra named by the *branch tip's*
+submodule pointer. Infra/theme changes ship via a pointer bump — never a cut; the pin inside a tag
+is provenance only. Details: `unionai-docs-infra/VERSIONING.md`.
 - `Makefile` — Real build logic (top-level Makefile forwards to this)
 - `hugo.toml`, `hugo.site.toml`, `hugo.ver.toml`, `config.{variant}.toml` — Hugo config
 - `static/` — Shared static assets (CSS, JS, images)
@@ -168,7 +172,7 @@ jupyter_notebook: /path/to/notebook.ipynb
 
 ## Development Setup
 
-1. Install Hugo >= 0.145.0: `brew install hugo`
+1. Install Hugo (extended) at the pinned version in `unionai-docs-infra/.hugoversion` (currently 0.161.1): `brew install hugo`
 2. Copy config: `cp hugo.local.toml~sample hugo.local.toml`
 3. Run: `make dev`
 
@@ -183,7 +187,7 @@ highlight_keys = true      # Show key replacements
 ## Build Constraints
 
 - Pre-build checks block absolute URLs to union.ai/docs — use `{{< docs_home {variant} >}}` instead
-- Hugo version must be >= 0.145.0
+- Hugo version must be >= the pin in `unionai-docs-infra/.hugoversion` (currently 0.161.1). **The floor equals the pin** so local dev and CI build with the same Hugo; `pre-flight.sh` fails below it and warns above it (brew tracks latest, so running ahead of CI is the common skew and the one a floor cannot catch).
 - Python 3.8+ required for build tools
 
 ## API Documentation

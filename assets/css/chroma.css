@@ -1,0 +1,100 @@
+/* ---------------------------------------------------------------------------
+   HASH ROTATION, 2026-07-31 — deliberate, and the reason is worth keeping.
+
+   The deploy that first shipped this file produced a CACHED 404. A request
+   landed mid-deploy before chroma.<hash>.css had propagated; the edge cached
+   the 404 and held it. Cloudflare's copy purged cleanly, but the response
+   carried `x-cache: Error from cloudfront` — CloudFront sits IN FRONT of
+   Cloudflare, it had cached the error independently, and we hold no CloudFront
+   credentials. `ops/cf-purge.sh` cannot reach it.
+
+   The escape is the hashing itself: change the content, get a new hash, and the
+   poisoned URL is simply never requested again. This comment is that change.
+
+   Only /docs/latest/union was affected; the same hash under /docs/latest/flyte
+   and both /docs/v2 paths returned 200, because CloudFront caches per URL.
+
+   See DOC-1321 — a long TTL would make this far worse, and the Cache Rule there
+   must set `status_code_ttl` 0 for 4xx.
+   --------------------------------------------------------------------------- */
+
+/* Syntax highlighting — DOC-1324, phase 4.
+
+   Was `hugo gen chromastyles --style=monokai`: 60 hardcoded literals across 12
+   distinct colours, none of them ours. Monokai also painted the code surface
+   itself (#272822 on `.chroma`), which won over the `pre` background — so the
+   code surface users saw was Monokai's, not `--code-surface`. That was the
+   blocker recorded in codeblock.css during phase 3a.
+
+   THE SCHEME IS DELIBERATELY MINIMAL. The Figma spec names only four invariant
+   syntax colours plus a decorator that follows the accent, and its code samples
+   show why: `flyte.init(endpoint=` renders entirely plain, with only the string
+   green and the number orange. Names, operators and punctuation are NOT
+   coloured — they inherit the code text colour. Monokai coloured nearly every
+   token; this colours five things and lets the rest recede.
+
+   Mode-invariant because the code surface stays dark in both themes.
+
+   Note on --syntax-dec: it is written as `var(--accent)` at the point of use
+   rather than aliased into a token. A custom property is substituted at
+   computed-value time on the element that DECLARES it, so `--syntax-dec:
+   var(--accent)` on :root would freeze the union accent and leak orange
+   decorators into the flyte variant — the exact bug caught in phase 2a. Used
+   directly here, it resolves on the .nd element, which inherits the right
+   accent for its variant and mode. */
+
+/* Surface. `.bg` and `.chroma` no longer set a background: the Code Card owns
+   it (base.css `pre`), and having two rules paint the same surface is how the
+   Monokai value survived three phases of retokenisation unnoticed. */
+.bg,
+.chroma {
+  color: var(--code-surface-text);
+  -webkit-text-size-adjust: none;
+}
+
+/* Chrome */
+.chroma .err        { color: var(--red); background: none }
+.chroma .lnlinks    { outline: none; text-decoration: none; color: inherit }
+.chroma .lntd       { vertical-align: top; padding: 0; margin: 0; border: 0 }
+.chroma .lntable    { border-spacing: 0; padding: 0; margin: 0; border: 0 }
+.chroma .hl         { background-color: rgba(255, 255, 255, 0.06) }
+.chroma .lnt,
+.chroma .ln         { white-space: pre; -webkit-user-select: none; user-select: none;
+                      margin-right: 0.4em; padding: 0 0.4em; color: var(--code-chrome-text) }
+.chroma .line       { display: flex }
+
+/* Keywords — import, def, class, return, if … */
+.chroma .k, .chroma .kc, .chroma .kd, .chroma .kn,
+.chroma .kp, .chroma .kr, .chroma .kt,
+.chroma .no        { color: var(--syntax-kw) }
+
+/* Functions and type names */
+.chroma .nf, .chroma .fm,
+.chroma .nc, .chroma .ne, .chroma .nt, .chroma .na { color: var(--syntax-fn) }
+
+/* Decorators — @flyte.task and friends. Follows the accent, per variant. */
+.chroma .nd        { color: var(--accent) }
+
+/* Strings */
+.chroma .s, .chroma .sa, .chroma .sb, .chroma .sc, .chroma .dl,
+.chroma .sd, .chroma .s2, .chroma .sh, .chroma .si, .chroma .sx,
+.chroma .sr, .chroma .s1, .chroma .ss, .chroma .ld { color: var(--syntax-str) }
+
+/* Numbers and literals */
+.chroma .m, .chroma .mb, .chroma .mf, .chroma .mh, .chroma .mi,
+.chroma .il, .chroma .mo, .chroma .l, .chroma .se { color: var(--syntax-num) }
+
+/* Comments */
+.chroma .c, .chroma .ch, .chroma .cm, .chroma .c1,
+.chroma .cs, .chroma .cp, .chroma .cpf,
+.chroma .gu        { color: var(--syntax-comment); font-style: italic }
+
+/* Diff output — the one place a semantic hue belongs in code */
+.chroma .gd        { color: var(--red) }
+.chroma .gi        { color: var(--green) }
+.chroma .ge        { font-style: italic }
+.chroma .gs        { font-weight: bold }
+
+/* Everything not listed above — names (.n, .nx, .nv, .nn, .ni, .nl, .py),
+   operators (.o, .ow), punctuation (.p), whitespace (.w) — inherits
+   --code-surface-text on purpose. That is the design, not an omission. */

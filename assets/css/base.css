@@ -1,0 +1,1148 @@
+/* Fonts are loaded via <link> in baseof.html, not @import. A CSS @import is
+   render-blocking and cannot be preconnected, so it costs a serial round trip
+   before any text paints. */
+
+/* ---------------------------------------------------------------------------
+   PRIMITIVE LAYER (scale-keyed) — DOC-1308, phase 1 of the Union V2 reskin.
+
+   Every colour the theme uses is declared here first, then the component-keyed
+   tokens below are expressed in terms of these. Phase 2 recolours the site by
+   editing this layer alone.
+
+   Values here are TODAY'S values. Phase 1 changes no pixels.
+
+   Note on structure: a custom property is substituted at computed-value time on
+   the element that declares it, so an alias like `--bg-color: var(--bg)` does
+   NOT follow a `--bg` that a descendant selector overrides. Every block that
+   overrides a primitive therefore re-declares the aliases that depend on it.
+   --------------------------------------------------------------------------- */
+:root {
+  /* surfaces — --bg-1 is the page canvas, --bg the raised content surface,
+     --bg-2..4 progressively stronger chrome (naming per the Figma spec) */
+  --bg: #ffffff;
+  --bg-1: #f7f7f5;
+  --bg-2: #f2f2f0;
+  --bg-3: #eaeae7;
+  --bg-4: #dededa;
+  /* text */
+  --text: #1c1a15;
+  --text-1: #2a2822;
+  --text-2: #5c584f;
+  --text-3: #8f8a80;
+  /* lines — ALPHA in both modes (black-alpha light, white-alpha dark). These
+     compose over whatever surface is beneath, unlike the opaque hexes they
+     replace, so nested surfaces read differently than a flat swap implies. */
+  --border: #1410081a;
+  --border-2: #1410082e;
+  --divider: #14100814;
+  --rule: var(--text-3);           /* solid mid-tone: this draws the callout rule */
+  --rule-soft: var(--divider);
+  /* status hues */
+  --green: #15803d;
+  --blue: #1d4ed8;
+  --orange: #c2410c;
+  --red: #b91c1c;
+  /* semantic tints, derived from the status hues */
+  --success-soft: #15803d0f;
+  --success-border: #15803d59;
+  --info-soft: #1d4ed80f;
+  --info-bar: #1d4ed873;
+  --info-border: #1d4ed859;
+  --warning-soft: #c2410c0f;
+  --warning-bar: #c2410c73;
+  --warning-border: #c2410c59;
+  --danger-soft: #b91c1c0f;
+  --danger-bar: #b91c1c73;
+  --danger-border: #b91c1c59;
+  /* code surface — dark in BOTH modes; the light value is a dark surface,
+     because the syntax colours are tuned for dark */
+  --code-surface: #16181d;
+  --code-surface-text: #d6d9de;
+  /* table rows — not in the Figma spec; derived from the surface ramp */
+  --row-alt: var(--bg-1);
+  --row-hover: var(--bg-2);
+  /* accent — union by default, overridden per variant AND per mode. The accent
+     DARKENS in light mode for contrast (#f5a623 dark -> #b45309 light); it was
+     previously mode-constant, so this is new behaviour, not a recolour. */
+  --accent: #b45309;
+  --accent-search: var(--accent);
+  /* Derived, not specified by Figma: our theme needs a link colour and two
+     accent tints that the spec has no equivalent for. color-mix keeps them
+     correct per mode and per variant without a value table. */
+  --accent-dark: var(--accent);
+  --accent-light: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  --accent-very-light: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  /* elevation — mode-invariant (every consuming rule is un-themed) */
+  --shadow-hairline: 0 1px 0 0 rgba(31, 35, 40, 0.04);
+  --shadow-card: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
+  /* brand marks — each product's own colour, independent of the ACTIVE variant
+     (the product toggle shows both at once, so these must not follow --accent).
+     The saturated dark-mode accents serve as the brand colours. */
+  --brand-union: #FCB51D;
+  --brand-flyte: #c084fc;
+  /* THE ACTIVE product's brand colour. --brand-union/-flyte above are each
+     product's own mark, used where both appear at once (the product toggle
+     shows both dots regardless of which variant you are reading). --brand is
+     the one belonging to the variant you are IN, and it is what filled brand
+     surfaces take: the promo banner and the signup CTA.
+
+     Those two were pinned to --brand-union, so the Flyte variant rendered
+     Union gold. Reported by Peeter. Declared per variant below rather than
+     aliased once, because an alias on :root is substituted against the union
+     value and would not follow the .variant-flyte override. */
+  --brand: var(--brand-union);
+  /* Foreground for BRAND surfaces (banner, signup CTA). The brand gold is a
+     filled surface, not text, so it takes near-black — white on gold is
+     1.78:1 and fails WCAG, which is what production has been shipping. With
+     #131108 it is 10.59:1. Mirrors how Figma pairs accent surfaces with
+     accent/on-accent in dark mode. */
+  --on-brand: #131108;
+  /* decorative accent — landing-page cards. NOT covered by the Figma spec;
+     left on the previous palette deliberately and tracked for the long-tail
+     phase, rather than invented here. */
+  --decor: #d97706;
+  --decor-soft: #fea034;
+  /* success text — pairs with --success-soft above */
+  --success-text: var(--green);
+  /* foreground on a solid accent; dark mode uses near-black for contrast */
+  --on-accent: #ffffff;
+  --on-scrim: #fff;
+  /* chrome surfaces — derived from the surface ramp */
+  --toggle-active-bg: var(--bg-3);
+  --menu-bg: var(--bg);
+  /* code chrome — invariant: code blocks are dark in both themes, so these
+     take values from the DARK end of the ramp regardless of active mode */
+  --code-chrome-bg: #1a1a1f;
+  --code-chrome-text: #9e9ea7;
+  --code-link: #d7d7dc;
+
+  /* syntax colours (DOC-1324, phase 4) — INVARIANT across all four quadrants,
+     because the code surface stays dark in both modes. Declared once here;
+     `chroma.css` consumes them.
+
+     Deliberately only five things carry colour. Figma's own code samples render
+     `flyte.init(endpoint=` entirely plain, with just the string and the number
+     tinted — names, operators and punctuation inherit --code-surface-text. The
+     previous Monokai theme coloured nearly every token; this lets the code
+     recede and the meaningful parts stand out.
+
+     There is no --syntax-dec token on purpose. The decorator follows the accent,
+     and an alias declared here would be substituted at computed-value time
+     against the UNION accent, leaking orange decorators into the flyte variant
+     (the bug caught in phase 2a). chroma.css writes var(--accent) at the point
+     of use instead, where it resolves per variant. */
+  --syntax-kw: #c084fc;
+  --syntax-fn: #60a5fa;
+  --syntax-str: #4ade80;
+  --syntax-num: #fb923c;
+  --syntax-comment: var(--code-chrome-text);
+
+  /* -------------------------------------------------------------------------
+     TYPE SCALE (Union V2) — DOC-1317, phase 2b.
+
+     Sizes come from the Figma `docs/*` text styles. They are theme-independent,
+     so unlike the colour ramp they are declared once and never overridden per
+     variant or per mode.
+
+     Two deliberate conversions from the Figma values:
+
+     - Line heights are UNITLESS ratios, not the px the comps specify. A px
+       line-height does not grow when a reader raises their default font size,
+       so the text gets taller inside a box that doesn't — lines overlap. The
+       ratio is the same rhythm at 16px and survives at 24px.
+     - Letter spacing is in `em`. Figma expresses tracking as a percentage of
+       the font size (H1's "-2" renders as -0.68px at 34px), and `em` is that
+       same proportion in CSS. Copying "-2px" would have been ~3x too tight.
+     ------------------------------------------------------------------------- */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* sizes — Figma px expressed against the 16px root. The root itself is left
+     alone: reducing it would silently shrink anything a reader's browser or
+     extension sizes in rem. */
+  --type-h1: 2.125rem;         /* 34   */
+  --type-h2: 1.3125rem;        /* 21   */
+  --type-h3: 1.03125rem;       /* 16.5 */
+  --type-h4: 0.90625rem;       /* 14.5 */
+  --type-h5: 0.8125rem;        /* 13   */
+  --type-h6: 0.6875rem;        /* 11   */
+  --type-lead: 1.03125rem;     /* 16.5 */
+  --type-body: 0.90625rem;     /* 14.5 */
+  --type-small: 0.84375rem;    /* 13.5 */
+  --type-crumb: 0.78125rem;    /* 12.5 */
+  --type-code: 0.78125rem;     /* 12.5 */
+  --type-code-tab: 0.6875rem;  /* 11   */
+
+  /* line heights — ratio = Figma line-height / Figma size */
+  --lh-h1: 1.21;               /* 41 / 34   */
+  --lh-h2: 1.29;               /* 27 / 21   */
+  --lh-h3: 1.33;               /* 22 / 16.5 */
+  --lh-h4: 1.38;               /* 20 / 14.5 */
+  --lh-tight: 1.3;             /* H5/H6, which Figma leaves at `normal` */
+  --lh-lead: 1.76;             /* 29 / 16.5 */
+  --lh-body: 1.79;             /* 26 / 14.5 */
+  --lh-small: 1.7;             /* 23 / 13.5 */
+  --lh-crumb: 1.28;            /* 16 / 12.5 */
+  --lh-code: 1.76;             /* 22 / 12.5 */
+  --lh-code-tab: 1.27;         /* 14 / 11   */
+
+  /* tracking — Figma percentages as em */
+  --track-h1: -0.02em;
+  --track-h2: -0.01em;
+  --track-caps: 0.06em;        /* the uppercase eyebrows: H6, "On this page" */
+
+  --weight-heading: 600;
+  --weight-h1: 700;
+
+  /* -------------------------------------------------------------------------
+     RADIUS (Union V2) — DOC-1324, phase 3.
+
+     Named for the component that established each value, which is how Figma
+     names them, rather than by size. A component picks the token whose name
+     matches its role, so the family stays coherent when a value changes.
+     ------------------------------------------------------------------------- */
+  --radius-code-card: 14px;   /* code cards, tab groups — the big blocks */
+  --radius-dropdown: 12px;    /* link cards, disclosures */
+  --radius-search: 9px;
+  --radius-nav-item: 7px;
+
+  /* vertical rhythm — the gaps between the Article frame's children. Headings
+     carry all the space; the elements they introduce carry none on top. */
+  --space-h1-below: 1.125rem;  /* 18 */
+  --space-h2-above: 3.5rem;    /* 56 */
+  --space-h2-below: 0.875rem;  /* 14 */
+  --space-h3-above: 2rem;      /* 32 */
+  --space-h3-below: 0.75rem;   /* 12 */
+  --space-h4-above: 1.5rem;    /* 24 */
+  --space-h4-below: 0.625rem;  /* 10 */
+
+  /* Light theme variables (default) */
+  --primary-color: var(--union-color);
+  --text-color: var(--text);
+  --text-color-light: var(--text-3);
+  --bg-color: var(--bg);
+  /* SURFACE OFFSET — a surface that must read as distinct from the page.
+     Cards, the sidebar: anything that needs to be seen as its own plane.
+
+     This exists because THE RAMP RUNS THE OPPOSITE WAY IN THE TWO MODES.
+     --bg-1 is defined as a step DARKER than --bg, which is a visible offset
+     under a white page but hits a floor under a near-black one: in dark,
+     --bg-1 (#09090b) against --bg (#0e0e11) is 1.03:1, i.e. nothing. Reported
+     on the live site as "completely black, not nearly enough contrast on cards
+     and left nav".
+
+     So light steps DOWN the ramp and dark steps UP, and both land in the same
+     place perceptually:
+
+       light  --bg-1  1.07:1 against the page
+       dark   --bg-3  1.11:1 against the page
+
+     Do not replace this with a bare --bg-1: it is only correct in one mode. */
+  --surface-offset: var(--bg-1);
+  --sidebar-bg: var(--surface-offset);
+  --border-color: var(--border);
+  --separator: var(--border-2);
+  --code-bg: var(--bg-2);
+  --pre-bg: var(--code-surface);
+  --pre-color: var(--code-surface-text);
+  --blockquote-border: var(--rule);
+  --blockquote-border-trans: var(--rule-soft);
+  --table-row-even: var(--row-alt);
+  --table-row-hover: var(--row-hover);
+  --menu-indent: 0.5rem;
+  --menu-submenu-indent: 1rem;
+  --menu-v-space: 0.2rem;
+  --sidepanels-padding: 2rem 1.5rem;
+  --sidebar-width: 264px;
+  --sidebar-font-size: var(--type-small);
+  /* Left at 256. Figma's TOC is a 168px frame with no padding of its own, but
+     ours is a grid column that also has to hold 56px of left padding/indent and
+     40px on the right — so 256 already yields ~160px of text, which is the
+     number to compare against Figma's 168. Cutting the column to 168 would
+     leave 72px of text. Flattening that padding is component work (phase 3). */
+  --toc-width: 256px;
+  --toc-font-size: var(--type-crumb);
+  --toc-header-height: 96px;
+  --header-height: 64px;
+  /* IA restructure (DOC-1334): the top tabs row is retired -- all hierarchy
+     lives in the left sidebar tree. The variable stays (the layout calc and
+     404.css read it) at 0 so the content area reclaims the row. */
+  --tabs-height: 0px;
+  --content-width: 720px;
+  /* Kept at the measure. An image wider than the text it sits in breaks the
+     left margin the eye is tracking down. */
+  --image-width: 720px;
+  --union-color: var(--accent);
+  --union-color-light: var(--accent-light);
+  --union-color-dark: var(--accent-dark);
+  --union-color-very-light: var(--accent-very-light);
+  --main-content-padding: 2rem;
+  --toc-bg: var(--bg-color);
+  --docsearch-primary-color: var(--accent-search) !important;
+  --docsearch-highlight-color: var(--docsearch-primary-color) !important;
+  --docsearch-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
+  --breadcrumbs-height: 128px;
+  --old-version-border: 3px solid var(--union-color);
+  --old-version-background: var(--bg-3);
+  --banner-height: 48px;
+  --secondary-topnav-height: 0px; /* band retired (DOC-1334); calc consumers keep the var */
+}
+
+:root .variant-flyte {
+  /* the active brand follows the variant — see --brand on :root */
+  --brand: var(--brand-flyte);
+  /* Variant changes the ACCENT ONLY — neutrals are variant-invariant per the
+     Union V2 spec. Light mode darkens the accent, as it does for Union. */
+  --accent: #7c3aed;
+  --decor: #7652a2;
+  --decor-soft: #c7b1dc;
+  /* Re-declared, not inherited: these are computed on the element that declares
+     them, so a copy on :root would resolve against the UNION accent and leak
+     orange links into the Flyte variant. */
+  --accent-search: var(--accent);
+  --accent-dark: var(--accent);
+  --accent-light: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  --accent-very-light: color-mix(in srgb, var(--accent) 12%, var(--bg));
+
+  --primary-color: var(--union-color);
+  --union-color: var(--accent);
+  --union-color-light: var(--accent-light);
+  --union-color-dark: var(--accent-dark);
+  --union-color-very-light: var(--accent-very-light);
+  --docsearch-primary-color: var(--accent-search) !important;
+  --docsearch-highlight-color: var(--accent-search) !important;
+  --docsearch-searchbox-shadow: 0 0 0 2px var(--docsearch-primary-color) !important;
+  --old-version-border: 3px solid var(--union-color);
+}
+
+/* Dark theme variables */
+[data-theme="dark"] {
+  --bg: #0e0e11;
+  --bg-1: #09090b;
+  --bg-2: #131316;
+  --bg-3: #1a1a1f;
+  --bg-4: #232329;
+  --text: #f7f7f8;
+  --text-1: #d7d7dc;
+  --text-2: #9e9ea7;
+  --text-3: #6f6f79;
+  --border: #ffffff14;
+  --border-2: #ffffff21;
+  --divider: #ffffff0a;
+  --green: #4ade80;
+  --blue: #60a5fa;
+  --orange: #fb923c;
+  --red: #f87171;
+  --success-soft: #4ade8012;
+  --success-border: #4ade8059;
+  --info-soft: #60a5fa14;
+  --info-bar: #60a5fa8c;
+  --info-border: #60a5fa66;
+  --warning-soft: #fb923c12;
+  --warning-bar: #fb923c8c;
+  --warning-border: #fb923c59;
+  --danger-soft: #f8717112;
+  --danger-bar: #f871718c;
+  --danger-border: #f8717159;
+  --code-surface: #131316;
+  --code-surface-text: #d7d7dc;
+  --accent: #f5a623;
+  --on-accent: #131108;
+
+  --primary-color: var(--union-color);
+  --text-color: var(--text);
+  --text-color-light: var(--text-3);
+  --bg-color: var(--bg);
+  --sidebar-bg: var(--surface-offset);
+  /* dark steps UP the ramp — see the note on --surface-offset above */
+  --surface-offset: var(--bg-3);
+  --border-color: var(--border);
+  --code-bg: var(--bg-2);
+  --pre-bg: var(--code-surface);
+  --pre-color: var(--code-surface-text);
+  --blockquote-border: var(--rule);
+  --table-row-even: var(--row-alt);
+  --table-row-hover: var(--row-hover);
+  --union-color-light: var(--accent-light);
+  --union-color-very-light: var(--accent-very-light);
+  --docsearch-primary-color: var(--accent-search) !important;
+  --docsearch-searchbox-shadow: 0 0 0 1px var(--docsearch-primary-color) !important;
+}
+
+[data-theme="dark"] .variant-flyte {
+  /* the active brand follows the variant — see --brand on :root */
+  --brand: var(--brand-flyte);
+  /* Accent only. The purple background cast (--bg #050310, --bg-1 #100e18 and
+     the row tints) is deliberately gone: neutrals are variant-invariant, so
+     Flyte dark now shares Union dark's surfaces. Decision locked 2026-07-30. */
+  --accent: #c084fc;
+  /* Re-declared, not inherited: these are computed on the element that declares
+     them, so a copy on :root would resolve against the UNION accent and leak
+     orange links into the Flyte variant. */
+  --accent-search: var(--accent);
+  --accent-dark: var(--accent);
+  --accent-light: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  --accent-very-light: color-mix(in srgb, var(--accent) 12%, var(--bg));
+
+  --primary-color: var(--union-color);
+  --union-color: var(--accent);
+  --union-color-light: var(--accent-light);
+  --union-color-dark: var(--accent-dark);
+  --union-color-very-light: var(--accent-very-light);
+  --docsearch-primary-color: var(--accent-search) !important;
+  --docsearch-highlight-color: var(--accent-search) !important;
+  --table-row-even: var(--row-alt);
+  --table-row-hover: var(--row-hover);
+  --bg-color: var(--bg);
+  --sidebar-bg: var(--surface-offset);
+  /* dark steps UP the ramp — see the note on --surface-offset above */
+  --surface-offset: var(--bg-3);
+  --toc-bg: var(--bg);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  color: var(--text-color);
+  line-height: var(--lh-body);
+  background: var(--bg-color);
+  overflow: hidden;
+}
+.tabs {
+  border-bottom: 1px solid var(--border-color);
+  z-index: 100;
+}
+.container {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--toc-width);
+  height: calc(100dvh - var(--header-height) - var(--tabs-height) - var(--secondary-topnav-height) - var(--banner-height));
+  overflow: hidden;
+}
+.main-content {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  /* Fill the whole grid column and center the content with symmetric padding
+     rather than max-width + `margin: 0 auto`. That keeps the scroll container
+     the full width of the column, so the negative space either side of the
+     content scrolls too (auto margins would sit outside the scroll area). The
+     `max()` floor keeps the base padding on narrow columns; when wide it grows
+     to `(column - content-width) / 2`, matching the old centered layout. */
+  padding: 2rem max(var(--main-content-padding), calc((100% - var(--content-width)) / 2));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+[data-theme="dark"] .main-content {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.logo {
+  height: 32px;
+}
+
+h1 {
+  font-size: var(--type-h1);
+  font-weight: var(--weight-h1);
+  line-height: var(--lh-h1);
+  letter-spacing: var(--track-h1);
+  margin-bottom: var(--space-h1-below);
+  color: var(--text-color);
+}
+h2 {
+  font-size: var(--type-h2);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-h2);
+  letter-spacing: var(--track-h2);
+  margin: var(--space-h2-above) 0 var(--space-h2-below);
+  color: var(--text-color);
+}
+h3 {
+  font-size: var(--type-h3);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-h3);
+  margin: var(--space-h3-above) 0 var(--space-h3-below);
+  color: var(--text-color);
+}
+h4 {
+  font-size: var(--type-h4);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-h4);
+  margin: var(--space-h4-above) 0 var(--space-h4-below);
+  color: var(--text-color);
+}
+/* H5 and H6 carry no named style in Figma, but the gallery renders both: H5 at
+   13/600 in --text-1, H6 at 11/600 uppercase with +6% tracking in --text-2.
+   They step DOWN in colour as well as size, so a level-6 heading reads as a
+   label rather than competing with the body text under it. */
+h5 {
+  font-size: var(--type-h5);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-tight);
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text-1);
+}
+h6 {
+  font-size: var(--type-h6);
+  font-weight: var(--weight-heading);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--text-2);
+}
+/* The first heading on a page has nothing to be spaced away from. */
+.main-content > :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+p {
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+/* The standfirst: a leading paragraph set one step up from body. Opt-in via
+   frontmatter/markup rather than "the first p", which would catch every page
+   whose first paragraph is just a sentence of throat-clearing. */
+.main-content .lead {
+  font-size: var(--type-lead);
+  line-height: var(--lh-lead);
+  color: var(--text-1);
+}
+a {
+  color: var(--union-color-dark);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+[data-theme="dark"] a {
+  color: var(--primary-color);
+}
+a:hover {
+  color: var(--union-color-dark);
+}
+[data-theme="dark"] a:hover {
+  color: var(--union-color);
+}
+.main-content a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .main-content a {
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+}
+.main-content h1 a,
+.main-content h2 a,
+.main-content h3 a,
+.main-content h4 a,
+.main-content h5 a,
+.main-content h6 a {
+  text-decoration: none;
+}
+.main-content a:hover {
+  text-decoration-color: currentColor;
+}
+code {
+  background: var(--code-bg);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  /* em, not rem: 12.5/14.5 of whatever it sits in, so an identifier inside a
+     heading scales with the heading instead of collapsing to body size. */
+  font-size: 0.86em;
+  font-family: var(--font-mono);
+}
+pre {
+  background: var(--pre-bg);
+  color: var(--pre-color);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  /* Stated outright rather than left to the UA sheet, which applies the legacy
+     monospace font-size quirk and lands somewhere near 13px on its own. */
+  font-family: var(--font-mono);
+  font-size: var(--type-code);
+  line-height: var(--lh-code);
+}
+pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  /* pre already sized this; without the reset the 0.86em on `code` compounds. */
+  font-size: 1em;
+}
+.main-content ul,
+.main-content ol {
+  margin: 1rem 0;
+}
+/* Tables — DOC-1324, phase 3c.
+
+   Figma's table is a set of horizontal rules, not a grid: no outer border, no
+   cell borders, no header fill. THead carries a 0.5px --border underneath and
+   each TRow a 0.5px --divider. The header is the same uppercase eyebrow used by
+   H6 and "On this page" (11/600, +5% tracking, --text-3), which is what ties
+   those three together as one idea rather than three small-caps accidents.
+
+   DEPARTURE 1 — column widths. Figma sizes its columns 150/110/110/350, i.e.
+   proportional to content. Ours were `table-layout: fixed` + `width: 100%`,
+   which forces every column to the SAME width. Surveying the corpus: of 1613
+   tables, 417 are 2-column and 1071 are 3-column, and the dominant shape is
+   `Property | Type | Description` — where equal thirds is the worst possible
+   split, since Description needs the room and Type needs almost none. At the
+   720px measure that got worse. So: `auto`, with overflow-wrap kept so a long
+   identifier still wraps instead of blowing the table out.
+
+   DEPARTURE 2 — the mono first column. Figma sets its first column in Roboto
+   Mono, because in that example the first column holds shortcode names. That is
+   a property of the sample, not of tables: our first columns are just as often
+   prose or a badge (the support severity table). Applying mono by position
+   would have been the third time in this phase that sample content got mistaken
+   for a specification. Inline code in a cell is already mono, which handles the
+   identifier case without guessing. */
+.main-content table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: var(--type-small);
+}
+.main-content th,
+.main-content td {
+  padding: 10px 14px 10px 0;
+  border: none;
+  border-bottom: 0.5px solid var(--divider);
+  text-align: left;
+  vertical-align: top;
+  /* break-word, NOT anywhere. `anywhere` sets the min-content width to a single
+     character, so with table-layout:auto the browser thinks a column can be
+     arbitrarily narrow and collapses it — `AsyncFunctionTaskTemplate` came out
+     as "AsyncFunctionTaskTemplat / e" with room to spare. `break-word` leaves
+     intrinsic sizing alone, so auto layout sizes the column to the longest word
+     and only breaks one that cannot fit a line by itself. */
+  overflow-wrap: break-word;
+  color: var(--text-2);
+}
+.main-content td code {
+  /* Was `word-break: break-all`, which breaks at whatever character the line
+     happens to end on — so `Trigger` came out as `Trig` / `ger` even with a
+     whole empty line under it. `anywhere` only breaks a word that cannot fit
+     on a line of its own, which is the case this was reaching for: a long
+     dotted identifier in a narrow cell.
+
+     Phase 3c: same reasoning as the cell rule above — under table-layout:auto,
+     `anywhere` here would also collapse the column it sits in. */
+  overflow-wrap: break-word;
+}
+.main-content th {
+  padding: 8px 14px 8px 0;
+  background: none;
+  border-bottom: 0.5px solid var(--border);
+  font-size: var(--type-h6);          /* 11 */
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+/* The caps treatment (here and on h6) must not rewrite inline code — a header
+   cell like "Local (`--local`)" holds a literal CLI flag, and case is
+   meaningful in code. Caps tracking comes off with it: it's part of the same
+   treatment, and monospace at these sizes doesn't want it. */
+h6 code,
+.main-content th code {
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* Zebra striping and row hover are dropped. Figma has neither, and with the
+   grid borders gone they fight the horizontal rules for the same job — the
+   rules already say where a row begins and ends. */
+
+/* Blockquote — a 2px bar and an 18px gap, per Figma's geometry (a 2px rect at
+   x=0 with the text starting at x=20). Distinct from a callout, which is a
+   tinted panel; a blockquote is quoted material.
+
+   40 of the 49 non-callout blockquotes in the corpus contain inline code, so
+   the bar must not restyle what sits inside it. */
+.main-content blockquote {
+  margin: 1.5rem 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--rule-soft);
+  color: var(--text-2);
+}
+.main-content blockquote > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists. Figma indents 22px per level with a 6px dot, and shows two levels.
+   The corpus goes to FIVE (49 bullets at depth 5), so the indent has to hold up
+   under nesting rather than just look right at depth 2 — 22px compounds
+   gently, where the previous `margin: 0 2rem` (32px, applied to every li
+   regardless of depth) both over-indented level 1 and doubled up on nesting. */
+.main-content ul,
+.main-content ol {
+  margin: 1rem 0;
+  padding-left: 22px;
+}
+.main-content li {
+  margin: 0;
+}
+.main-content li + li {
+  margin-top: 0.375rem;
+}
+.main-content li > ul,
+.main-content li > ol {
+  margin: 0.375rem 0 0;
+}
+.main-content ul li::marker {
+  color: var(--text-3);
+}
+.main-content ol li::marker {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+  margin: 2rem 0;
+}
+
+.variant {
+  margin: 1rem 0;
+}
+
+.not-in-prod {
+  display: flex;
+  padding: 0.5rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.variant.not-allowed,
+.not-in-prod.not-allowed {
+  border: 1px solid hsl(0, 100%, 50%);
+}
+
+.not-in-prod.excluded {
+  border: 1px solid yellow;
+  background: rgb(251, 251, 184);
+  color: rgb(109, 109, 0);
+}
+
+.variant.allowed,
+.not-in-prod.allowed {
+  border: 1px solid green;
+}
+.variant.allowed .content {
+  padding: 1rem;
+}
+
+.not-allowed.page-warn {
+  display: flex;
+  align-items: center;
+}
+.not-allowed.variant {
+  margin: 1rem 0;
+  padding: 0;
+}
+.not-allowed.variant .page-name {
+  padding: 1rem;
+  background-color: var(--bg-color);
+}
+.allowed.variant .title,
+.not-allowed.variant .title {
+  padding: 0.5rem;
+}
+.not-allowed.variant .title,
+.not-allowed.page-warn {
+  background: hsl(0, 84%, 85%);
+  color: red;
+}
+.allowed.variant .title {
+  background-color: hsl(120, 61%, 66%);
+  color: green;
+}
+.allowed.variant .content,
+.not-allowed.variant .content {
+  background-color: var(--bg-color);
+  padding: 1rem;
+}
+
+.not-allowed.how-to-fix {
+  display: inline-block;
+  background: hsl(0, 84%, 85%);
+  padding: 0 0.5rem;
+  margin: 0 0.5rem;
+}
+
+.err-no-title {
+  background-color: yellow;
+  padding: 0.25rem 0.5rem;
+}
+.err-no-title::before {
+  content: "⚠️ [NO TITLE]";
+  margin-right: 0.5rem;
+}
+
+BLOCKQUOTE {
+  border-left: 3px solid var(--blockquote-border);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+BLOCKQUOTE P {
+  margin-bottom: 0;
+}
+
+BLOCKQUOTE P + P {
+  margin-top: 1rem;
+}
+
+IMG {
+  max-width: min(var(--image-width), 100%);
+  height: auto;
+}
+
+/* Notices (DOC-1315) -------------------------------------------------------
+   `sl-alert` is a shadow-DOM component, so until now it took its entire
+   appearance from Shoelace's CDN theme and none of ours: a white panel with a
+   3px #0284c7 top stripe and a 4px radius. In light mode that panel is
+   #ffffff on an #ffffff page — the callout had no box, just a hairline.
+
+   Meanwhile Phase 2a shipped the whole semantic tint scale (--info-soft,
+   --info-bar, --warning-*, --danger-*) and NOTHING consumed it. Ten of the
+   eleven tokens were dead. This wires them to the component they were
+   extracted for, which is what makes the callout a box again.
+
+   The Union V2 Notice is a tinted panel with a 2px status-coloured bar down
+   the left and the right corners rounded — not a top stripe. Styled through
+   ::part() because that is the only handle Shoelace exposes; the custom
+   properties below pierce the shadow boundary and do the variant switching. */
+sl-alert {
+  margin: 1rem 0;
+
+  /* default = variant="primary", i.e. > [!NOTE] */
+  --notice-tint: var(--info-soft);
+  --notice-bar: var(--info-bar);
+  --notice-hue: var(--blue);
+  --notice-title-size: 0.75rem;   /* 12 — component-local, not part of the docs/* scale */
+}
+sl-alert[variant="warning"] {
+  --notice-tint: var(--warning-soft);
+  --notice-bar: var(--warning-bar);
+  --notice-hue: var(--orange);
+}
+sl-alert[variant="danger"] {
+  --notice-tint: var(--danger-soft);
+  --notice-bar: var(--danger-bar);
+  --notice-hue: var(--red);
+}
+sl-alert[variant="success"] {
+  --notice-tint: var(--success-soft);
+  /* The token set has no --success-bar; the spec stops at success-soft and
+     success-border. Reusing the border is the closest in-system value. */
+  --notice-bar: var(--success-border);
+  --notice-hue: var(--green);
+}
+
+sl-alert::part(base) {
+  background-color: var(--notice-tint);
+  border: none;
+  border-left: 2px solid var(--notice-bar);
+  border-radius: 0 10px 10px 0;
+  box-shadow: none;
+  padding: 13px 18px 13px 16px;
+  font-size: var(--type-small);
+  line-height: var(--lh-small);
+  /* Applies to bare text nodes only — the templates wrap body content in <p>,
+     and `p { color: var(--text-color) }` wins there. That divergence is
+     deliberate: Figma sets notice body in --text-2, but a warning that reads
+     quieter than the prose around it is the wrong trade for us. Left here so a
+     notice built without a <p> still lands in-system. */
+  color: var(--text-2);
+}
+
+/* Figma's Notice carries no icon — the coloured bar is the entire signal.
+   Hidden rather than removed from the four templates that emit it, so this is
+   one line to revert if we decide the icon earns its space. */
+sl-alert::part(icon) {
+  display: none;
+}
+
+/* base owns the padding now; otherwise Shoelace's own message padding stacks. */
+sl-alert::part(message) {
+  padding: 0;
+}
+
+sl-alert P {
+  margin: 0;
+}
+
+sl-alert P + P {
+  margin-top: 0.75rem;
+}
+
+/* The title, when `> [!NOTE] Some title` supplies one. Figma sets it in the
+   status hue at 12/600 — the one place the hue appears as text rather than as
+   the bar, which is what tells you which kind of notice this is now that the
+   icon is gone. */
+sl-alert > strong:first-of-type {
+  display: block;
+  margin-bottom: 5px;
+  font-size: var(--notice-title-size);
+  font-weight: var(--weight-heading);
+  letter-spacing: 0.02em;
+  color: var(--notice-hue);
+}
+
+/* The templates emit `<strong>Title</strong><br />`, and the <br> before a
+   block-level title would add an empty line. */
+sl-alert > strong:first-of-type + br {
+  display: none;
+}
+
+span.download {
+  display: inline-flex;
+}
+
+div.download {
+  margin: 0.5rem 0;
+}
+
+footer {
+  min-height: calc(1rem + var(--main-content-padding) / 2);
+}
+
+/* Rule. Figma draws a 720x1 bar with 20px of space either side — symmetric,
+   where ours was 2rem above and 1rem below. A rule separates two things
+   equally; the asymmetry made it read as belonging to the section above. */
+hr {
+  margin: 20px 0;
+  border: 0;
+  border-top: 1px solid var(--divider);
+}
+
+.codeblock {
+  margin-bottom: 1rem;
+}
+/* Disclosure ({{< dropdown >}}) — DOC-1324, phase 3a.
+
+   `sl-details` had no rules of ours, so it rendered in Shoelace's CDN theme.
+   Kept as Shoelace rather than swapped for native <details>: the native element
+   is also accessible, but switching would change the open/close animation and
+   the summary marker behaviour, which is a behavioural change rather than a
+   restyle. Worth revisiting on its own if we want the shadow boundary gone.
+
+   Figma's Disclosure:
+     border 0.5px --border · radius --radius-dropdown
+     Summary  padding 13/16, gap 10, chevron 9px
+              label Inter 600 13.5 --text-1 */
+.main-content sl-details::part(base) {
+  background: var(--bg);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-dropdown);
+}
+
+.main-content sl-details::part(header) {
+  padding: 13px 16px;
+  gap: 10px;
+  font-size: var(--type-small);        /* 13.5 */
+  font-weight: var(--weight-heading);
+  color: var(--text-1);
+}
+
+.main-content sl-details::part(header):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.main-content sl-details::part(summary-icon) {
+  font-size: 9px;
+  color: var(--text-2);
+}
+
+.main-content sl-details::part(content) {
+  padding: 0 16px 13px;
+  font-size: var(--type-small);
+  color: var(--text-1);
+}
+
+/* Code card ({{< code >}} and fenced blocks) — DOC-1324, phase 3a.
+
+   Figma's Code Card: bg --code-surface, border 0.5px --border,
+   radius --radius-code-card, body padding 12 top / 18 sides / 18 bottom.
+   Ours had the surface and the type (phase 2b) but an 8px radius and no
+   border, so it read as a flat slab rather than a card. */
+.main-content pre {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-code-card);
+  padding: 12px 18px 18px;
+}
+
+/* ---------------------------------------------------------------------------
+   INLINE COMPONENTS — DOC-1324, phase 3b.
+
+   Badge, button and download link. Like the boxed components in 3a, all three
+   were rendering in Shoelace's CDN theme with no rule of ours reaching them.
+   --------------------------------------------------------------------------- */
+
+/* Badge. Figma reuses the semantic tint trio the notices use — soft fill,
+   matching border, status hue for the label — so a badge and a notice of the
+   same kind read as the same family. Small caps-ish label: 10.5/600 with +3%
+   tracking. */
+.main-content sl-badge {
+  --badge-tint: var(--info-soft);
+  --badge-border: var(--info-border);
+  --badge-hue: var(--blue);
+}
+.main-content sl-badge[variant="success"] {
+  --badge-tint: var(--success-soft);
+  --badge-border: var(--success-border);
+  --badge-hue: var(--green);
+}
+.main-content sl-badge[variant="warning"] {
+  --badge-tint: var(--warning-soft);
+  --badge-border: var(--warning-border);
+  --badge-hue: var(--orange);
+}
+.main-content sl-badge[variant="danger"] {
+  --badge-tint: var(--danger-soft);
+  --badge-border: var(--danger-border);
+  --badge-hue: var(--red);
+}
+.main-content sl-badge[variant="neutral"] {
+  --badge-tint: var(--bg-2);
+  --badge-border: var(--border-2);
+  --badge-hue: var(--text-2);
+}
+
+.main-content sl-badge::part(base) {
+  background: var(--badge-tint);
+  border: 0.5px solid var(--badge-border);
+  border-radius: 6px;
+  padding: 0 8px;
+  font-family: var(--font-sans);
+  font-size: 0.65625rem;        /* 10.5 */
+  font-weight: var(--weight-heading);
+  letter-spacing: 0.03em;       /* Figma +0.315px at 10.5 = 3% */
+  line-height: 1.6;
+  color: var(--badge-hue);
+  box-shadow: none;
+}
+
+/* Button. A filled accent surface — the one place a solid accent block appears
+   in body content — so the label takes --on-accent, which already flips to
+   near-black in dark mode where the accent is bright. */
+.main-content sl-button::part(base) {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-search);      /* 9 */
+  padding: 0 16px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;                     /* 13 */
+  font-weight: var(--weight-heading);
+  color: var(--on-accent);
+  transition: filter 0.15s ease;
+}
+.main-content sl-button:hover::part(base) {
+  filter: brightness(1.08);
+}
+.main-content sl-button::part(base):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Download link. Figma renders it as a bordered card with everything on ONE
+   row — icon, filename in mono, description muted beside it. Ours stacked the
+   description under the link.
+
+   The CARD is the container, not the anchor. Putting the border on `div.download`
+   and laying it out as a flex row gets Figma's arrangement without moving the
+   description inside the <a>, which would have folded a sentence of prose into
+   the link text for every screen-reader user.
+
+   The inline (span) form is untouched — only the paragraph form is a card. */
+div.download {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 0.75rem 0;
+  padding: 13px 16px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-dropdown);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+div.download:hover {
+  border-color: var(--rule);
+  background: var(--bg-1);
+}
+
+/* The filename is a path, so it is set in mono like every other identifier. */
+div.download > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--type-crumb);   /* 12.5 */
+  color: var(--text-1);
+  flex-shrink: 0;
+}
+.main-content div.download > a {
+  text-decoration: none;
+}
+.main-content div.download > a:hover {
+  text-decoration: underline;
+}
+div.download > a sl-icon {
+  font-size: 17px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+div.download .description {
+  font-family: var(--font-sans);
+  font-size: var(--type-crumb);
+  color: var(--text-3);
+}
+
+/* The INLINE form is what content actually uses — every `{{< download >}}` in
+   the corpus is inline in a sentence ("Copy the public key here: …"), and
+   `display="paragraph"` appears nowhere. Figma only draws the card, so the
+   inline treatment is ours: the filename in mono like any other path, with the
+   icon in the muted tone so it reads as an affordance rather than punctuation. */
+span.download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+span.download > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+span.download sl-icon {
+  font-size: 1.1em;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+/* Footer version links (DOC-1294). The legs link out (label -> component home,
+   number -> exact release) but must stay visually quiet -- this is a colophon,
+   not navigation. Inherit the muted footer colour; a dotted underline is the
+   only affordance, solidifying on hover. */
+.docs-version-info a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.docs-version-info a:hover {
+  color: var(--text);
+  border-bottom-style: solid;
+}

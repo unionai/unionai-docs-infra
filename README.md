@@ -4,6 +4,14 @@ This document describes how the Union.ai documentation platform works, including
 
 ## Repository structure
 
+> **Role of this repo as a submodule:** `unionai-docs` (branches `main` and
+> `v1`) pins this repo by commit. That pin is a **promotion gate** — infra
+> merges reach production only when a docs branch bumps its pointer — and the
+> single source that lets one build system serve both content lines. It is
+> *not* a historical record: builds apply the branch tip's pin to every
+> version tree, old pins included ("content is versioned; chrome is
+> promoted" — VERSIONING.md, DOC-1329).
+
 The docs system is split across three repositories:
 
 - **[unionai-docs](https://github.com/unionai/unionai-docs)** — the parent repository containing version-specific content and configuration. Files that differ between `main` (v2) and `v1` branches live here: `content/`, `data/`, `linkmap/`, `include/`, `api-packages.toml`, `makefile.inc`, and CI workflows (`.github/`).
@@ -12,6 +20,16 @@ The docs system is split across three repositories:
 A thin top-level `Makefile` in `unionai-docs` is a delegator: it reads the version-specific variables from `makefile.inc` and forwards all build targets to `unionai-docs-infra/Makefile` (the target list is enumerated explicitly there). It also provides submodule helpers that are *not* forwarded — `make init-infra` / `make update-infra` (this repo) and `make init-examples` / `make update-examples` (the examples repo).
 
 A third repository, **[unionai-examples](https://github.com/unionai/unionai-examples)** (at `unionai-examples/`), contains example code and tutorial notebooks referenced by the documentation. It is imported as a git submodule at `unionai-examples/` in the parent `unionai-docs` repo.
+
+## Related references
+
+Deeper topic docs that this README deliberately does not duplicate:
+
+- **[`VERSIONING.md`](./VERSIONING.md)** — how the versioning system works, and what gets built per line.
+- **[`CUTTING-A-DOCS-VERSION.md`](./CUTTING-A-DOCS-VERSION.md)** — the step-by-step of cutting a version.
+- **[`ROUTING-ARCHITECTURE.md`](./ROUTING-ARCHITECTURE.md)** — URL and edge routing, including the Cloudflare rules.
+- **[`SITEMAPS-AND-SEARCH.md`](./SITEMAPS-AND-SEARCH.md)** — how the docs are discovered, by Google (the `/docs/sitemap.xml` index) and by our own on-site search (the Algolia crawler). Read this before changing anything's indexability: the two consumers follow different rules, and `noindex` does **not** mean "not searchable".
+- **[`RUNBOOK-new-major-line.md`](./RUNBOOK-new-major-line.md)** — adding a new major line.
 
 ## Table of contents
 
@@ -49,7 +67,6 @@ A third repository, **[unionai-examples](https://github.com/unionai/unionai-exam
   - [Check Redirects](#check-redirects-check-redirects)
   - [Check Links](#check-links-check-links)
   - [Check Generated Content](#check-generated-content-check-generated-content)
-  - [Check LLM Bundle Notes](#check-llm-bundle-notes-check-llm-bundle-notes)
   - [Check Markdownlint](#check-markdownlint-check-markdownlint)
   - [Check Spelling](#check-spelling-check-spelling)
   - [Pull request build and preview](#pull-request-build-and-preview)
@@ -59,7 +76,13 @@ A third repository, **[unionai-examples](https://github.com/unionai/unionai-exam
 
 ## Requirements
 
-1. **Hugo (extended)** (>= 0.145.0; enforced by `scripts/pre-flight.sh`). CI builds with Hugo 0.161.1.
+1. **Hugo (extended)** — version pinned in **[`.hugoversion`](./.hugoversion)** (currently `0.161.1`), enforced by `scripts/pre-flight.sh`. **The floor equals the pin**: local dev and CI build with the same Hugo, so there is no window where a template works in one and not the other.
+
+   `pre-flight.sh` **fails** below the pin and **warns** above it. Being newer is the likelier skew — `brew install hugo` tracks latest — and it is the more dangerous direction, because it renders fine locally while the build that reaches readers uses the pin. If you are chasing a CI-only build or `check-determinism` failure, match the pin before trusting a local result.
+
+   **Changing the version means changing three things together:** `.hugoversion`, and the `hugo-version:` value in the parent repo's `build-pr.yml`, `build-and-deploy.yml`, and `check-determinism.yml`. They are not wired to each other, so drift is silent.
+
+   *History:* the floor was `0.145.0` while the templates already called `hugo.Data`, which needs `>= 0.156` — the declared constraint was wrong for eleven minor versions, and infra#195 papered over it with a `.Site.Data` fallback rather than correcting the number. That fallback is gone; do not reintroduce it (`.Site.Data` is deprecated and fatal under `--panicOnWarning`).
 
    ```
    brew install hugo
@@ -187,8 +210,8 @@ This is the main production build command. `make dist` runs `scripts/build_dist.
    - **Local (default)**: `make update-api-docs` + `make update-helm-docs` — regenerates both from the pinned package versions.
 5. **`make update-redirects`** — detects moved pages and appends to `redirects.csv`. Runs *after* the API/Helm regen so the redirect detector sees the regenerated content dirs and doesn't flag them as removed pages.
 6. **`make check-links`** — internal-link check (non-fatal).
-7. **Hugo builds** — builds every variant in `$(VARIANTS)` (flyte, union) into `dist/`. Runs sequentially by default; set `PARALLEL_HUGO=true` to build variants in parallel. Each variant build also runs `process_shortcodes.py` to emit the per-page `page.md` files.
-8. **`make llm-docs`** — generates the LLM-optimized bundles and indexes (`llms.txt`, `llms-full.txt`, `section.md`) for each variant.
+7. **Hugo builds** — builds every variant in `$(VARIANTS)` (flyte, union) into `dist/`. Runs sequentially by default; set `PARALLEL_HUGO=true` to build variants in parallel. Each variant build also runs `process_shortcodes.py` to emit the per-page markdown twins.
+8. **`make llm-docs`** — generates the LLM-optimized bundles and indexes (`llms.txt`, `llms-full.txt`, `_section.md`) for each variant.
 
 `make dist` is the single command that regenerates everything. If CI checks are failing, running `make dist` locally and committing the changed files will usually fix them.
 
@@ -206,13 +229,13 @@ If no port is specified, defaults to `PORT=9000`. Open `http://localhost:<port>`
 
 The docs are **built in GitHub Actions and uploaded to Cloudflare Pages via Direct Upload** (the `wrangler pages deploy` action). Cloudflare Pages' own build runner is **not** used — CF Pages is only the static host, and its automatic build-on-push is disabled for the `docs` project so GHA owns production end-to-end. (This replaced the earlier CF-native build; see DOC-1228.)
 
-All build jobs use the same toolchain: `actions/checkout` with `submodules: recursive`, Hugo 0.161.1 (extended), Python 3.12, and `astral-sh/setup-uv`, then `make dist`.
+All build jobs use the same toolchain: `actions/checkout` with `submodules: recursive`, Hugo 0.161.1 (extended) — the value in [`.hugoversion`](./.hugoversion), which `pre-flight.sh` also enforces locally — Python 3.12, and `astral-sh/setup-uv`, then `make dist`. The workflows hardcode `hugo-version:` rather than reading the file, so bump both together.
 
 ### Production deploys
 
 **Workflow: `.github/workflows/build-and-deploy.yml`** (in the parent `unionai-docs` repo).
 
-Triggered on push to `main` (and `workflow_dispatch`). It runs `make dist`, then deploys with:
+Triggered on push to the branch's own production ref (`main` on the v2 line, `v1` on the v1 line) and on `workflow_dispatch`. It runs `make dist`, then deploys with:
 
 ```
 wrangler pages deploy ./dist --project-name=docs --branch=<sanitized-branch> --commit-dirty=true
@@ -220,12 +243,45 @@ wrangler pages deploy ./dist --project-name=docs --branch=<sanitized-branch> --c
 
 `--commit-dirty=true` is required because `make dist` regenerates tracked files (notebooks, API/Helm docs), so the tree is always dirty at deploy time. The deploy step has its own 10-minute timeout so a hung upload fails fast instead of eating the whole job budget (DOC-1229).
 
+This workflow is **production-only**. It never runs on `pull_request`; previews are the two-stage pipeline below.
+
 ### Pull request previews
 
 PR previews use a **two-stage, fork-safe pipeline** (DOC-1228), because GitHub does not expose repo secrets to `pull_request` runs from forks:
 
 1. **`build-pr.yml`** (`on: pull_request`) — builds `make dist` with **no secrets** and uploads the `dist/` + PR metadata as an artifact. Its check-run is named `Build and deploy docs` (preserved from the old single-stage workflow) so the branch-protection required status check keeps matching.
 2. **`deploy-pr-preview.yml`** (`on: workflow_run` after "Build PR" completes) — runs in the trusted base-repo context where secrets are available, downloads the prebuilt artifact, and deploys it to a per-branch CF Pages preview. It never checks out or executes untrusted PR code.
+
+**This applies to `v1` PRs exactly as it does to `main` PRs.** Both branches carry the same `build-pr.yml` + `deploy-pr-preview.yml` pair, and a PR based on `v1` gets a preview of the v1 tree in the same `docs` Pages project.
+
+#### Finding the preview URL
+
+Stage 2 runs as a **detached `workflow_run`**, so it does **not** appear in the PR's checks list, and its run is filed under the repo's default branch rather than the PR branch. The only check you see on the PR is stage 1, `Build and deploy docs`, whose last step is `Upload PR dist artifact`. That is the expected end of that job. It is not evidence that the deploy is missing.
+
+The preview surfaces instead as a **sticky PR comment** titled *GHA build & deploy preview*, posted by stage 2 roughly a minute after the build check goes green. It carries two links:
+
+- **Branch alias** — `https://pr-<num>-<sanitized-branch>.docs-dog.pages.dev`, stable for the life of the PR and always pointing at the latest push.
+- **This commit** — the immutable per-deployment URL for the exact commit.
+
+Append the line's path to reach content: `/docs/v2/<variant>/` on a `main` PR, `/docs/v1/<variant>/` on a `v1` PR.
+
+If the comment is not there yet, the deploy has not finished. Watch the **Deploy PR preview** workflow (filter Actions by that workflow name, not by your branch) rather than the PR's check list.
+
+Preview deployments are preview-class in Cloudflare Pages, so every one carries an `x-robots-tag: noindex` response header. That is by design and keeps previews out of search (see DOC-1332 for the same mechanism on the v1 production alias).
+
+#### Fallback: serve the CI artifact locally
+
+When a preview is not available (the deploy failed, the secrets are unavailable, or you want to inspect the built tree offline), download the artifact stage 1 already produced and serve it:
+
+```
+gh run download <build-pr-run-id> --repo unionai/unionai-docs --dir out
+cd out/pr-dist/dist && python3 -m http.server 8899
+# then open http://localhost:8899/docs/v1/<variant>/   (or /docs/v2/<variant>/)
+```
+
+Find the run id from the `Build and deploy docs` check on the PR, or with `gh run list --branch <pr-branch> --workflow build-pr.yml`.
+
+This exercises the same artifact CI built and deployed, which makes it a better check than a fresh local `hugo` build. What it cannot reproduce is anything the edge adds: redirects, headers, and CloudFront routing. For those, use the real preview.
 
 ### Build provenance
 
@@ -270,6 +326,26 @@ Each row in `redirects.csv` has seven columns:
 | 6      | Preserve query string (TRUE/FALSE) |
 | 7      | Preserve path suffix (TRUE/FALSE) |
 
+#### Choosing 301 vs 302
+
+A **301 is cached by the browser and is effectively permanent** — it keeps being honoured
+after the rule is changed or removed, and there is no clean way to take it back. Use it only
+where the target is certain.
+
+- **301** when the target *is* the content the old URL described (a page that moved, or a
+  path that only needed a suffix corrected). There is nothing better to point at later, so
+  permanence costs nothing.
+- **302** when the target is a *judgment call* — typically a retired page with no equivalent,
+  landing on the nearest sensible ancestor so it stops 404ing. A better target may appear, and
+  a 302 keeps that correction reachable for readers who already followed it.
+
+The SEO difference is small for retired content (Search Console moves the URL out of
+"Not found" either way); the reversibility difference is not.
+
+Existing populations follow this: the 308 `docs.union.ai` rows are 301 (a retired host, the
+move is permanent), while the ~2,130 v1 variant-consolidation rows are 302 (a living
+structure that may change again). **Do not normalise these to a single code.**
+
 ### Automatic redirect detection
 
 The `detect_moved_pages.py` script scans git history for file renames under `content/` and generates redirect entries for both variants. Run it with:
@@ -312,8 +388,8 @@ The build generates LLM-optimized documentation at four levels of granularity, d
 
 | File | Scope | Description |
 |------|-------|-------------|
-| `page.md` | Per page | Clean Markdown version of every page, with links to other `page.md` files |
-| `section.md` | Per section | Single-file bundle of all pages in a section (where enabled) |
+| `<path>.md` | Per page | Clean Markdown twin of every page, served at the page's own URL with `.md` appended, with links to other twins. The variant root has none: `llms.txt` is its agent surface |
+| `_section.md` | Per section | Single-file bundle holding one level of a section: its own pages in full, plus each sub-section's landing page and a link onward |
 | `llms.txt` | Per variant | Page index with H2/H3 headings, grouped by section |
 | `llms-full.txt` | Per variant | Entire documentation as one file with hierarchical link references |
 
@@ -325,57 +401,75 @@ dist/docs/v2/llms.txt                       # Version discovery: lists variants
 dist/docs/v2/{variant}/
 ├── llms.txt                                # Page index with headings
 ├── llms-full.txt                           # Full consolidated doc
-├── page.md                                 # Root page
+├── _section.md                             # Root section bundle (one level down)
+├── user-guide.md                           # User Guide landing page  (/user-guide/)
 ├── user-guide/
-│   ├── page.md                             # User Guide landing page
+│   ├── _section.md                         # Section bundle (one level down)
+│   ├── task-configuration.md               # Section landing page (/user-guide/task-configuration/)
 │   ├── task-configuration/
-│   │   ├── page.md                         # Section landing page
-│   │   ├── section.md                      # Section bundle (all pages concatenated)
-│   │   ├── resources/
-│   │   │   └── page.md
-│   │   ├── caching/
-│   │   │   └── page.md
+│   │   ├── _section.md                     # Section bundle (one level down)
+│   │   ├── resources.md                    # Leaf page (/user-guide/task-configuration/resources/)
+│   │   ├── caching.md
 │   │   └── ...
 │   └── ...
 └── ...
 ```
 
+The twin for the page served at `<path>/` is the file `<path>.md`, so it sits BESIDE
+that page's directory rather than inside it. A section therefore ends up with both
+`a/b.md` (its landing page) and `a/b/_section.md` (its bundle). The variant root gets
+no twin: it would land outside the variant tree, at `/docs/<version>/<variant>.md`.
+
 ### Processing pipeline
 
 The LLM docs are produced in two stages that run at different points in `make dist`:
 
-**Stage 1: `process_shortcodes.py`** — Generates `page.md` files (runs during each variant's Hugo build, via the `variant` target)
+**Stage 1: `process_shortcodes.py`** — Generates the per-page markdown twins (runs during each variant's Hugo build, via the `variant` target)
 
 1. Reads Hugo's Markdown output from `tmp-md/` (Hugo builds this alongside HTML via the MD output format).
 2. Resolves all shortcodes: `{{< variant >}}`, `{{< code >}}`, `{{< tabs >}}`, `{{< note >}}`, `{{< key >}}`, `{{< llm-bundle-note >}}`, etc.
-3. Writes the result as `page.md` alongside each `index.html` in `dist/`.
-4. Converts all internal links to point to other `page.md` files using relative paths.
+3. Writes the result as `<path>.md`, beside the directory holding that page's `index.html`.
+4. Converts all internal links to point to other twins, using paths relative to the Hugo **source** directory the link was written in (see `page_paths.py`).
 
 **Stage 2: `build_llm_docs.py`** — Generates bundles and indexes (runs via the `llm-docs` target, after all variants are built)
 
-1. **Lookup tables**: Traverses all `page.md` files depth-first via `## Subpages` links, building a lookup table mapping file paths and anchors to hierarchical titles (e.g. `"user-guide/task-configuration/resources/page.md"` → `"Configure tasks > Resources"`).
-2. **`llms-full.txt`**: Processes all pages, converting internal `page.md` links to hierarchical bold references (e.g. `**Configure tasks > Resources**`).
-3. **Subpage enhancement**: Adds H2/H3 headings to `## Subpages` listings in `page.md` files.
-4. **Section bundles**: Generates `section.md` for sections with `llm_readable_bundle: true`.
-5. **Link absolutization**: Converts all relative links in `page.md` files to absolute URLs (`https://www.union.ai/docs/...`).
+1. **Lookup tables**: Traverses all twins depth-first via `## Subpages` links, building a lookup table mapping URL paths and anchors to hierarchical titles (e.g. `"user-guide/task-configuration/resources"` → `"Configure tasks > Resources"`).
+2. **`llms-full.txt`**: Processes all pages, converting internal twin links to hierarchical bold references (e.g. `**Configure tasks > Resources**`).
+3. **Subpage enhancement**: Adds H2/H3 headings to `## Subpages` listings in the twins.
+4. **Section bundles**: Generates `_section.md` for every section that holds more than its own landing page.
+5. **Link absolutization**: Converts all relative links in the twins to absolute URLs (`https://www.union.ai/docs/...`).
 6. **`llms.txt`**: Creates the page index with headings and bundle references.
 
-### Section bundles (`section.md`)
+### Section bundles (`_section.md`)
 
-To enable a `section.md` bundle for a documentation section, two things are required in the section's `_index.md`:
+Every section that holds more than its own landing page gets a `_section.md`. There is
+no opt-in flag: a bundle appears wherever there is something to bundle. A section whose
+whole subtree is one `_index.md` gets none, because its content already lives at its own
+page URL and its parent inlines it in full.
 
-1. Frontmatter: `llm_readable_bundle: true`
-2. Body: `{{< llm-bundle-note >}}` shortcode (renders a note pointing to the bundle)
+A bundle holds exactly **one level** of the tree, in this order:
 
-A CI check (`check-llm-bundle-notes`) verifies these are always in sync.
+1. a manifest header saying what is included in full and what is abridged
+2. the section's landing page, in full
+3. the section's own leaf pages, in full
+4. each immediate sub-section's landing page, in full, each followed immediately by
+   `→ Full section: <url>/_section.md` when that sub-section has more beneath it
 
-In section bundles, links to pages within the section become hierarchical bold references, while links to pages outside the section become absolute URLs.
+There is no trailing link block. Onward links sit next to the content they abridge
+because a size-capped fetch cuts the tail: at a 100K cap a trailing block lost a third
+of all onward links, from files that still looked complete.
+
+Links to a page the bundle actually carries become hierarchical bold references; every
+other link becomes an absolute URL, so a link deeper into the subtree stays usable.
+
+Bundling the whole subtree instead of one level made the root bundle a second copy of
+`llms-full.txt` (4,087K). One level caps the largest bundle at ~263K.
 
 ### Key implementation details
 
 **Link conversion in `llms-full.txt`:**
-- Cross-page: `[Resources](../resources/page.md)` → `**Configure tasks > Resources**`
-- Anchor: `[Caching](../caching/page.md#cache-versions)` → `**Configure tasks > Caching > Cache versions**`
+- Cross-page: `[Resources](resources.md)` → `**Configure tasks > Resources**`
+- Anchor: `[Caching](caching.md#cache-versions)` → `**Configure tasks > Caching > Cache versions**`
 - Same-page: `[Image building](#image-building)` → `**Container images > Image building**`
 - External links preserved unchanged
 
@@ -474,14 +568,6 @@ make dist
 ```
 Then commit the changed files. This single command regenerates all generated content.
 
-### Check LLM Bundle Notes (`check-llm-bundle-notes`)
-
-**What it checks:** That `llm_readable_bundle: true` in frontmatter and the `{{< llm-bundle-note >}}` shortcode in the page body are always in sync for section `_index.md` files.
-
-**Why it fails:** A section has `llm_readable_bundle: true` but is missing the shortcode, or vice versa.
-
-**How to fix:** Either add the missing `{{< llm-bundle-note >}}` shortcode to the page body, or add `llm_readable_bundle: true` to the frontmatter. Both must be present together, or neither.
-
 ### Check Markdownlint (`check-markdownlint`)
 
 **What it checks:** That changed Markdown content conforms to the repo's markdownlint rules.
@@ -502,7 +588,7 @@ Then commit the changed files. This single command regenerates all generated con
 
 **What it does:** `build-pr.yml` builds the full site (`make dist`) for the PR and uploads it as an artifact; `deploy-pr-preview.yml` then deploys that artifact to a per-branch Cloudflare Pages preview (see [Pull request previews](#pull-request-previews)). The build half reports as the required `Build and deploy docs` status check.
 
-**How to use:** If the build check is green, the preview deployment comment/URL lets you view your changes as they'll appear on the live site.
+**How to use:** Once the build check is green, wait for the sticky *GHA build & deploy preview* comment and open its **Branch alias** link. The deploy half is a detached `workflow_run` and never shows up in the PR's checks list, so the build check ending at `Upload PR dist artifact` is normal and does not mean the deploy was skipped. Works the same on `v1` PRs. If no preview appears, fall back to [serving the CI artifact locally](#fallback-serve-the-ci-artifact-locally).
 
 ### Quick fix for most failures
 

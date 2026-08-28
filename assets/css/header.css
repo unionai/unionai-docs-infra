@@ -1,0 +1,554 @@
+header {
+  height: var(--header-height);
+  background-color: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.25rem 1.5rem;
+  z-index: 100;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+header .product-version-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+header .product-version-controls .version-dropdown {
+  margin-left: auto;
+}
+
+header .header-toolbar-spacer {
+  min-width: 0;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.logo-container a:first-child {
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.logo-container a:first-child img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+.logo-container .title {
+  color: unset;
+  font-weight: 400;
+  font-size: 1.25rem;
+  white-space: nowrap;
+  min-width: 10em; /* prevent layout shift between "Union.ai Docs" and "Flyte OSS Docs" */
+}
+
+#theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+}
+
+#theme-toggle:hover {
+  background-color: var(--code-bg);
+}
+
+#sun-icon {
+  display: block;
+}
+
+#moon-icon {
+  display: none;
+}
+
+[data-theme="dark"] #moon-icon {
+  display: block;
+}
+
+[data-theme="dark"] #sun-icon {
+  display: none;
+}
+
+/* ── Product toggle ── */
+.product-toggle {
+  display: flex;
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px;
+  gap: 2px;
+  position: relative;
+  height: 34px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.product-toggle:hover {
+  border-color: var(--separator);
+  box-shadow: var(--shadow-card);
+}
+
+.product-toggle button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 18px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-color-light);
+  cursor: pointer;
+  transition: color 0.2s, background 0.25s;
+  white-space: nowrap;
+}
+
+.product-toggle button.active {
+  background: var(--toggle-active-bg);
+  color: var(--text-color);
+  font-weight: 500;
+  box-shadow: var(--shadow-hairline), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.product-toggle button:not(.active):hover {
+  color: var(--text-color);
+  background: var(--code-bg);
+}
+
+.product-toggle button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* Colored dots — hardcoded since --union-color changes per variant build */
+.product-toggle .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.product-toggle button:not(.active) .dot {
+  opacity: 0.35;
+}
+
+.product-toggle .dot.union { background: var(--brand-union); }
+.product-toggle .dot.flyte { background: var(--brand-flyte); }
+
+/* ── Version dropdown ── */
+.version-dropdown {
+  position: relative;
+}
+
+.version-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--code-bg);
+  color: var(--text-color);
+  box-shadow: var(--shadow-hairline);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+  height: 34px;
+  box-sizing: border-box;
+}
+
+.version-btn:hover {
+  border-color: var(--separator);
+  box-shadow: var(--shadow-card);
+}
+
+.version-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.version-btn .badge {
+  background: var(--success-soft);
+  color: var(--success-text);
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  letter-spacing: 0.04em;
+}
+
+.version-btn .chevron-icon {
+  margin-left: 2px;
+  transition: transform 0.2s;
+}
+
+.version-dropdown.open .version-btn .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.version-dropdown.open .version-btn {
+  border-color: var(--border-color);
+}
+
+.version-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  background-color: var(--menu-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  padding: 6px;
+  display: none;
+  z-index: 200;
+  opacity: 1;
+}
+
+.version-dropdown.open .version-menu {
+  display: block;
+}
+
+.version-item {
+  width: 100%;
+  text-align: left;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.version-item:hover {
+  background: var(--code-bg);
+  color: var(--text-color);
+}
+
+.version-item.selected {
+  background: var(--code-bg);
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.version-item .badge,
+.version-btn .badge {
+  background: var(--success-soft);
+  color: var(--success-text);
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.version-item .check-icon {
+  opacity: 0;
+}
+
+.badge-hidden {
+  visibility: hidden;
+}
+
+.version-item.selected .check-icon {
+  opacity: 1;
+}
+
+/* ── Flat version selector with line dividers (DOC-1245) ── */
+.version-menu { min-width: 200px; }
+
+/* Non-clickable line heading ("v2" / "v1") above each group's entries. Full
+   contrast + bold so it reads as a heading, not a disabled/quiet label. */
+.version-group-label {
+  padding: 8px 14px 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+.version-group-label:not(:first-child) {
+  margin-top: 4px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+/* Closed-state label: "<line> <number> <badge>" laid out inline. */
+.version-label { display: inline-flex; align-items: center; gap: 6px; }
+.version-label .vl-line { font-weight: 600; }
+
+[data-theme="dark"] .version-group-label { color: var(--text-color); }
+[data-theme="dark"] .version-group-label:not(:first-child) { border-top-color: rgba(255, 255, 255, 0.12); }
+
+/* ── Dark theme overrides ── */
+/* In dark mode, --code-bg (#2d3748) is the track, #141d33 is the active segment */
+[data-theme="dark"] .product-toggle button.active {
+  background: var(--toggle-active-bg);
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .version-btn .badge,
+[data-theme="dark"] .version-item .badge {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+[data-theme="dark"] .version-menu {
+  background-color: var(--menu-bg);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .version-item:hover {
+  background: var(--code-bg);
+}
+
+[data-theme="dark"] .version-item.selected {
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+}
+
+/* ── Dev mode warnings ── */
+#devwarn, #verwarn {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: yellow;
+  color: gray;
+  padding: 4px 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  z-index: 201;
+  font-size: 0.75rem;
+}
+
+header .toggle-sidebar {
+  display: none;
+}
+
+/* Product + version controls live in the mobile drawer below 1200px (see sidebar.html) */
+.drawer-sidebar::part(header) {
+  padding-bottom: 0;
+}
+
+.drawer-sidebar::part(body) {
+  padding-top: 0.25rem;
+}
+
+.drawer-sidebar .drawer-product-version-host {
+  width: 100%;
+}
+
+.drawer-sidebar .product-version-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.5rem 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.drawer-sidebar .product-toggle {
+  flex: 1;
+  justify-content: center;
+}
+
+.drawer-sidebar .product-toggle button {
+  padding: 5px 14px;
+  font-size: 0.8rem;
+}
+
+.drawer-sidebar .version-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: max-content;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  z-index: 200;
+}
+
+.drawer-sidebar .product-version-controls .developer {
+  position: static;
+  margin: 0;
+}
+
+.signup-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 0.9rem;
+  background-color: var(--brand);
+  color: var(--on-brand);
+  border: 1px solid var(--brand);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+#support-trigger {
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  margin-left: 0.5rem;
+  border-radius: 6px;
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-hairline);
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.2s, box-shadow 0.2s, color 0.2s, background-color 0.2s;
+}
+
+#support-trigger:hover {
+  border-color: var(--separator);
+  box-shadow: var(--shadow-card);
+}
+
+#support-trigger sl-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+#support-trigger.active {
+  background-color: color-mix(in srgb, var(--union-color) 12%, var(--code-bg));
+  border-color: var(--union-color);
+  color: var(--union-color-dark);
+}
+
+[data-theme="dark"] #support-trigger.active {
+  background-color: color-mix(in srgb, var(--union-color) 20%, var(--code-bg));
+  color: var(--union-color);
+}
+
+/* Icon-only sibling of #support-trigger, linking to the AI-agent docs page. Deliberately
+   has no visible label — it's a secondary affordance, so the name lives in title/aria-label. */
+#agent-docs-trigger {
+  height: 34px;
+  width: 34px;
+  box-sizing: border-box;
+  margin-left: 0.5rem;
+  border-radius: 6px;
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-hairline);
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: border-color 0.2s, box-shadow 0.2s, color 0.2s, background-color 0.2s;
+}
+
+#agent-docs-trigger sl-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+#agent-docs-trigger:hover {
+  border-color: var(--separator);
+  box-shadow: var(--shadow-card);
+}
+
+#agent-docs-trigger.active {
+  background-color: color-mix(in srgb, var(--union-color) 12%, var(--code-bg));
+  border-color: var(--union-color);
+  color: var(--union-color-dark);
+}
+
+[data-theme="dark"] #agent-docs-trigger.active {
+  background-color: color-mix(in srgb, var(--union-color) 20%, var(--code-bg));
+  color: var(--union-color);
+}
+
+.signup-icon {
+  display: none;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .signup-button {
+  color: var(--on-brand);
+}
+
+/* Hover stays in the BRAND family. It used to jump to --accent-dark, which is
+   a different colour family and much darker, while keeping --on-brand text --
+   near-black chosen to sit on the light brand fills. The result failed WCAG AA
+   in both light variants:
+
+     resting  union #FCB51D  10.59:1     flyte #c084fc  7.15:1
+     hover    union #b45309   3.76:1     flyte #7c3aed  3.32:1
+
+   Flyte was worst, which is where Peeter spotted the text "disappearing", but
+   union light was already failing before the brand token existed.
+
+   Darkening the brand instead keeps the hue, keeps --on-brand correct, and
+   works for every variant/mode pair without a value table. Matches how the
+   `button-link` shortcode handles its hover (phase 3b). */
+.signup-button:hover {
+  filter: brightness(0.93);
+}
+
+.old-version {
+  border: var(--old-version-border);
+  background-color: var(--old-version-background);
+  padding: 1rem 1.25rem;
+  margin: 0 1.25rem 2rem 1.25rem;
+}
+
+.old-version .title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.old-version .message {
+  font-size: 0.9rem;
+}

@@ -1,22 +1,67 @@
-<html>
-    <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-        <link id="home_css" rel="stylesheet" href="@@BASE@@/css/home.css?v=@@BUILD@@" />
-    </head>
-    <body>
-        <div class="container">
-            <h1>
-                <img id="logo" src="@@BASE@@/images/icon-logo.svg" class="logo"
-                     onerror="this.style.display='none'" />
-                Union.ai
-            </h1>
+<!DOCTYPE html>
+<!-- Docs ROOT landing page (dist/index.html + dist/docs/index.html). NOT a Hugo
+     page: plain HTML with @@BASE@@/@@DEFAULT_VARIANT@@/@@BUILD@@ substituted by
+     the Makefile's `base` target (and copied from the canonical build by
+     build_versions.sh).
 
-            <p>
-                Go to the <a href="@@BASE@@/@@DEFAULT_VARIANT@@/">Union.ai documentation</a>.
-            </p>
-        </div>
-    </body>
+     Reached by: PR previews (the click-through), and /docs/ hits that beat the
+     Cloudflare docs-root redirect. Since the root 404.html exists (DOC-1334
+     failure-surfaces slice) this page is ONLY a landing -- Pages no longer
+     serves it as the fallback for unknown paths, so it no longer needs to
+     apologize for being seen.
+
+     Styling is INLINE and self-contained on purpose: a root page must not
+     depend on per-variant hashed assets it cannot know the names of. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Union.ai Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Minimal local tokens mirroring base.css's palette (light + dark).
+         Kept tiny deliberately -- this page shows for seconds. */
+      :root {
+        --bg: #ffffff; --text: #131108; --text-2: #57534e;
+        --card: #fafaf9; --border: rgba(19, 17, 8, 0.12);
+        --accent: #b45309;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #09090b; --text: #f7f7f5; --text-2: #a8a29e;
+          --card: #131316; --border: rgba(247, 247, 245, 0.14);
+          --accent: #fcb51d;
+        }
+      }
+      html, body { height: 100%; margin: 0; }
+      body {
+        background: var(--bg); color: var(--text);
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        display: grid; place-items: center;
+      }
+      .card {
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 12px; padding: 2.5rem 3rem; text-align: center;
+        max-width: 26rem;
+      }
+      h1 { font-size: 1.375rem; font-weight: 700; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+      p  { font-size: 0.9rem; color: var(--text-2); line-height: 1.6; margin: 0 0 1.5rem; }
+      a.button {
+        display: inline-block; background: var(--accent); color: var(--bg);
+        border-radius: 6px; padding: 0.55rem 1.1rem; text-decoration: none;
+        font-weight: 600; font-size: 0.9rem;
+      }
+      a.plain { color: var(--text-2); font-size: 0.8rem; text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Union.ai Docs</h1>
+      <p>Documentation for Union.ai and Flyte&nbsp;2 &mdash; building, deploying and running agentic AI systems and data/ML pipelines.</p>
+      <a class="button" href="@@BASE@@/@@DEFAULT_VARIANT@@/">Open the documentation</a>
+    </div>
+  </body>
 </html>
-

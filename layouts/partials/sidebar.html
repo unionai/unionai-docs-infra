@@ -9,33 +9,7 @@
       <div class="drawer-product-version-host"></div>
       {{- $current := . -}}
       <nav class="site-nav drawer-nav" role="navigation">
-        <ul>
-          {{- range .Site.Sections.ByWeight -}}
-            {{- $access := partial "page-allowed.html" . -}}
-            {{- if and $access.allowed .Params.top_menu -}}
-              {{- $isActive := eq $current.Section .Section -}}
-              <li>
-                <a href="{{- .RelPermalink -}}" class="section-title{{ if $isActive }} active{{ end }}">
-                  <div class="content">
-                    {{- if and .IsSection (gt (len .Pages) 0) -}}
-                    <span class="chevron{{ if not $isActive }} rotated{{ end }}" aria-hidden="true"></span>
-                    {{- else -}}
-                    <span class="chevron hidden" aria-hidden="true"></span>
-                    {{- end -}}
-                    <div style="flex: 1">{{- .Title -}}</div>
-                  </div>
-                </a>
-                {{- if .IsSection -}}
-                <ul class="section-pages{{ if not $isActive }} collapsed{{ end }}">
-                  {{- range .Pages.ByWeight -}}
-                    {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
-                  {{- end -}}
-                </ul>
-                {{- end -}}
-              </li>
-            {{- end -}}
-          {{- end -}}
-        </ul>
+        {{- template "full-tree-nav" $current -}}
       </nav>
     </div>
   </slot>
@@ -90,61 +64,80 @@
 {{ define "site-nav" }}
 <nav class="site-nav" role="navigation" aria-label="Site navigation" itemscope itemtype="https://schema.org/SiteNavigationElement">
   <span class="sr-only" itemprop="description">Documentation navigation for {{ .Site.Params.variant | humanize }} including user guides, tutorials, API references, and integration examples</span>
-  <ul>
-    {{- $current := . -}}
-    {{- $secondaryTopnavActive := partial "secondary-topnav-active.html" $current -}}
-    {{- range .Site.Sections -}}
-        {{- if eq $current.Section .Section -}}
-          {{- if $secondaryTopnavActive -}}
-            {{- /* Tier 2 active: find the active child and render only its subtree */ -}}
-            {{- $activeChild := false -}}
-            {{- range .Pages.ByWeight -}}
-              {{- if and (not $activeChild) (hasPrefix $current.RelPermalink .RelPermalink) -}}
-                {{- $activeChild = . -}}
-              {{- end -}}
-            {{- end -}}
-            {{- if and $activeChild $activeChild.IsSection -}}
-              {{- range $activeChild.Pages.ByWeight -}}
-                {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
-              {{- end -}}
-            {{- end -}}
-          {{- else -}}
-            {{- range .Pages.ByWeight -}}
-              {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
-            {{- end -}}
-          {{- end -}}
-        {{- end -}}
-    {{- end -}}
-  </ul>
+  {{- /* IA restructure (DOC-1334): ALL hierarchy lives in this one tree -- the
+         former top-menu sections are its collapsible roots, the active one
+         expanded. The SAME template renders the mobile drawer, so desktop and
+         mobile navigation are structurally identical by construction (one
+         definition, not two kept in sync). The retired top tabs and the
+         secondary topnav band collapsed into this. */ -}}
+  {{- template "full-tree-nav" . -}}
 
   <script>
-    // Persist the user's collapse/expand choices across navigations (DOC-942).
-    // The server re-renders each section's `collapsed` class from the active
-    // path on every load, which would otherwise re-expand sections the user
-    // collapsed. We store per-section state in localStorage (keyed by the
-    // section's stable href / RelPermalink) and re-apply it on load.
+    // Sidebar open/closed state (DOC-942, DOC-1352).
     //
-    // Robustness:
-    //  - The sidebar is rendered TWICE (desktop `.site-nav` + the mobile
-    //    `.drawer-sidebar`), so every section has two `.section-title`s sharing
-    //    one href. We apply each change to BOTH copies so they never disagree.
-    //  - On every toggle we snapshot the FULL set of sections (not just the one
-    //    clicked), so a section that was open only because it's on the active
-    //    path is persisted too and doesn't silently collapse when you navigate.
-    //  - The section containing the current page is always kept open.
-    //  - The chevron's `rotated` class is driven from the collapsed state (set,
-    //    never blind-flipped), so the arrow can't drift out of sync.
+    // THE RULES, in full:
+    //
+    //  0. The only thing persisted is a set of PINNED sections. Everything else
+    //     comes from the server's rendering on each load, which opens the trail
+    //     down to the current page (plus any `sidebar_expanded` section) and
+    //     collapses the rest. Nothing else is remembered, so nothing can pile up.
+    //
+    //  1. A LABEL click navigates. Labels open, never close: you arrive with the
+    //     trail to where you landed open, and whatever you left goes back to the
+    //     server's rendering, which collapses it unless it is pinned.
+    //
+    //  2. A CHEVRON on a collapsed section opens its immediate subtree and PINS
+    //     it. A pin never expires — it survives navigations and browser sessions
+    //     until you close it. Ancestors of a pinned section are held open so it
+    //     is actually visible; they are not themselves pinned, so they release
+    //     automatically when the pin goes.
+    //
+    //  3. A CHEVRON on an open section collapses it and RESETS its whole subtree:
+    //     every descendant is collapsed and unpinned. Closing something means it
+    //     is closed, not that its insides are hidden but remembered. This is
+    //     deliberately NOT the VS Code / Finder convention — invisible state you
+    //     cannot see or manage is a liability in a nav.
+    //
+    //  4. Pinned therefore implies open: a pin is created by opening and
+    //     destroyed by closing, so "pinned but collapsed" cannot exist.
+    //
+    // Why it is shaped this way: the previous version persisted a per-section
+    // `collapsed` boolean, so a section force-opened because it held the active
+    // item stayed open forever. Visiting a section opened it permanently and
+    // nothing but a chevron ever closed anything, so open sections accumulated
+    // for the whole session — measured on prod at 1.6 viewports lightly browsed,
+    // 4.6 with every root open, 23 fully expanded. Persisting only deliberate
+    // pins removes that by construction: ordinary browsing holds at about one
+    // open root, which is what an accordion would give you, without an accordion
+    // ever discarding something you set by hand.
+    //
+    // Robustness: the sidebar is rendered TWICE (desktop `.site-nav` + the mobile
+    // `.drawer-sidebar`), so every section has two `.section-title`s sharing one
+    // href. Every change is applied to BOTH copies so they cannot disagree. The
+    // chevron's `rotated` class is driven from the collapsed state (set, never
+    // blind-flipped), so the arrow cannot drift out of sync.
     (function () {
-      const STORAGE_KEY = 'sidebarCollapsedSections';
+      const STORAGE_KEY = 'sidebarPinnedSections';
+      const LEGACY_KEY = 'sidebarCollapsedSections';   // the old per-section collapse map
 
       function load() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-        catch (e) { return {}; }
+        try {
+          // Nothing in the old format maps to a pin: every entry it held was
+          // either a collapse we no longer persist or the ratchet we removed.
+          // Drop it on sight rather than leaving it to rot in the reader's
+          // storage.
+          localStorage.removeItem(LEGACY_KEY);
+          const raw = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          return Array.isArray(raw) ? raw : [];
+        } catch (e) { return []; }
       }
-      function save(state) {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+      function save() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pins)); }
         catch (e) { /* private mode / quota — ignore */ }
       }
+
+      let pins = load();
 
       function sectionOf(title) {
         const li = title.closest('li');
@@ -155,88 +148,156 @@
         };
       }
 
-      // Apply a collapsed bool to every copy (desktop + drawer) of a section.
-      function setCollapsed(id, collapsed) {
+      // Apply an open/collapsed state to every copy (desktop + drawer).
+      function setOpen(id, open) {
         document.querySelectorAll('.section-title').forEach(function (t) {
           if (t.getAttribute('href') !== id) return;
           const s = sectionOf(t);
-          if (s.pages) s.pages.classList.toggle('collapsed', collapsed);
-          if (s.chevron) s.chevron.classList.toggle('rotated', collapsed);
+          if (s.pages) s.pages.classList.toggle('collapsed', !open);
+          if (s.chevron) s.chevron.classList.toggle('rotated', !open);
         });
       }
 
-      // Record the current collapsed state of every section.
-      function snapshot() {
-        const state = {};
-        document.querySelectorAll('.section-title').forEach(function (t) {
-          const s = sectionOf(t);
-          if (s.id && s.pages) state[s.id] = s.pages.classList.contains('collapsed');
+      // Section hrefs nested anywhere inside this one.
+      function descendantsOf(title) {
+        const s = sectionOf(title);
+        if (!s.pages) return [];
+        return Array.prototype.slice.call(s.pages.querySelectorAll('.section-title'))
+          .map(function (t) { return t.getAttribute('href'); })
+          .filter(Boolean);
+      }
+
+      // Section hrefs on the way up to the root.
+      function ancestorsOf(title) {
+        const ids = [];
+        let li = title.closest('li');
+        li = li && li.parentElement ? li.parentElement.closest('li') : null;
+        while (li) {
+          const t = li.querySelector(':scope > .section-title');
+          const id = t ? t.getAttribute('href') : null;
+          if (id) ids.push(id);
+          li = li.parentElement ? li.parentElement.closest('li') : null;
+        }
+        return ids;
+      }
+
+      // What the server rendered, before we touch anything: the trail down to
+      // the current page open (plus any `sidebar_expanded` section), the rest
+      // collapsed. This is the baseline an arrival restores to.
+      let titles = [];
+      let serverOpen = {};
+
+      function applyPins() {
+        const toOpen = {};
+        titles.forEach(function (title) {
+          const id = title.getAttribute('href');
+          if (!id || pins.indexOf(id) === -1) return;
+          toOpen[id] = true;
+          ancestorsOf(title).forEach(function (a) { toOpen[a] = true; });
         });
-        save(state);
+        Object.keys(toOpen).forEach(function (id) { setOpen(id, true); });
+      }
+
+      // Put the tree in the state arriving on this page produces: the server's
+      // baseline, plus the pins and whatever has to be open to see them.
+      function arrive() {
+        titles.forEach(function (title) {
+          const id = title.getAttribute('href');
+          if (id && Object.prototype.hasOwnProperty.call(serverOpen, id)) setOpen(id, serverOpen[id]);
+        });
+        applyPins();
       }
 
       function init() {
-        const state = load();
-        const titles = Array.prototype.slice.call(document.querySelectorAll('.section-title'));
+        titles = Array.prototype.slice.call(document.querySelectorAll('.section-title'));
 
-        // 1. Restore saved state; always keep the active section open.
         titles.forEach(function (title) {
           const s = sectionOf(title);
-          if (!s.pages || !s.id) return;
-          const containsActive = s.pages.querySelector('.active') !== null;
-          let collapsed;
-          if (containsActive) {
-            collapsed = false;                                          // never hide the active item
-          } else if (Object.prototype.hasOwnProperty.call(state, s.id)) {
-            collapsed = state[s.id];                                    // user's remembered choice
-          } else {
-            collapsed = s.pages.classList.contains('collapsed');       // server default
-          }
-          s.pages.classList.toggle('collapsed', collapsed);
-          if (s.chevron) s.chevron.classList.toggle('rotated', collapsed);
+          if (s.id && s.pages) serverOpen[s.id] = !s.pages.classList.contains('collapsed');
         });
-        snapshot();                                                    // persist the resolved picture (incl. active-open)
 
-        // 2. Click behavior:
-        //    - chevron  → pure toggle in place, never navigates.
-        //    - label    → navigate; if the section is collapsed, expand it
-        //                 first (NEVER collapse on a label click) and persist
-        //                 before the reload so it stays open on arrival.
+        // 1. Open the pins, and whatever has to be open for them to be seen.
+        //    Anything not touched here keeps the server's rendering, which is
+        //    what makes browsing self-clean: there is no stored openness to
+        //    accumulate.
+        applyPins();
+
+        // 2. The chevron is the only control that changes open/closed state.
+        //    A label click is left alone: it navigates, and the page it lands on
+        //    renders its own trail open.
         titles.forEach(function (title) {
           title.addEventListener('click', function (e) {
+            if (!(e.target.classList.contains('chevron') || e.target.closest('.chevron'))) return;
+            e.preventDefault();                                    // toggle only — do not navigate
             const s = sectionOf(title);
             if (!s.pages || !s.id) return;
-            const onChevron = e.target.classList.contains('chevron') || e.target.closest('.chevron');
-            if (onChevron) {
-              e.preventDefault();                                      // toggle only — do not navigate
-              setCollapsed(s.id, !s.pages.classList.contains('collapsed'));
-              snapshot();
-            } else if (s.pages.classList.contains('collapsed')) {
-              setCollapsed(s.id, false);                               // expand-only on label click
-              snapshot();                                              // persist synchronously before navigation
-              // no preventDefault → the link navigates
+
+            if (s.pages.classList.contains('collapsed')) {
+              setOpen(s.id, true);                                 // open the immediate subtree
+              if (pins.indexOf(s.id) === -1) pins.push(s.id);
+            } else {
+              const inside = descendantsOf(title);                 // collapse AND reset the branch
+              setOpen(s.id, false);
+              inside.forEach(function (id) { setOpen(id, false); });
+              pins = pins.filter(function (id) {
+                return id !== s.id && inside.indexOf(id) === -1;
+              });
             }
+            save();
           });
+        });
+
+        // 3. "Where am I?" — the last breadcrumb segment names the page you are
+        //    already on, and clicking it reveals that page in the nav: the tree
+        //    goes back to exactly what arriving here produces (trail open,
+        //    anything you had left open collapsed, pins untouched) and the page
+        //    is scrolled into view if it is off screen. It pins nothing and it
+        //    does not reload the page. Delegated, because the breadcrumb is
+        //    rendered later in the document than this script.
+        document.addEventListener('click', function (e) {
+          const trigger = e.target.closest && e.target.closest('[data-nav-reveal]');
+          if (!trigger) return;
+          e.preventDefault();
+          arrive();
+          if (typeof window.__revealActiveSidebarItem === 'function') {
+            window.__revealActiveSidebarItem();
+          }
+        });
+
+        // 4. "Start over" — the logo goes to the docs home, and going home by
+        //    that route is a deliberate reset, so it also drops everything the
+        //    sidebar remembers: every pin, and the recorded scroll position.
+        //    The navigation itself is left alone; the home page then renders
+        //    the default state because there is nothing left to restore.
+        document.addEventListener('click', function (e) {
+          if (!(e.target.closest && e.target.closest('[data-nav-reset]'))) return;
+          pins = [];
+          save();
+          if (typeof window.__forgetSidebarScroll === 'function') {
+            window.__forgetSidebarScroll();
+          }
         });
       }
 
       // Run synchronously. This script sits after the nav markup it manages
       // (both the desktop `.site-nav` and the drawer copy above), so every
-      // `.section-title` it touches is already parsed. Applying the collapse
-      // state now — before the first paint — avoids a flash of sections
-      // expanding then collapsing.
+      // `.section-title` it touches is already parsed. Applying the pins now —
+      // before the first paint — avoids a flash of sections expanding.
       init();
 
-      // Center the active page in the sidebar before the first paint. A single
-      // rAF scheduled during parse runs in the pre-paint rendering step with
-      // layout resolved, so the sidebar first appears already scrolled — no
-      // visible snap from the top. (`__centerActiveSidebarItem` is defined by
+      // Put the sidebar back where the reader left it, before the first paint.
+      // Called synchronously, like init() above: this script sits after the nav
+      // markup, and reading the geometry forces the layout it needs, so the
+      // sidebar first appears already positioned — no visible snap from the top.
+      //
+      // Deliberately NOT a requestAnimationFrame: rAF callbacks do not run while
+      // the tab is hidden, so a page opened in a background tab (cmd-click, open
+      // in new tab) would render its sidebar unpositioned and only jump into
+      // place once you looked at it. (`__restoreSidebarScroll` is defined by
       // sidebar.js, loaded in <head>; guard in case it failed to load.)
-      requestAnimationFrame(function () {
-        if (typeof window.__centerActiveSidebarItem === 'function') {
-          window.__centerActiveSidebarItem();
-        }
-      });
+      if (typeof window.__restoreSidebarScroll === 'function') {
+        window.__restoreSidebarScroll();
+      }
     })();
   </script>
 </nav>
@@ -293,4 +354,40 @@
             {{- end -}}
         </li>
     {{- end -}}
+{{- end -}}
+
+{{- define "full-tree-nav" -}}
+{{- /* The whole-site navigation tree (DOC-1334): every allowed `top_menu`
+       section is a collapsible root; the current page's root renders expanded,
+       the rest collapsed; each root's subtree comes from section-tree-nav.
+       Rendered by BOTH the desktop sidebar and the mobile drawer -- keep it the
+       only place this structure exists. */ -}}
+{{- $current := . -}}
+<ul>
+  {{- range .Site.Sections.ByWeight -}}
+    {{- $access := partial "page-allowed.html" . -}}
+    {{- if and $access.allowed .Params.top_menu -}}
+      {{- $isActive := eq $current.Section .Section -}}
+      <li>
+        <a href="{{- .RelPermalink -}}" class="section-title{{ if $isActive }} active{{ end }}">
+          <div class="content">
+            {{- if and .IsSection (gt (len .Pages) 0) -}}
+            <span class="chevron{{ if not $isActive }} rotated{{ end }}" aria-hidden="true"></span>
+            {{- else -}}
+            <span class="chevron hidden" aria-hidden="true"></span>
+            {{- end -}}
+            <div style="flex: 1">{{- .Title -}}</div>
+          </div>
+        </a>
+        {{- if .IsSection -}}
+        <ul class="section-pages{{ if not $isActive }} collapsed{{ end }}">
+          {{- range .Pages.ByWeight -}}
+            {{- template "section-tree-nav" (dict "page" . "current" $current) -}}
+          {{- end -}}
+        </ul>
+        {{- end -}}
+      </li>
+    {{- end -}}
+  {{- end -}}
+</ul>
 {{- end -}}

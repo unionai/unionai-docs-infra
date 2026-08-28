@@ -19,6 +19,7 @@ import argparse
 import csv
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.request
@@ -26,12 +27,32 @@ import urllib.error
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _repo import INFRA_ROOT
+from _repo import INFRA_ROOT, get_repo_root
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib  # type: ignore[no-redef]
 
 REDIRECTS_FILE = "redirects.csv"
+
+#: Which branch carries the OTHER documentation line's versions.toml. Both must be
+#: read before deploying -- see retired_pins().
+SIBLING_BRANCH = {"v2": "v1", "v1": "main"}
 CF_API_BASE = "https://api.cloudflare.com/client/v4"
 POLL_INTERVAL_SECONDS = 2
 POLL_MAX_ATTEMPTS = 60
+
+#: Cloudflare's code for "you have been ratelimited please wait and try again".
+#: Replacing this list is a bulk operation, and landing a change that touches both
+#: lines can need several in a few minutes -- five in twenty minutes on 2026-08-26
+#: hit this twice. Transient, so it is waited out rather than failed on.
+RATE_LIMITED_CODE = 10040
+#: Waits between attempts, seconds. The one that eventually succeeded on
+#: 2026-08-26 was seven minutes after the last failure, so this is deliberately
+#: patient: a redirect deploy that gives up leaves the live list stale, and the
+#: symptom is 404s nobody connects to a CI failure days earlier.
+RETRY_BACKOFF_SECONDS = (15, 45, 90, 180)
 
 
 def parse_csv(csv_path: Path) -> list[dict]:
@@ -79,6 +100,86 @@ def parse_csv(csv_path: Path) -> list[dict]:
     return items
 
 
+
+def _versions_from_branch(branch: str) -> dict:
+    """Read versions.toml as it stands on `branch`.
+
+    The two lines are branches of one repository, so the sibling's file is a
+    `git show` away rather than another checkout.
+    """
+    result = subprocess.run(
+        ["git", "show", f"origin/{branch}:versions.toml"],
+        capture_output=True,
+        text=True,
+        cwd=get_repo_root(),
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"could not read versions.toml from origin/{branch}: "
+            f"{result.stderr.strip() or 'unknown error'}"
+        )
+    return tomllib.loads(result.stdout)
+
+
+def retired_pins() -> list[str]:
+    """Every pin either line has retired, this line's first.
+
+    BOTH lines, always. This deploy PUTs the entire redirect list and the
+    workflow fires on either branch, so a run that could see only its own
+    retired pins would republish a list missing the other line's and silently
+    undo them -- the same failure as deploying from a stale submodule pointer,
+    reached from a different direction.
+
+    This line is read from the working tree, not from `origin`, so the file the
+    deploy acts on is the one checked out; the sibling has to come from its ref.
+    A sibling that cannot be read is fatal rather than skipped: a partial list is
+    not a smaller correct answer, it is a wrong one.
+    """
+    own = tomllib.loads((get_repo_root() / "versions.toml").read_text())
+    sibling = SIBLING_BRANCH[_line_of(str(own.get("stable", "v2")))]
+
+    pins = [str(p) for p in own.get("retired", [])]
+    for pin in _versions_from_branch(sibling).get("retired", []):
+        if str(pin) not in pins:
+            pins.append(str(pin))
+    return pins
+
+
+def _line_of(pin: str) -> str:
+    """The docs line a pin belongs to: `v2.6.1.0` -> `v2`."""
+    return "v" + pin.lstrip("v").split(".", 1)[0]
+
+
+def retired_pin_items(pins: list[str], existing: set[str]) -> list[dict]:
+    """A redirect item per retired pin, skipping any the CSV already covers.
+
+    Every retired pin gets the same rule -- the line root, permanent, matching
+    the whole subtree and keeping the path suffix -- so there is no judgement to
+    record and nothing to keep in a file. `existing` makes this idempotent
+    against a hand-written row that has not been migrated yet; Cloudflare rejects
+    a list with two items sharing a source.
+    """
+    items = []
+    for pin in pins:
+        source = f"www.union.ai/docs/{pin}"
+        if source in existing:
+            continue
+        items.append(
+            {
+                "redirect": {
+                    "source_url": source,
+                    "target_url": f"https://www.union.ai/docs/{_line_of(pin)}",
+                    "status_code": 301,
+                    "include_subdomains": True,
+                    "subpath_matching": True,
+                    "preserve_query_string": True,
+                    "preserve_path_suffix": True,
+                }
+            }
+        )
+    return items
+
+
 def cf_api_request(
     method: str, path: str, token: str, body: object = None
 ) -> dict:
@@ -98,9 +199,58 @@ def cf_api_request(
         with urllib.request.urlopen(req) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        print(f"Cloudflare API error ({e.code}): {error_body}", file=sys.stderr)
-        sys.exit(1)
+        raise CloudflareError(e.code, e.read().decode()) from e
+
+
+class CloudflareError(RuntimeError):
+    """A non-2xx response. Carries enough to decide whether to wait or give up."""
+
+    def __init__(self, status: int, body: str):
+        super().__init__(f"Cloudflare API error ({status}): {body}")
+        self.status = status
+        self.body = body
+
+    @property
+    def rate_limited(self) -> bool:
+        return self.status == 429 or f'"code": {RATE_LIMITED_CODE}' in self.body.replace(
+            '"code":', '"code": '
+        )
+
+
+def _rate_limited_result(result: dict) -> bool:
+    """Cloudflare may report the limit in a 200 body rather than a status code."""
+    if result.get("success"):
+        return False
+    return any(e.get("code") == RATE_LIMITED_CODE for e in result.get("errors", []))
+
+
+def cf_api_request_retrying(method: str, path: str, token: str, body: object = None) -> dict:
+    """`cf_api_request`, waiting out a rate limit instead of failing on it.
+
+    Only the rate limit is retried. Anything else is a real error and is raised
+    immediately -- retrying a malformed list just spends the budget slower.
+    """
+    for wait in (*RETRY_BACKOFF_SECONDS, None):
+        try:
+            result = cf_api_request(method, path, token, body=body)
+            if not _rate_limited_result(result):
+                return result
+            reason = "rate limited (in response body)"
+        except CloudflareError as e:
+            if not e.rate_limited:
+                raise
+            reason = f"rate limited (HTTP {e.status})"
+        if wait is None:
+            break
+        print(f"  {reason}; retrying in {wait}s...", file=sys.stderr)
+        time.sleep(wait)
+
+    raise RuntimeError(
+        "Cloudflare rate limit did not clear after "
+        f"{len(RETRY_BACKOFF_SECONDS)} retries over "
+        f"{sum(RETRY_BACKOFF_SECONDS)}s. The live redirect list is UNCHANGED and "
+        "now lags this branch -- re-run this workflow once the limit clears."
+    )
 
 
 def deploy(items: list[dict], account_id: str, list_id: str, token: str) -> None:
@@ -108,7 +258,7 @@ def deploy(items: list[dict], account_id: str, list_id: str, token: str) -> None
     path = f"/accounts/{account_id}/rules/lists/{list_id}/items"
 
     print(f"Uploading {len(items)} redirect items to Cloudflare...")
-    result = cf_api_request("PUT", path, token, body=items)
+    result = cf_api_request_retrying("PUT", path, token, body=items)
 
     if not result.get("success"):
         errors = result.get("errors", [])
@@ -126,7 +276,7 @@ def deploy(items: list[dict], account_id: str, list_id: str, token: str) -> None
 
     for attempt in range(1, POLL_MAX_ATTEMPTS + 1):
         time.sleep(POLL_INTERVAL_SECONDS)
-        status_result = cf_api_request("GET", poll_path, token)
+        status_result = cf_api_request_retrying("GET", poll_path, token)
         status = status_result.get("result", {}).get("status", "unknown")
         print(f"  Poll {attempt}: {status}")
 
@@ -171,6 +321,16 @@ def main() -> int:
     items = parse_csv(csv_path)
     print(f"Parsed {len(items)} redirect items from {args.csv}")
 
+    # Retired pins are not stored as rows. They are recorded in each line's
+    # versions.toml by the cut that retires them, and their redirect is derived
+    # here, so the retirement and the redirect cannot drift apart.
+    derived = retired_pin_items(retired_pins(), {i["redirect"]["source_url"] for i in items})
+    if derived:
+        print(f"Derived {len(derived)} redirect item(s) for retired pins:")
+        for item in derived:
+            print(f"  {item['redirect']['source_url']} -> {item['redirect']['target_url']}")
+        items += derived
+
     if not items:
         print("No redirect items found. Nothing to deploy.")
         return 0
@@ -203,7 +363,14 @@ def main() -> int:
         print("Set these or use --dry-run to test CSV parsing.", file=sys.stderr)
         return 1
 
-    deploy(items, account_id, list_id, token)
+    try:
+        deploy(items, account_id, list_id, token)
+    except (CloudflareError, RuntimeError) as e:
+        # Fail loudly and say what state the live list is in. A redirect deploy
+        # that fails quietly leaves stale redirects, and the symptom is 404s
+        # nobody connects to a red workflow from days earlier.
+        print(str(e), file=sys.stderr)
+        return 1
     return 0
 
 

@@ -15,6 +15,9 @@ import sys
 from pathlib import Path
 
 VARIANTS = ["flyte", "union"]
+# Marks a link that came from a shortcode attribute rather than markdown syntax.
+# Such links are RESOLVED like any other but exempt from the notation lints.
+SHORTCODE_MARKER = "\x00shortcode\x00"
 CONTENT_DIR = Path("content")
 
 
@@ -189,6 +192,37 @@ def extract_links(content: str, variant: str | None = None) -> list[tuple[int, s
         link_url = match.group(2).strip()
         links.append((line_num, link_text, link_url))
 
+    # Shortcode links. A {{< link-card target="..." >}} renders an <a href> and
+    # resolves exactly like a markdown link, but it is an ATTRIBUTE rather than
+    # `[text](url)` syntax, so it was invisible to the pattern above.
+    #
+    # That gap was not theoretical: on the v1 branch it hid five broken
+    # navigation cards, four of them on the tutorials landing page, where the
+    # target pages had been re-categorised and the cards never updated. Link
+    # cards are the primary navigation on landing pages, so this was a large
+    # blind spot.
+    #
+    # Deliberately reusing body_no_code rather than body: the contributing-docs
+    # page documents this very shortcode inside a fenced block, and stripping
+    # fences is what keeps that from reporting as broken.
+    shortcode_pattern = re.compile(
+        r"\{\{<\s*link-card\b([^>]*?)>\}\}", re.DOTALL
+    )
+    for match in shortcode_pattern.finditer(body_no_code):
+        attrs = match.group(1)
+        target = re.search(r'target="([^"]*)"', attrs)
+        if not target:
+            continue
+        title = re.search(r'title="([^"]*)"', attrs)
+        line_num = fm_lines + body_no_code[:match.start()].count("\n") + 1
+        # SHORTCODE_MARKER prefixes the text so check_variant can resolve these
+        # without applying the markdown NOTATION lints — "use ./ prefix" and
+        # "use explicit _index" are rules about [text](url) syntax, and are wrong
+        # for a shortcode attribute. Feeding link-cards through lint_link produced
+        # 17 errors on v1 where only 5 were real, which is how a check gets muted.
+        label = title.group(1) if title else "link-card"
+        links.append((line_num, SHORTCODE_MARKER + label, target.group(1).strip()))
+
     return links
 
 
@@ -238,7 +272,7 @@ def resolve_relative_link(link_path: str, source_file: Path, content_dir: Path,
     source_dir = source_file.parent
 
     # For browser-resolved links from non-_index pages, the URL is one level
-    # deeper than the filesystem path (page.md -> page/index.html).
+    # deeper than the filesystem path (<page>.md -> page/index.html).
     if browser_resolves and source_file.name != "_index.md":
         source_dir = source_dir / source_file.stem
 
@@ -465,6 +499,10 @@ def check_variant(variant: str, content_dir: Path, variant_pages: dict[str, set[
         links = extract_links(content, variant=variant)
 
         for line_num, link_text, link_url in links:
+            # Shortcode links resolve like any other but skip the notation lints.
+            from_shortcode = link_text.startswith(SHORTCODE_MARKER)
+            if from_shortcode:
+                link_text = link_text[len(SHORTCODE_MARKER):]
             link_type = classify_link(link_url)
 
             if link_type in ("skip", "external", "absolute"):
@@ -497,9 +535,11 @@ def check_variant(variant: str, content_dir: Path, variant_pages: dict[str, set[
                 )
                 continue
 
-            # Lint: check notation standards
-            lint_msg = lint_link(link_url, link_text, source_file, content_dir,
-                                page_files, target_file)
+            # Lint: check notation standards. Markdown-syntax links only —
+            # see SHORTCODE_MARKER.
+            lint_msg = None if from_shortcode else lint_link(
+                link_url, link_text, source_file, content_dir,
+                page_files, target_file)
             if lint_msg:
                 errors.append(f"  {source_rel}:{line_num}: {lint_msg}")
 

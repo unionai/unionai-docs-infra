@@ -9,8 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-links check-generated-content clean clean-generated
-
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names update-icon-names clean clean-generated
 all: usage
 
 usage:
@@ -31,18 +30,119 @@ base:
 	@if ! unionai-docs-infra/scripts/pre-flight.sh; then exit 1; fi
 	@echo "Converting Jupyter notebooks..."
 	@unionai-docs-infra/tools/jupyter_generator/gen_jupyter.sh
+	@# Docs version manifest (DOC-1245, PRD §9.1): a pinned tag build carries a
+	@# committed data/version-manifest.json (written by the cut); for /docs/latest
+	@# and dev it's absent, so generate it from the current tree. Gated on
+	@# versions.toml so it's inert without versioning; best-effort so a resolver
+	@# hiccup never fails the build (the version-footer partial just no-ops).
+	@if [ -f versions.toml ] && [ ! -f data/version-manifest.json ]; then \
+		echo "Generating data/version-manifest.json (versioning on, not a pinned cut)..."; \
+		$(UV) unionai-docs-infra/tools/api_generator/manifest.py --write --variant both --out data/version-manifest.json || echo "  (manifest generation skipped)"; \
+	fi
 	rm -rf dist
 	mkdir -p dist
 	mkdir -p dist/docs
 	cat unionai-docs-infra/index.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/index.html
 	cat unionai-docs-infra/index.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/docs/index.html
+	@# Root 404.html (DOC-1334 failure-surfaces): its presence switches CF Pages
+	@# from SPA-fallback (the 200-stub) to REAL 404s for unknown paths.
+	cat unionai-docs-infra/404-root.html.tmpl | sed -e 's#@@BASE@@#/${PREFIX}#g' -e 's#@@DEFAULT_VARIANT@@#$(DEFAULT_VARIANT)#g' -e 's#@@BUILD@@#$(BUILD)#g' > dist/404.html
+
+# Push the built docs into the search index. Runs after a deploy, scoped to the
+# slices THIS branch built: main carries v2 + latest, the v1 branch carries v1.
+# Nothing outside those slices is touched, so the two lines cannot clobber each
+# other. See unionai-docs-infra/tools/algolia_indexer/README.md.
+#
+# Skips silently without credentials so `make dist` stays runnable locally.
+# Settings are NOT applied here -- see index-search-settings.
+index-search:
+	@if [ -z "$$ALGOLIA_DOCS_2_WRITE_API_KEY" ]; then \
+		echo "  skip search index (ALGOLIA_DOCS_2_WRITE_API_KEY unset)"; \
+	else \
+		records=$$(mktemp "$${TMPDIR:-/tmp}/search-records.XXXXXX") || exit 1; \
+		md=$$(mktemp "$${TMPDIR:-/tmp}/markdown-records.XXXXXX") || exit 1; \
+		echo "== keyword index (union) =="; \
+		$(UV) unionai-docs-infra/tools/algolia_indexer/build_records.py \
+			--dist dist --out "$$records" && \
+		$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+			--records "$$records" --prune "$$records.prune.json" --index union; \
+		status=$$?; \
+		if [ $$status -eq 0 ]; then \
+			echo "== Ask AI retrieval index (union-markdown) =="; \
+			if $(UV) unionai-docs-infra/tools/algolia_indexer/build_markdown_records.py \
+				--dist dist --out "$$md" && \
+			   $(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+				--records "$$md" --prune "$$md.prune.json" --index union-markdown; then \
+				echo "  Ask AI retrieval index updated"; \
+			elif [ -n "$$(sed -n 's/^ask_ai_key *= *"\(..*\)"/\1/p' unionai-docs-infra/hugo.toml 2>/dev/null | head -1)" ]; then \
+				echo "  ****************************************************************"; \
+				echo "  ERROR: the Ask AI retrieval index was NOT updated, and Ask AI"; \
+				echo "  IS LIVE (ask_ai_key is set in hugo.toml). Readers would be"; \
+				echo "  answered from a corpus that is stale against this build, with"; \
+				echo "  nothing on the page saying so. Failing the deploy."; \
+				echo "  ****************************************************************"; \
+				status=1; \
+			else \
+				echo "  ****************************************************************"; \
+				echo "  WARNING: the Ask AI retrieval index was NOT updated."; \
+				echo "  The union-markdown corpus is now STALE against this build."; \
+				echo "  Continuing because ask_ai_key is NOT set, so Ask AI is not"; \
+				echo "  serving readers and nothing in production reads this corpus."; \
+				echo "  This becomes fatal automatically once the key is set."; \
+				echo "  ****************************************************************"; \
+			fi; \
+		fi; \
+		rm -f "$$records" "$$md" "$$records.prune.json" "$$md.prune.json"; \
+		exit $$status; \
+	fi
+
+# Index settings are config-as-code but applied deliberately, not on every
+# deploy: a push that also rewrote settings would silently revert any dashboard
+# tuning someone did to diagnose a relevance problem.
+index-search-settings:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+		--index union --settings unionai-docs-infra/tools/algolia_indexer/settings.json
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+		--index union-markdown \
+		--settings unionai-docs-infra/tools/algolia_indexer/settings.markdown.json
+# The search-quality benchmark's answer key references real content URLs. A PR
+# that renames or deletes a labelled page silently rots the benchmark, so the
+# next eval reports a "ranking regression" that is really labelling decay.
+# Fail loudly at PR time instead. Cheap: pure path existence, no network.
+check-search-labels:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/check_labels.py \
+		unionai-docs-infra/tools/algolia_indexer/queries.judged.json \
+		--content content
+
+# Synonyms, like settings, are applied DELIBERATELY -- never on a deploy.
+# push_records uses replaceExistingSynonyms=true, so the payload must always be
+# complete: pushing one source file alone would delete the other's synonyms.
+# merge_synonyms.py is what makes it complete (and drops the findings buckets,
+# which name queries with no page to point at).
+index-search-synonyms:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/merge_synonyms.py \
+		--draft unionai-docs-infra/tools/algolia_indexer/synonyms.draft.json \
+		--manual unionai-docs-infra/tools/algolia_indexer/synonyms.manual.json \
+		--out unionai-docs-infra/tools/algolia_indexer/synonyms.merged.json
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/push_records.py \
+		--index union \
+		--synonyms unionai-docs-infra/tools/algolia_indexer/synonyms.merged.json
+
+# Popularity prior feeding weight.pageRank. Refreshed DELIBERATELY, not per
+# deploy: click data moves slowly, and a prior that shifts under every build
+# makes a ranking regression impossible to attribute. Reads the LEGACY app by
+# default -- it holds the history; pass --app-env ALGOLIA_DOCS_2 once the new
+# app has accumulated its own. Commit the resulting popularity.json.
+refresh-search-popularity:
+	@$(UV) unionai-docs-infra/tools/algolia_indexer/fetch_popularity.py \
+		--out unionai-docs-infra/tools/algolia_indexer/popularity.json
 
 dist:
 	@VARIANTS="$(VARIANTS)" PARALLEL_HUGO="$(PARALLEL_HUGO)" unionai-docs-infra/scripts/build_dist.sh
 
 variant:
 	@if [ -z ${VARIANT} ]; then echo "VARIANT is not set"; exit 1; fi
-	@VERSION=${VERSION} unionai-docs-infra/scripts/run_hugo.sh
+	@VERSION=${VERSION} BUILD=${BUILD} unionai-docs-infra/scripts/run_hugo.sh
 	@VERSION=${VERSION} VARIANT=${VARIANT} PREFIX=${PREFIX} BUILD=${BUILD} unionai-docs-infra/scripts/gen_404.sh
 	@if [ -d "dist/docs/${VERSION}/${VARIANT}/tmp-md" ]; then \
 		$(UV) unionai-docs-infra/tools/llms_generator/process_shortcodes.py \
@@ -122,14 +222,56 @@ check-links:
 check-generated-content:
 	@$(UV) unionai-docs-infra/tools/check_generated_content.py
 
+# Every `icon="..."` must exist in the set its shortcode resolves against:
+# Bootstrap Icons for the <sl-icon> shortcodes, gemoji aliases for `dropdown`.
+# The two are mutually unintelligible and both fail SILENTLY (an empty slot, or
+# a literal `:name:`), and no other check can see it -- a missing icon is not a
+# broken link. DOC-1444.
+check-icon-names:
+	@$(UV) unionai-docs-infra/tools/check_icon_names.py
+
+# Refresh the vendored icon list after a Shoelace version bump.
+update-icon-names:
+	@$(UV) unionai-docs-infra/tools/check_icon_names.py --update
+
 check-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --check
 
-check-llm-bundle-notes:
-	@$(UV) python unionai-docs-infra/tools/llms_generator/check_llm_bundle_notes.py
+# Advisory. Audits the GENERATED API reference for reader-visible defects
+# (literal RST, language-less code blocks, empty parameter descriptions, ...).
+# Set SDK_SOURCE to a flyte-sdk checkout to split empty descriptions into
+# "the generator dropped documented prose" vs "nothing in source to render".
+check-api-docs-rendered:
+	@$(UV) unionai-docs-infra/tools/check_generated_api_docs.py $(if $(SDK_SOURCE),--source $(SDK_SOURCE),)
+
+# Fails when a plugin-provided CLI command is published to the wrong variants,
+# e.g. a Union-only command rendered into the open-source docs (DOC-1479).
+# Reads what each distribution registered from the API venv's entry points, so
+# it cannot inherit a misclassification made by the generator itself.
+check-cli-variant-gating:
+	@$(UV) unionai-docs-infra/tools/check_cli_variant_gating.py
+
+check-asset-refs:
+	@unionai-docs-infra/scripts/check-asset-refs.sh
+
+# The version selector's entries are built twice (baked by run_hugo.sh, published
+# per-line by build_versions.sh for sibling pages to fetch). Assert they agree.
+check-version-menu-parity:
+	@unionai-docs-infra/scripts/check-version-menu-parity.sh
+
+# The pin-retention window is stated in three places that cannot share a
+# constant (two argparse defaults and a Hugo template). DOC-1441.
+check-pin-window-parity:
+	@unionai-docs-infra/scripts/check-pin-window-parity.sh
 
 update-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --update
+
+# Regenerate every package regardless of version. Needed after a change to the
+# GENERATOR, which no version bump would otherwise pick up: the pages are
+# committed, and regeneration is triggered by the PyPI version moving.
+regen-api-docs-all:
+	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --all
 
 check-helm-docs:
 	@$(UV) unionai-docs-infra/tools/helm_generator/check_helm_versions.py --check

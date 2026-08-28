@@ -1,0 +1,28 @@
+# Docs version plan (DOC-1245, docs-versioning "A2" model).
+# The real file lives at the unionai-docs repo ROOT (version-specific config,
+# alongside makefile.inc / api-packages.toml), NOT here in infra. It is normally
+# managed by `manifest.py --promote` (the cut step), not hand-edited.
+#
+# The production build (build_versions.sh) assembles one dist serving each version
+# of this line under /docs/<version>/:
+#   /docs/latest  <- main            NOINDEX   (bleeding edge; v2 only, `latest = true`)
+#   /docs/<line>  <- the `stable` tag INDEXED   (canonical stable; the one indexed URL)
+#   /docs/<tag>   <- each enumerated  NOINDEX   (immutable pinned OLDER version, cached)
+# <line> is the tag prefix (v2 or v1). Only /docs/<line> is indexed. /docs/stable and
+# the /docs/latest alias are Cloudflare redirect rules, not built here.
+#
+# INVARIANT: the newest tag is served ONCE, at /docs/<line> (as `stable`). It is NEVER
+# also enumerated — so there are no two byte-identical trees. `enumerated` is OLDER tags
+# only; on a cut, the outgoing stable rotates into it. See ROUTING-ARCHITECTURE.md.
+
+# The newest tag, served at /docs/<line> (canonical stable).
+stable = "v2.5.12.0"
+
+# OLDER pinned tags, each served at /docs/<tag> and shown in the selector. Newest-first;
+# each MUST be an existing git tag; the current `stable` is NOT listed here.
+enumerated = [
+  "v2.5.11.0",
+  "v2.5.10.0",
+]
+
+# latest = false   # a secondary line (v1) serves no /docs/latest (that URL is v2's).

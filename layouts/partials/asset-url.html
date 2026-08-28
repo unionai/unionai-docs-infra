@@ -1,0 +1,35 @@
+{{- /* asset-url.html — the published URL of a CSS/JS asset, content-hashed.
+
+       Takes a path relative to assets/ (e.g. "css/base.css") and returns a URL
+       like /docs/v2/union/css/base.<sha256>.css.
+
+       WHY (DOC-1316). Assets used to be served from static/ at a stable path
+       with a per-build query string: `css/base.css?v=1785494765`. Cloudflare's
+       cache key includes the query string, so `?v=<new>` is a brand-new cache
+       entry — and whatever the origin happens to return the first time that
+       entry is requested is what gets stored under it, for the full max-age.
+
+       A request landing mid-deploy (HTML already switched, assets not yet
+       propagated) therefore caches the OLD stylesheet under the NEW stamp. The
+       result is new HTML paired with the previous build's CSS for up to four
+       hours, and it is invisible to any check that compares build stamps —
+       the entry has the right stamp and the wrong bytes. It bit us twice on
+       2026-07-31.
+
+       Hashing the CONTENT into the filename removes the failure by
+       construction: a given URL can only ever hold one byte sequence. If the
+       new file has not propagated yet the request 404s briefly and self-heals,
+       which is both louder and shorter than silently serving stale CSS.
+
+       Side benefit: an unchanged stylesheet keeps its URL across deploys, so it
+       stays cached instead of being invalidated on every release. Previously
+       every deploy re-downloaded all ~23 stylesheets for every visitor.
+
+       errorf rather than a silent fallback: a stylesheet that vanishes from the
+       page is exactly the kind of failure that ships unnoticed. */ -}}
+{{- $path := . -}}
+{{- with resources.Get $path -}}
+  {{- (. | fingerprint "sha256").RelPermalink -}}
+{{- else -}}
+  {{- errorf "asset-url.html: no asset at %q (looked in assetDir). If you moved a file, update Params.custom_css / custom_js too." $path -}}
+{{- end -}}

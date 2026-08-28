@@ -1,4 +1,16 @@
-{{- /* Build-constant version string for cache-busting asset URLs (DOC-1251).
-       Mirrors the `$v` in baseof.html. Call via `partialCached "build-version.html" .`
-       so every caller in a build gets the same value (one stable ?v per build). */ -}}
-{{- now.Format "20060102150405" -}}
+{{- /* Build-constant version string for cache-busting asset URLs (DOC-1251, DOC-1309).
+
+       THE single source of the `?v=` stamp — CSS/JS in baseof.html and images in
+       _markup/render-image.html. Always call as `partialCached "build-version.html" .`
+       so every caller in a build gets one value.
+
+       `build_id` is set once per build by scripts/run_hugo.sh (from the Makefile's
+       BUILD). The `now` fallback keeps `hugo server` and any direct Hugo invocation
+       working — there, per-render churn is what you want anyway.
+
+       DOC-1309: baseof.html used to compute its own `now.Format` inline, outside any
+       cache, so Hugo evaluated it per PAGE. A ~25-30s build emitted a different stamp
+       on nearly every page, each CSS file was cached under ~30 URLs, and navigation
+       re-fetched all 26 stylesheets. Images were never affected — they already came
+       through this partial. Both now share it so they cannot diverge again. */ -}}
+{{- .Site.Params.build_id | default (now.Format "20060102150405") -}}
