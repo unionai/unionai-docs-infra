@@ -153,11 +153,19 @@ def print_results(results: list[dict]) -> None:
             print(f"  {r['package']}: committed={committed} latest={latest} [{status}]")
 
 
-def regenerate(results: list[dict]) -> None:
+def regenerate(results: list[dict], force: bool = False) -> None:
     """Invoke existing Makefiles to regenerate outdated docs.
 
     Sets up the shared SDK/CLI venv once, then runs each generator.
+
+    `force` regenerates every item regardless of its version, for a change to
+    the generator that no version bump would pick up. It has to be threaded
+    through each of the three selections below, not applied by the caller
+    handing over a longer list: each one re-reads `outdated` itself, so a
+    caller-side filter is silently ignored.
     """
+    def wanted(r: dict) -> bool:
+        return force or r["outdated"]
     # Set up the shared venv used by SDK and CLI generation.
     print("\nSetting up shared venv...")
     subprocess.run(
@@ -167,9 +175,9 @@ def regenerate(results: list[dict]) -> None:
     )
 
     # Regenerate all SDKs together
-    has_outdated_sdk = any(r["outdated"] and r["type"] == "sdk" for r in results)
+    has_outdated_sdk = any(wanted(r) and r["type"] == "sdk" for r in results)
     if has_outdated_sdk:
-        outdated_sdks = [r["package"] for r in results if r["outdated"] and r["type"] == "sdk"]
+        outdated_sdks = [r["package"] for r in results if wanted(r) and r["type"] == "sdk"]
         print(f"\nRegenerating SDK docs ({', '.join(outdated_sdks)})...")
         subprocess.run(
             ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "sdks"],
@@ -178,9 +186,9 @@ def regenerate(results: list[dict]) -> None:
         )
 
     # Regenerate all CLIs together
-    has_outdated_cli = any(r["outdated"] and r["type"] == "cli" for r in results)
+    has_outdated_cli = any(wanted(r) and r["type"] == "cli" for r in results)
     if has_outdated_cli:
-        outdated_clis = [r["name"] for r in results if r["outdated"] and r["type"] == "cli"]
+        outdated_clis = [r["name"] for r in results if wanted(r) and r["type"] == "cli"]
         print(f"\nRegenerating CLI docs ({', '.join(outdated_clis)})...")
         subprocess.run(
             ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "clis"],
@@ -190,7 +198,7 @@ def regenerate(results: list[dict]) -> None:
 
     # Regenerate outdated plugins
     for r in results:
-        if not r["outdated"]:
+        if not wanted(r):
             continue
         if r["type"] == "plugin":
             print(f"\nRegenerating plugin docs ({r['package']})...")
@@ -259,7 +267,7 @@ def main():
     # for a stable plugin can be never. `--all` is the way to publish one.
     if args.regen_all:
         print(f"\nRegenerating all {len(results)} item(s), ignoring versions.")
-        regenerate(results)
+        regenerate(results, force=True)
         print("\nDone. Review and commit the updated docs.")
         return
 
