@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names update-icon-names clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names update-icon-names clean clean-generated
 all: usage
 
 usage:
@@ -266,6 +266,12 @@ check-pin-window-parity:
 
 update-api-docs:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --update
+
+# Regenerate every package regardless of version. Needed after a change to the
+# GENERATOR, which no version bump would otherwise pick up: the pages are
+# committed, and regeneration is triggered by the PyPI version moving.
+regen-api-docs-all:
+	@$(UV) unionai-docs-infra/tools/api_generator/check_versions.py --all
 
 check-helm-docs:
 	@$(UV) unionai-docs-infra/tools/helm_generator/check_helm_versions.py --check
