@@ -14,6 +14,14 @@
 
 {{ $destination = partial "rel-link.html" $destination }}
 
+{{/* `rel-link.html` preserves relative paths on API-reference pages so API links can
+   retain their source-relative form. Images need the usual page-relative rebasing,
+   otherwise `../_static/...` resolves under `/api-reference/` in the browser instead
+   of at the documentation root. */}}
+{{- if and (in page.RelPermalink "/api-reference/") (not (or (hasPrefix $destination "/") (hasPrefix $destination "http://") (hasPrefix $destination "https://") (hasPrefix $destination "//") (hasPrefix $destination "data:"))) -}}
+  {{- $destination = printf "%s../%s" page.RelPermalink $destination -}}
+{{- end -}}
+
 {{/* Cache-bust LOCAL images with the build version so a replaced same-name image
      updates immediately across the CDN (external / data URIs are left as-is).
      Mirrors the ?v= busting already applied to CSS/JS. DOC-1251. */}}
