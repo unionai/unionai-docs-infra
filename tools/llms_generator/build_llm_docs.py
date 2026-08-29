@@ -11,7 +11,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Set, List
+from typing import List, Optional, Set, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -55,6 +55,11 @@ EXCERPT_MAX_CHARS = 320
 # description is not read as a second entry. Everything after the closing paren
 # is captured as one tail that runs to end of line, so a description survives
 # whatever it contains -- brackets, parens, a link, a further ` - `.
+# One markdown link. Shared by the absolutizer and the heading rewrite so the
+# two cannot drift; a heading whose link the pattern misses is copied verbatim
+# and resolves against the wrong page.
+MD_LINK_RE = re.compile(r'\[([^\]]*)\]\(([^)]+)\)')
+
 SUBPAGE_ENTRY_RE = re.compile(
     r'^- \[([^\]]+)\]\(([^)]+)\)(?P<tail>.*)$', re.MULTILINE)
 
@@ -772,6 +777,7 @@ class LLMDocBuilder:
         version = version or self.version
         variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
         self.variant_root = variant_dir
+        base_url = f"https://www.union.ai/docs/{version}/{variant}"
 
         for content_file in iter_pages(variant_dir):
             try:
@@ -815,7 +821,16 @@ class LLMDocBuilder:
                 except ValueError:
                     child_key = ""
 
-                headings = self.page_headings.get(child_key, [])
+                # A heading may itself be a link, and its URL was written
+                # against the CHILD page. Copying it into the parent's listing
+                # moves it to a page with a different base, so resolve it here
+                # while the child is still known. Left relative it would be
+                # absolutized later against the parent and point at a page that
+                # does not exist -- or worse, at one that does (DOC-1499).
+                headings = [
+                    self.absolutize_in(h, page_for(variant_dir, child_key), base_url)[0]
+                    for h in self.page_headings.get(child_key, [])
+                ]
                 entry = self.format_subpage_entry(
                     child_title, child_url, headings, description=child_desc)
                 enhanced_lines.append(entry)
@@ -910,13 +925,68 @@ class LLMDocBuilder:
         twin = page_for(self.variant_root, rel)
         return rel + PAGE_SUFFIX if twin.is_file() else rel
 
+    def absolutize_in(self, text: str, base_file: Path, base_url: str) -> Tuple[str, int]:
+        """Rewrite every relative markdown link in `text` to an absolute URL.
+
+        `base_file` is the page the link was authored in, which is NOT always the
+        page the text ends up in. A heading copied out of a child page into its
+        parent's `## Subpages` listing carries a link written against the CHILD,
+        so it has to be resolved here, at copy time, against that child -- not
+        later against the parent that now holds it (DOC-1499, DOC-1511).
+
+        Returns the rewritten text and the number of links changed. The count is
+        the assertion: a rewrite pass that silently matches nothing reports
+        success, so callers check the number rather than the exit status.
+        """
+        count = 0
+
+        def replace_link(match):
+            nonlocal count
+            link_text, link_url = match.groups()
+
+            # Skip external links
+            if re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*:', link_url):
+                return match.group(0)
+
+            # Skip anchor-only links
+            if link_url.startswith('#'):
+                return match.group(0)
+
+            # Handle root-relative paths (e.g. /docs/v2/flyte/...)
+            if link_url.startswith('/'):
+                count += 1
+                return f'[{link_text}](https://www.union.ai{link_url})'
+
+            # Split URL and anchor
+            url_parts = link_url.split('#', 1)
+            base_path_part = url_parts[0]
+            anchor = '#' + url_parts[1] if len(url_parts) > 1 else ''
+
+            if not base_path_part:
+                return match.group(0)
+
+            # Resolve relative path to absolute filesystem path
+            resolved = self._resolve_from_source_dir(base_file, base_path_part)
+
+            # The page's twin, not whichever of the twin/directory pair the
+            # link happened to resolve to. The anchor rides on the END of
+            # the URL, after the `.md`.
+            rel_to_variant = self._published_path(resolved)
+            if rel_to_variant is None:
+                return match.group(0)
+
+            absolute_url = f"{base_url}/{rel_to_variant}{anchor}"
+            count += 1
+            return f'[{link_text}]({absolute_url})'
+
+        return re.sub(MD_LINK_RE, replace_link, text), count
+
     def absolutize_links(self, variant: str, version: str = None):
         """Convert all relative links in the page twins to absolute URLs."""
         version = version or self.version
         variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
         self.variant_root = variant_dir
         base_url = f"https://www.union.ai/docs/{version}/{variant}"
-        link_pattern = r'\[([^\]]*)\]\(([^)]+)\)'
         fixed_count = 0
         total_files = 0
 
@@ -927,51 +997,11 @@ class LLMDocBuilder:
             except Exception:
                 continue
 
-            original_content = content
+            new_content, changed = self.absolutize_in(content, content_file, base_url)
+            fixed_count += changed
 
-            def replace_link(match, _file=content_file):
-                nonlocal fixed_count
-                link_text, link_url = match.groups()
-
-                # Skip external links
-                if re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*:', link_url):
-                    return match.group(0)
-
-                # Skip anchor-only links
-                if link_url.startswith('#'):
-                    return match.group(0)
-
-                # Handle root-relative paths (e.g. /docs/v2/flyte/...)
-                if link_url.startswith('/'):
-                    fixed_count += 1
-                    return f'[{link_text}](https://www.union.ai{link_url})'
-
-                # Split URL and anchor
-                url_parts = link_url.split('#', 1)
-                base_path_part = url_parts[0]
-                anchor = '#' + url_parts[1] if len(url_parts) > 1 else ''
-
-                if not base_path_part:
-                    return match.group(0)
-
-                # Resolve relative path to absolute filesystem path
-                resolved = self._resolve_from_source_dir(_file, base_path_part)
-
-                # The page's twin, not whichever of the twin/directory pair the
-                # link happened to resolve to. The anchor rides on the END of
-                # the URL, after the `.md`.
-                rel_to_variant = self._published_path(resolved)
-                if rel_to_variant is None:
-                    return match.group(0)
-
-                absolute_url = f"{base_url}/{rel_to_variant}{anchor}"
-                fixed_count += 1
-                return f'[{link_text}]({absolute_url})'
-
-            content = re.sub(link_pattern, replace_link, content)
-
-            if content != original_content:
-                content_file.write_text(content, encoding='utf-8')
+            if new_content != content:
+                content_file.write_text(new_content, encoding='utf-8')
 
         if not self.quiet:
             print(f"Converted {fixed_count} links to absolute URLs in {total_files} files for {variant}")
