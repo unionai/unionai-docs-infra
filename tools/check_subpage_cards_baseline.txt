@@ -10,7 +10,7 @@
 # Never add a line to make a build pass: a new entry means the gate caught the
 # thing it exists to catch.
 #
-# 47 entries. By area: deployment 18, user-guide 13, security 5, integrations 4,
+# 46 entries. By area: deployment 18, user-guide 13, security 5, integrations 4,
 # oss-deployment 3, community 2, tutorials 1, plus the site root.
 
 # The site root. Its landing page is the variant-switching intro, so whether it
@@ -74,21 +74,9 @@ user-guide/tasks/task-programming/_index.md
 # Both are worth a look rather than a rubber stamp:
 #   tutorials/_index.md      5 industry verticals shipped after the card grid
 #                            was written and never got one.
-#   core-concepts/_index.md  9 of its 10 children have no card. The page is
-#                            prose with a single card at the end, so it may
-#                            want subpage_cards: false rather than 9 new cards.
 # ---------------------------------------------------------------------------
 tutorials/_index.md -> autonomous-systems
 tutorials/_index.md -> logistics
 tutorials/_index.md -> media
 tutorials/_index.md -> observability
 tutorials/_index.md -> post-training
-user-guide/get-started/core-concepts/_index.md -> basic-project
-user-guide/get-started/core-concepts/_index.md -> introducing-apps
-user-guide/get-started/core-concepts/_index.md -> key-capabilities
-user-guide/get-started/core-concepts/_index.md -> projects-and-domains
-user-guide/get-started/core-concepts/_index.md -> runs-and-actions
-user-guide/get-started/core-concepts/_index.md -> settings
-user-guide/get-started/core-concepts/_index.md -> task-environment
-user-guide/get-started/core-concepts/_index.md -> tasks
-user-guide/get-started/core-concepts/_index.md -> where-data-lives
