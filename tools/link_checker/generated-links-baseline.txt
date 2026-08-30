@@ -11,16 +11,22 @@
 #    34  after #291
 #    32  after the wrapped-link fix in this PR (both the twin and bundle paths)
 #
-# One URL per line, as it appears after https://www.union.ai/docs/.
+# One path per line, VARIANT-RELATIVE: the version segment is stripped before
+# matching. The same defect appears once per version tree and CI builds ten of
+# them (latest, the stable line, three pinned tags, each times two variants), so
+# a version-keyed entry would match only the tree it was measured in.
+#
+# It is also the only form that works for a pinned tag at all: those trees come
+# from an immutable tag, so a link broken inside one can never be fixed there.
 
 # ---------------------------------------------------------------------------
 # DOC-1506 -- two content pages still document the old `page.md` name, so the
 # link resolves to a file the DOC-1432 rename removed. Content fix, not code.
 # ---------------------------------------------------------------------------
-v2/flyte/api-reference/page.md
-v2/union/api-reference/page.md
-v2/flyte/community/resources/page.md
-v2/union/community/resources/page.md
+flyte/api-reference/page.md
+union/api-reference/page.md
+flyte/community/resources/page.md
+union/community/resources/page.md
 
 # ---------------------------------------------------------------------------
 # DOC-1511 site A -- `absolutize_links()` resolves an author-written `../x/_index`
@@ -28,18 +34,18 @@ v2/union/community/resources/page.md
 # frozen v2.5.8 snapshots of removed plugins and are never regenerated, so these
 # two need a content edit rather than a generator fix (see DOC-1512).
 # ---------------------------------------------------------------------------
-v2/flyte/api-reference/agents/claude
-v2/union/api-reference/agents/claude
-v2/flyte/api-reference/agents/google
-v2/union/api-reference/agents/google
-v2/union/union-plugin
+flyte/api-reference/agents/claude
+union/api-reference/agents/claude
+flyte/api-reference/agents/google
+union/api-reference/agents/google
+union/union-plugin
 
 # ---------------------------------------------------------------------------
 # DOC-1511 -- an `_index` suffix survives resolution instead of being stripped
 # to the section landing. Same function, same ticket, distinct symptom.
 # ---------------------------------------------------------------------------
-v2/union/deployment/byoc/_index
-v2/union/deployment/selfmanaged/_index
+union/deployment/byoc/_index
+union/deployment/selfmanaged/_index
 
 # ---------------------------------------------------------------------------
 # Content, not the generator: author-written ABSOLUTE `/docs/v2/union/...` URLs
@@ -51,7 +57,7 @@ v2/union/deployment/selfmanaged/_index
 #   reusable-containers        -> now under user-guide/tasks/task-configuration/
 #   sandboxing/code-sandboxing -> now under user-guide/agents/sandboxing/
 # ---------------------------------------------------------------------------
-v2/union/user-guide/considerations/#driver-pod-requirements
-v2/union/user-guide/task-programming/traces/
-v2/union/user-guide/reusable-containers
-v2/union/user-guide/sandboxing/code-sandboxing
+union/user-guide/considerations/#driver-pod-requirements
+union/user-guide/task-programming/traces/
+union/user-guide/reusable-containers
+union/user-guide/sandboxing/code-sandboxing

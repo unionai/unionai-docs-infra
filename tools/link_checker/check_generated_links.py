@@ -58,6 +58,25 @@ def build_scope(dist: Path) -> set:
     return scope
 
 
+def without_version(path: str) -> str:
+    """Drop the leading version segment: `v2/union/x` -> `union/x`.
+
+    The baseline is matched on this, not on the full path, because the same
+    content defect appears once per version tree and CI builds many of them:
+    `latest/`, the stable line, and every pinned tag. A version-keyed baseline
+    matches only the tree it was measured in, so it would pass locally on a
+    two-tree build and fail in CI on ten.
+
+    It is also the only form that can work at all for a pinned tag. Those trees
+    are built from an immutable tag, so a broken link inside one can never be
+    fixed -- there is nothing to fix it in. Excluding it by content path is the
+    only option; excluding it by version would need a new baseline entry at
+    every cut, forever.
+    """
+    parts = path.split("/", 1)
+    return parts[1] if len(parts) > 1 else path
+
+
 def in_scope(path: str, scope: set) -> bool:
     parts = path.split("/")
     return len(parts) >= 2 and f"{parts[0]}/{parts[1]}" in scope
@@ -74,7 +93,8 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dist", default="dist/docs", type=Path)
     ap.add_argument("--exclude", type=Path,
-                    help="file of URL paths to ignore, one per line, # for comments")
+                    help="file of variant-relative paths to ignore (no version "
+                         "segment), one per line, # for comments")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
 
@@ -109,7 +129,7 @@ def main() -> int:
             if not in_scope(path, scope):
                 out_of_scope += 1
                 continue
-            if path in excluded:
+            if without_version(path) in excluded:
                 skipped += 1
                 continue
             if not resolves(args.dist, path):
