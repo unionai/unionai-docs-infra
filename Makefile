@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names update-icon-names clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names update-icon-names clean clean-generated
 all: usage
 
 usage:
@@ -218,6 +218,14 @@ check-deleted-pages:
 
 check-links:
 	@$(UV) unionai-docs-infra/tools/link_checker/check_internal_links.py
+
+# Checks the links the GENERATOR writes into dist/, which check-links does not
+# see: it reads content/. Needs `make dist` first. The baseline file is a
+# ratchet -- it holds the links that predate the gate, each attributed to a
+# ticket, and shrinks. See tools/link_checker/generated-links-baseline.txt.
+check-generated-links:
+	@$(UV) unionai-docs-infra/tools/link_checker/check_generated_links.py \
+		--exclude unionai-docs-infra/tools/link_checker/generated-links-baseline.txt
 
 check-generated-content:
 	@$(UV) unionai-docs-infra/tools/check_generated_content.py

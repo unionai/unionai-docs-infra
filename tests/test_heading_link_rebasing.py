@@ -200,3 +200,33 @@ def test_end_to_end_the_child_description_still_survives(tmp_path):
     b.enhance_subpage_listings("union", "v2")
     out = (variant / "guide.md").read_text()
     assert "- [Concepts](concepts/) - What the concepts are." in out
+
+
+def test_a_link_wrapped_across_lines_is_still_external(tree):
+    """A markdown link may wrap, putting a newline inside the captured target.
+
+    Left in place it defeats the scheme test, so an external URL is taken for a
+    relative path and gets the docs base glued in front of it. Real case, from
+    user-guide/tasks/task-programming/reports.md:
+
+        (You can find it in the [source file](
+        https://github.com/unionai/unionai-examples/blob/main/...))
+
+    which produced
+        .../union/user-guide/tasks/task-programming/https:/github.com/unionai/...
+    """
+    b, variant = tree
+    base = child_of(variant, "user-guide/get-started/core-concepts")
+    wrapped = "[source file](\nhttps://github.com/unionai/unionai-examples/blob/main/x.py)"
+    out, n = b.absolutize_in(wrapped, base, BASE_URL)
+    assert "union.ai/docs" not in out, out
+    assert n == 0
+
+
+def test_a_wrapped_relative_link_still_resolves(tree):
+    """Stripping must not stop a genuinely relative wrapped link from resolving."""
+    b, variant = tree
+    base = child_of(variant, "user-guide/get-started/core-concepts")
+    out, n = b.absolutize_in("[Leases](\n  leases)", base, BASE_URL)
+    assert out == f"[Leases]({BASE_URL}/user-guide/get-started/core-concepts/leases.md)"
+    assert n == 1

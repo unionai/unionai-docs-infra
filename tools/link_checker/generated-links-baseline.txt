@@ -1,0 +1,57 @@
+# Known-broken links in the generated markdown, as of 2026-08-30.
+#
+# This file is a RATCHET, not a permission slip. The gate blocks any NEW broken
+# generated link; these are the ones that predate it, each attributed to the
+# ticket that closes it. Delete a line when its ticket lands. Never add a line
+# to make a build pass -- a new entry means the gate caught the thing it exists
+# to catch.
+#
+# Baseline history:
+#   202  before infra#291 (headings copied into a parent kept the child's base)
+#    34  after #291
+#    32  after the wrapped-link fix in this PR (both the twin and bundle paths)
+#
+# One URL per line, as it appears after https://www.union.ai/docs/.
+
+# ---------------------------------------------------------------------------
+# DOC-1506 -- two content pages still document the old `page.md` name, so the
+# link resolves to a file the DOC-1432 rename removed. Content fix, not code.
+# ---------------------------------------------------------------------------
+v2/flyte/api-reference/page.md
+v2/union/api-reference/page.md
+v2/flyte/community/resources/page.md
+v2/union/community/resources/page.md
+
+# ---------------------------------------------------------------------------
+# DOC-1511 site A -- `absolutize_links()` resolves an author-written `../x/_index`
+# one level too high, dropping a path segment. The gemini and anthropic pages are
+# frozen v2.5.8 snapshots of removed plugins and are never regenerated, so these
+# two need a content edit rather than a generator fix (see DOC-1512).
+# ---------------------------------------------------------------------------
+v2/flyte/api-reference/agents/claude
+v2/union/api-reference/agents/claude
+v2/flyte/api-reference/agents/google
+v2/union/api-reference/agents/google
+v2/union/union-plugin
+
+# ---------------------------------------------------------------------------
+# DOC-1511 -- an `_index` suffix survives resolution instead of being stripped
+# to the section landing. Same function, same ticket, distinct symptom.
+# ---------------------------------------------------------------------------
+v2/union/deployment/byoc/_index
+v2/union/deployment/selfmanaged/_index
+
+# ---------------------------------------------------------------------------
+# Content, not the generator: author-written ABSOLUTE `/docs/v2/union/...` URLs
+# in prose, pointing at paths that no longer exist. The generator never touches
+# an already-absolute link, so no code change reaches these. Each needs the
+# author's intended target restored.
+#   considerations/            -> page removed or renamed
+#   task-programming/traces/   -> now under user-guide/tasks/task-programming/
+#   reusable-containers        -> now under user-guide/tasks/task-configuration/
+#   sandboxing/code-sandboxing -> now under user-guide/agents/sandboxing/
+# ---------------------------------------------------------------------------
+v2/union/user-guide/considerations/#driver-pod-requirements
+v2/union/user-guide/task-programming/traces/
+v2/union/user-guide/reusable-containers
+v2/union/user-guide/sandboxing/code-sandboxing

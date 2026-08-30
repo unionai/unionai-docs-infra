@@ -944,6 +944,13 @@ class LLMDocBuilder:
             nonlocal count
             link_text, link_url = match.groups()
 
+            # A markdown link may wrap across lines, which puts a newline and
+            # the following indent INSIDE the captured target. Left in place it
+            # defeats the scheme test below, so an external `https://github.com/...`
+            # is taken for a relative path and gets the docs base glued in front
+            # of it. Strip first, then classify.
+            link_url = link_url.strip()
+
             # Skip external links
             if re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*:', link_url):
                 return match.group(0)
@@ -1032,7 +1039,11 @@ class LLMDocBuilder:
 
         def replace_link(match):
             text = match.group(1)
-            url = match.group(2)
+            # A wrapped markdown link puts a newline and the following indent
+            # inside the captured target, which defeats the scheme test below.
+            # The same strip is in `absolutize_in()`; the bundle path resolves
+            # links itself and does not go through it.
+            url = match.group(2).strip()
 
             # Already-absolute links
             if url.startswith(('http://', 'https://', 'mailto:')):
