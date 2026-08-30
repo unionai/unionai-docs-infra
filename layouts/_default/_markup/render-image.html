@@ -14,6 +14,24 @@
 
 {{ $destination = partial "rel-link.html" $destination }}
 
+{{/* `rel-link.html` preserves relative paths on API-reference pages so API links can
+   retain their source-relative form. Images need the usual page-relative rebasing,
+   otherwise `../_static/...` resolves against the page's own URL instead of the
+   documentation root, and 404s.
+
+   Mirror rel-link.html's index/leaf split exactly. A branch bundle (`_index.md`)
+   has a RelPermalink that already ends at its own directory, so it needs no `../`;
+   a leaf page's RelPermalink ends at the page, so it needs one. Getting this wrong
+   on an index page yields `/docs/<v>/_static/...`, which 302s to an HTML page rather
+   than 404ing -- a broken image that no checker sees. */}}
+{{- if and (in page.RelPermalink "/api-reference/") (not (or (hasPrefix $destination "HAHAHUGOSHORTCODE") (hasPrefix $destination "/") (hasPrefix $destination "http://") (hasPrefix $destination "https://") (hasPrefix $destination "//") (hasPrefix $destination "data:"))) -}}
+  {{- if hasSuffix page "_index.md" -}}
+    {{- $destination = printf "%s%s" page.RelPermalink $destination -}}
+  {{- else -}}
+    {{- $destination = printf "%s../%s" page.RelPermalink $destination -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Cache-bust LOCAL images with the build version so a replaced same-name image
      updates immediately across the CDN (external / data URIs are left as-is).
      Mirrors the ?v= busting already applied to CSS/JS. DOC-1251. */}}
