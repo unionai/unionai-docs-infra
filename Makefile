@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names check-subpage-cards update-icon-names clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-rendered-images check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names check-subpage-cards update-icon-names clean clean-generated
 all: usage
 
 usage:
@@ -226,6 +226,14 @@ check-links:
 check-generated-links:
 	@$(UV) unionai-docs-infra/tools/link_checker/check_generated_links.py \
 		--exclude unionai-docs-infra/tools/link_checker/generated-links-baseline.txt
+
+# Checks the images the BUILT site actually serves, resolved the way a browser
+# does -- against the page's URL, not the source file's directory. Needs
+# `make dist` first. check-images reads content/ and cannot see this: a src can
+# be correct in the markdown and wrong in the HTML, because Hugo's render hooks
+# rebase it. DOC-1515.
+check-rendered-images:
+	@$(UV) unionai-docs-infra/tools/image_checker/check_rendered_images.py
 
 check-generated-content:
 	@$(UV) unionai-docs-infra/tools/check_generated_content.py
