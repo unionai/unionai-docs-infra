@@ -63,3 +63,32 @@ user-guide/run-scaling/_index.md
 user-guide/tasks/task-configuration/_index.md
 user-guide/tasks/task-deployment/_index.md
 user-guide/tasks/task-programming/_index.md
+
+# ---------------------------------------------------------------------------
+# COVERAGE EXEMPTIONS -- `page -> child`
+#
+# A child that has no card on its parent's hand-authored card set. A card set
+# does not grow by itself, so a page added later is reachable only from the
+# sidebar. These 14 predate the check.
+#
+# Both are worth a look rather than a rubber stamp:
+#   tutorials/_index.md      5 industry verticals shipped after the card grid
+#                            was written and never got one.
+#   core-concepts/_index.md  9 of its 10 children have no card. The page is
+#                            prose with a single card at the end, so it may
+#                            want subpage_cards: false rather than 9 new cards.
+# ---------------------------------------------------------------------------
+tutorials/_index.md -> autonomous-systems
+tutorials/_index.md -> logistics
+tutorials/_index.md -> media
+tutorials/_index.md -> observability
+tutorials/_index.md -> post-training
+user-guide/get-started/core-concepts/_index.md -> basic-project
+user-guide/get-started/core-concepts/_index.md -> introducing-apps
+user-guide/get-started/core-concepts/_index.md -> key-capabilities
+user-guide/get-started/core-concepts/_index.md -> projects-and-domains
+user-guide/get-started/core-concepts/_index.md -> runs-and-actions
+user-guide/get-started/core-concepts/_index.md -> settings
+user-guide/get-started/core-concepts/_index.md -> task-environment
+user-guide/get-started/core-concepts/_index.md -> tasks
+user-guide/get-started/core-concepts/_index.md -> where-data-lives
