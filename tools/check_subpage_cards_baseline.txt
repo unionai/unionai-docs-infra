@@ -1,0 +1,65 @@
+# Section pages with children that have no subpage cards, as of 2026-08-30.
+#
+# A RATCHET, not a permission slip. The gate's job is to stop a NEW section page
+# shipping with no way forward for a reader; these predate it. DOC-1509 is
+# explicit that they must not be auto-carded -- deciding whether a landing page
+# wants cards, and what belongs above them, is an editorial call per page.
+#
+# Delete a line when the page gets `{{< subpage-cards >}}`, or when it gets
+# `subpage_cards: false` because it is a document rather than a signpost.
+# Never add a line to make a build pass: a new entry means the gate caught the
+# thing it exists to catch.
+#
+# 47 entries. By area: deployment 18, user-guide 13, security 5, integrations 4,
+# oss-deployment 3, community 2, tutorials 1, plus the site root.
+
+# The site root. Its landing page is the variant-switching intro, so whether it
+# wants cards at all is a design question, not an oversight.
+_index.md
+
+community/_index.md
+community/contributing-docs/_index.md
+deployment/_index.md
+deployment/byoc/_index.md
+deployment/byoc/enabling-aws-resources/_index.md
+deployment/byoc/enabling-azure-resources/_index.md
+deployment/byoc/enabling-gcp-resources/_index.md
+deployment/byoc/single-sign-on-setup/_index.md
+deployment/selfmanaged/_index.md
+deployment/selfmanaged/architecture/_index.md
+deployment/selfmanaged/configuration/_index.md
+deployment/selfmanaged/helm-chart-reference/_index.md
+deployment/selfmanaged/selfmanaged-aws/_index.md
+deployment/selfmanaged/selfmanaged-azure/_index.md
+deployment/selfmanaged/selfmanaged-coreweave/_index.md
+deployment/selfmanaged/selfmanaged-crusoe/_index.md
+deployment/selfmanaged/selfmanaged-gcp/_index.md
+deployment/selfmanaged/selfmanaged-generic/_index.md
+deployment/selfmanaged/selfmanaged-nebius/_index.md
+deployment/selfmanaged/selfmanaged-oci/_index.md
+integrations/_index.md
+integrations/agents/_index.md
+integrations/opentelemetry/_index.md
+integrations/wandb/_index.md
+oss-deployment/_index.md
+oss-deployment/kind-deployment/_index.md
+oss-deployment/plugin-setup/_index.md
+security/_index.md
+security/architecture/_index.md
+security/compliance/_index.md
+security/data-protection/_index.md
+security/identity-and-access/_index.md
+tutorials/data-processing/micro-batching/_index.md
+user-guide/advanced-project/_index.md
+user-guide/agents/build-agent/_index.md
+user-guide/agents/build-mcp/_index.md
+user-guide/agents/sandboxing/_index.md
+user-guide/apps/build-apps/_index.md
+user-guide/apps/configure-apps/_index.md
+user-guide/apps/native-app-integrations/_index.md
+user-guide/apps/serve-and-deploy-apps/_index.md
+user-guide/migration/flyte-2/_index.md
+user-guide/run-scaling/_index.md
+user-guide/tasks/task-configuration/_index.md
+user-guide/tasks/task-deployment/_index.md
+user-guide/tasks/task-programming/_index.md
