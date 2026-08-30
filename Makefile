@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names update-icon-names clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names check-subpage-cards update-icon-names clean clean-generated
 all: usage
 
 usage:
@@ -235,6 +235,14 @@ check-generated-content:
 # The two are mutually unintelligible and both fail SILENTLY (an empty slot, or
 # a literal `:name:`), and no other check can see it -- a missing icon is not a
 # broken link. DOC-1444.
+# A section page with children must say where its subpage cards go, or opt out.
+# The cards are placed by an explicit shortcode rather than injected (DOC-1509),
+# so this is what stops a new section page shipping with no way forward for a
+# reader. The baseline holds the pages that predate the gate; it shrinks.
+check-subpage-cards:
+	@$(UV) unionai-docs-infra/tools/check_subpage_cards.py \
+		--baseline unionai-docs-infra/tools/check_subpage_cards_baseline.txt
+
 check-icon-names:
 	@$(UV) unionai-docs-infra/tools/check_icon_names.py
 

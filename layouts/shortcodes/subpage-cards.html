@@ -1,0 +1,61 @@
+{{- /* Cards for this page's immediate subpages, one per child.
+
+       Replaces a hand-written grid of {{< link-card >}} calls with the same
+       markup generated from each child's own front matter, so a card and the
+       page it points at cannot drift apart. Emits `.grid-container` and
+       `.link-card` exactly as the hand-written form does; the styling in
+       card.css is unchanged and this needs no CSS of its own.
+
+       WHY THIS IS A SHORTCODE AND NOT AUTOMATIC (DOC-1509)
+
+       Because placement carries meaning. All 25 section pages that had cards
+       put them BELOW the top -- median 54% down, three past 87% -- after intro
+       prose, deliberately. An implicit generator has to choose a position and
+       would move the cards on every one of them. Another 47 section pages have
+       no cards, and would silently acquire cards nobody reviewed. And the 70
+       generated API-reference landings must NOT have cards at all: 66 already
+       carry a `## Directory` table listing the same children, so a grid there
+       is a second copy of it.
+
+       That last case is the whole argument. "Descriptor yes, machine-facing
+       listing yes, human-facing cards no" is not a state an implicit generator
+       can express. A marker says it by being absent.
+
+       The markdown twin is a separate matter and stays implicit: `list.md`
+       appends `## Subpages` with the same descriptions, and position carries
+       no meaning for an agent reading a twin.
+
+       PARAMETERS
+         weight  (bool, default true)  order by front-matter weight, else by title
+         cols    (int, optional)       fixed column count, as with {{< grid >}}
+*/ -}}
+
+{{- $page := .Page -}}
+
+{{- if not $page.Pages -}}
+  {{- errorf "subpage-cards: %q has no subpages. The shortcode belongs on a section page; on a leaf it renders nothing, which reads as a styling bug rather than a mistake." $page.File.Path -}}
+{{- end -}}
+
+{{- $children := $page.Pages -}}
+{{- if ne (.Get "weight") "false" -}}
+  {{- $children = $children.ByWeight -}}
+{{- else -}}
+  {{- $children = $children.ByTitle -}}
+{{- end -}}
+
+{{- $cols := .Get "cols" -}}
+<div class="grid-container"{{ with $cols }} style="grid-template-columns: repeat({{ . }}, 1fr)"{{ end }}>
+{{- range $children -}}
+  {{- if (partial "page-allowed.html" .).allowed -}}
+    <a class="link-card" href="{{ .RelPermalink }}">
+      {{- with .Params.icon -}}
+      <sl-icon class="link-card-icon" name="{{ . }}" aria-hidden="true"></sl-icon>
+      {{- end -}}
+      <span class="link-card-title">{{ .Title }}</span>
+      {{- with .Params.description -}}
+      <span class="link-card-body">{{ $page.RenderString . }}</span>
+      {{- end -}}
+    </a>
+  {{- end -}}
+{{- end -}}
+</div>
