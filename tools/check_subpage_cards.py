@@ -24,6 +24,32 @@ A page opts out with `subpage_cards: false` in its front matter. Use it for a
 section whose landing page is a document in its own right rather than a
 signpost -- and say why in a comment, because the next person will wonder.
 
+WHAT THIS DELIBERATELY DOES NOT CHECK: SIBLING ICON COLLISIONS
+
+A rule failing when two children of one section share an icon was added and then
+removed the same day. Do not re-add it without new evidence.
+
+It failed on 14 sets of existing content the first time a docs build carried it,
+and every one of them was defensible. The largest were 8 of the 12 pages under
+`deployment/selfmanaged` sharing `cloud` and 6 of the 11 under
+`integrations/agents` sharing `robot` -- pages that ARE all clouds, and ARE all
+agents. No carded page has all its cards identical, which is the case that would
+actually leave a reader with nothing to go on; the grids still carry 5 to 8
+distinct icons each. Peeter, 2026-08-30.
+
+Two other things the removal turned on. An icon is one of several signals on a
+card, next to the title and the description, so shared does not mean
+indistinguishable. And repetition is meaningful elsewhere by design: in the
+generated API reference every symbol page carries `braces` and every error page
+`exclamation-triangle` on purpose, and the only reason that corpus did not trip
+the rule too is that it has no cards for the rule to look at. A rule whose
+premise is wrong on the largest body of pages sharing its shape is the wrong
+rule, not an under-baselined one.
+
+It also could not be silenced: unlike the coverage rule below, it never consulted
+--baseline, so there was no ratchet and no way to land the docs bump that carried
+it. See infra#296 (added), infra#297 (removed).
+
 Usage:
     check_subpage_cards.py [content-dir] [--exclude-dir PATH ...]
 """
@@ -113,7 +139,7 @@ def main() -> int:
                 baseline.add(line)
 
     missing, opted_out, legacy, grandfathered, ok = [], [], [], [], 0
-    uncovered, out_of_sync, iconless, twins = [], [], [], []
+    uncovered, out_of_sync, iconless = [], [], []
     for index in sorted(args.content.rglob("_index.md")):
         rel = index.relative_to(args.content)
         if rel.parts and rel.parts[0] in excludes:
@@ -123,19 +149,6 @@ def main() -> int:
                     any(p.name != "_index.md" for p in d.glob("*.md"))
         if not has_child:
             continue
-
-        # Two children sharing an icon sit side by side in one grid looking
-        # identical, so the icon distinguishes nothing and is pure noise. This
-        # is the only icon problem a reader can see, and check_icon_names.py
-        # cannot see it: every name involved is perfectly valid.
-        seen = {}
-        for name in sorted(children_of(d)):
-            i = icon_of(d, name)
-            if i:
-                seen.setdefault(i, []).append(name)
-        for i, names in sorted(seen.items()):
-            if len(names) > 1:
-                twins.append((str(rel), i, names))
 
         text = index.read_text(encoding="utf-8")
         if OPT_OUT.search(frontmatter(text)):
@@ -188,21 +201,9 @@ def main() -> int:
         if len(iconless) > 12:
             print(f"  ... and {len(iconless) - 12} more")
 
-    if not missing and not uncovered and not out_of_sync and not twins:
+    if not missing and not uncovered and not out_of_sync:
         print("check-subpage-cards: OK")
         return 0
-
-    if twins:
-        print("")
-        print(f"FATAL: {len(twins)} set(s) of sibling pages share an icon.")
-        print("       Their cards sit side by side in one grid looking identical, so")
-        print("       the icon distinguishes nothing. Every name is valid, which is")
-        print("       why check-icon-names cannot see this.")
-        print("")
-        for rel, icon, names in twins:
-            print(f"  {rel}")
-            print(f"      {icon}: {', '.join(names)}")
-        print("")
 
     if out_of_sync:
         print("")
