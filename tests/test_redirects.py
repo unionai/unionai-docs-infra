@@ -387,12 +387,6 @@ class TestRedirectInvariants:
             f"{len(dupes)} duplicate source URLs:\n"
             + "\n".join(f"  {s} ({c}x)" for s, c in sorted(dupes.items())[:10]))
 
-    @pytest.mark.xfail(
-        reason="DOC-1486: 397 pre-existing two-hop chains, all from retired variant "
-        "names (byoc/selfmanaged/serverless) whose union destination later moved. "
-        "Parked, not waived -- remove this marker with the fix.",
-        strict=False,
-    )
     def test_no_redirect_chains_within_csv(self):
         """No destination URL (stripped of https://) should also appear as a source.
 
