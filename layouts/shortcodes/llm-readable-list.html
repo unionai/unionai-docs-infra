@@ -1,0 +1,23 @@
+{{- /* RETIRED (DOC-1509). Renders nothing, deliberately.
+
+       This listed the `_section.md` section bundles. Those are retired: the page
+       twin now carries a full `## Subpages` listing with each child's
+       description and headings, and both bundle URL forms 301 to the twin.
+
+       THE TEMPLATE CANNOT BE DELETED, ONLY EMPTIED.
+
+       Every served tree is built with the BRANCH TIP's infra, pinned version
+       tags included (DOC-1329). A tag is immutable, so its content cannot be
+       edited, and `api-reference/flyte-context.md` calls this shortcode in
+       v2.6.5.0, v2.6.6.0, v2.6.9.0 and v2.6.10.0. Deleting the template fails
+       the Hugo build of all four with "template for shortcode not found", which
+       is how this was discovered.
+
+       So it stays until no enumerated pin references it, which for `stable`
+       means until it has rolled out of the retention window. Same treatment as
+       `llm-bundle-note` (DOC-1358), which is stripped rather than deleted for
+       the same reason.
+
+       Emitting nothing is correct on a pinned tree too: the bundles those pages
+       advertised no longer exist, so a list of them would be a list of
+       redirects. */ -}}
