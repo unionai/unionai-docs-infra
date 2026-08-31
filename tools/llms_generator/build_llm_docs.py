@@ -59,6 +59,63 @@ def subpage_description(tail: str) -> str:
     return tail[3:].strip() if tail.startswith(' - ') else ''
 
 
+
+def version_line(version: str) -> str:
+    """The documentation LINE a version string belongs to: "v1" or "v2".
+
+    A build produces several trees per line -- `latest`, the stable pin `v2`,
+    and each enumerated tag -- and they are all the same line. Comparing the
+    version string to "v2" instead of asking which line it is has been shipping
+    a wrong banner: `/docs/latest/union/llms.txt`, the CURRENT docs, has been
+    telling agents "This is legacy (latest) documentation. Do not use unless
+    explicitly asked about this version." Every pinned v2 tag says it too.
+    """
+    return "v1" if version == "v1" or version.startswith("v1.") else "v2"
+
+
+# The block prepended to every page twin, so a twin fetched on its own says what
+# it is. Four of them: one per (line, variant). Held here verbatim rather than
+# assembled from parts, because the four differ in ways that are deliberate --
+# from Union the useful instruction is "you probably do not need the Flyte
+# docs", from Flyte it is "the Union docs may have more" -- and building them
+# from a template would flatten exactly the differences that carry the meaning.
+#
+# It goes ABOVE the page description, so it is the first thing an agent reads.
+# That position also keeps it out of BOTH Algolia indices: `parse_sections()`
+# discards everything before the first heading, which is why the description is
+# already absent from them. `tests/test_preamble_not_indexed.py` pins that,
+# since a change there would put this boilerplate into ~1,277 retrieval records.
+PAGE_PREAMBLES = {
+    ("v2", "union"): [
+        '* This page is part of the Union.ai v2 docs.',
+        '* Full index: https://www.union.ai/docs/v2/union/llms.txt',
+        '* Union.ai is a commercial superset of the open-source Flyte project and uses the same `flyte` SDK and CLI, so questions about Flyte are usually answered here too.',
+        '* Only refer to the open-source Flyte docs if you are explicitly looking for information about the open-source Flyte project, particularly the open-source Flyte backend. The open-source Flyte v2 docs are at https://www.union.ai/docs/v2/flyte/llms.txt',
+        '* These are the v2 docs. v1 is out of date and deprecated. Only refer to v1 docs if asked explicitly about v1. The v1 index is at https://www.union.ai/docs/v1/union/llms.txt',
+    ],
+    ("v2", "flyte"): [
+        '* This page is part of the open-source Flyte v2 docs.',
+        '* Full index: https://www.union.ai/docs/v2/flyte/llms.txt',
+        '* Flyte is the open-source project. Union.ai is a commercial superset of it and uses the same `flyte` SDK and CLI, so the Union.ai docs cover everything here and more.',
+        '* If a question is not answered in these docs, or is about a feature that may be commercial, check the Union.ai v2 docs at https://www.union.ai/docs/v2/union/llms.txt',
+        '* These are the v2 docs. v1 is out of date and deprecated. Only refer to v1 docs if asked explicitly about v1. The v1 index is at https://www.union.ai/docs/v1/flyte/llms.txt',
+    ],
+    ("v1", "union"): [
+        '* This page is part of the Union.ai v1 docs.',
+        '* Full index: https://www.union.ai/docs/v1/union/llms.txt',
+        '* Union.ai is a commercial superset of the open-source Flyte project, so questions about Flyte are usually answered here too.',
+        '* Only refer to the open-source Flyte docs if you are explicitly looking for information about the open-source Flyte project, particularly the open-source Flyte backend. The open-source Flyte v1 docs are at https://www.union.ai/docs/v1/flyte/llms.txt',
+        '* These are the v1 docs. v1 is out of date and deprecated. Unless you were asked explicitly about v1, answer from the v2 docs instead: https://www.union.ai/docs/v2/union/llms.txt',
+    ],
+    ("v1", "flyte"): [
+        '* This page is part of the open-source Flyte v1 docs.',
+        '* Full index: https://www.union.ai/docs/v1/flyte/llms.txt',
+        '* Flyte is the open-source project. Union.ai is a commercial superset of it, so the Union.ai docs cover everything here and more.',
+        '* If a question is not answered in these docs, or is about a feature that may be commercial, check the Union.ai v1 docs at https://www.union.ai/docs/v1/union/llms.txt',
+        '* These are the v1 docs. v1 is out of date and deprecated. Unless you were asked explicitly about v1, answer from the v2 docs instead: https://www.union.ai/docs/v2/flyte/llms.txt',
+    ],
+}
+
 class LLMDocBuilder:
     def __init__(self, base_path: Path, quiet: bool = False):
         self.base_path = base_path
@@ -657,7 +714,7 @@ class LLMDocBuilder:
         lines = [
             f"# {variant_display} Documentation",
         ]
-        if self.version != "v2":
+        if version_line(self.version) == "v1":
             lines.extend([
                 f"> **This is legacy ({self.version}) documentation.** Do not use"
                 " unless explicitly asked about this version."
@@ -956,6 +1013,49 @@ class LLMDocBuilder:
 
         return re.sub(MD_LINK_RE, replace_link, text), count
 
+
+    def prepend_preambles(self, variant: str, version: str = None):
+        """Put the identity block at the top of every page twin.
+
+        A twin is the one surface where any page can be the entry point: an
+        agent arriving from search has no way to tell Union from Flyte, or v2
+        from v1, or where the index is. The block says so in five lines.
+
+        It goes above everything, including the page description, so it is read
+        first. That also keeps it out of both Algolia indices, which drop
+        content before the first heading.
+        """
+        version = version or self.version
+        variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
+        block = PAGE_PREAMBLES.get((version_line(version), variant))
+        if block is None:
+            if not self.quiet:
+                print(f"No preamble for {version}/{variant}; twins left unchanged")
+            return
+
+        # Bullet 2 points at THIS tree's index, not the line's canonical one. On
+        # a pinned tag `/docs/v2.6.5.0/union/llms.txt` is the index that lists
+        # these pages; sending a reader to the v2 index would hand them a
+        # different version's contents under the words "full index".
+        own_index = f"https://www.union.ai/docs/{version}/{variant}/llms.txt"
+        lines = list(block)
+        lines[1] = f"* Full index: {own_index}"
+        text = "\n".join(lines) + "\n"
+
+        done = 0
+        for content_file in iter_page_twins(variant_dir):
+            try:
+                content = content_file.read_text(encoding='utf-8')
+            except Exception:
+                continue
+            if content.startswith(lines[0]):
+                continue          # idempotent: never stack two blocks
+            content_file.write_text(text + "\n" + content, encoding='utf-8')
+            done += 1
+
+        if not self.quiet:
+            print(f"Prepended the {version_line(version)}/{variant} preamble to {done} twins")
+
     def absolutize_links(self, variant: str, version: str = None):
         """Convert all relative links in the page twins to absolute URLs."""
         version = version or self.version
@@ -1207,6 +1307,9 @@ def main():
 
             # Convert relative links to absolute URLs
             builder.absolutize_links(variant)
+
+            # Last, so the block is not itself link-rewritten or heading-scanned.
+            builder.prepend_preambles(variant)
 
             # Create llms.txt page index
             redirect_file = base_path / 'dist' / 'docs' / builder.version / variant / 'llms.txt'
