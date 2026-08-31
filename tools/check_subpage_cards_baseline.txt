@@ -17,8 +17,8 @@
 # 46 entries. By area: deployment 18, user-guide 13, security 5, integrations 4,
 # oss-deployment 3, community 2, tutorials 1, plus the site root.
 
-# The site root. Its landing page is the variant-switching intro, so whether it
-# wants cards at all is a design question, not an oversight.
+# The site root is a redirect to user-guide. No reader ever sees it, so it will
+# never want cards. This entry is permanent.
 _index.md
 
 community/_index.md
@@ -30,24 +30,12 @@ deployment/byoc/enabling-azure-resources/_index.md
 deployment/byoc/enabling-gcp-resources/_index.md
 deployment/byoc/single-sign-on-setup/_index.md
 deployment/selfmanaged/_index.md
-deployment/selfmanaged/architecture/_index.md
-deployment/selfmanaged/configuration/_index.md
 deployment/selfmanaged/helm-chart-reference/_index.md
-deployment/selfmanaged/selfmanaged-aws/_index.md
-deployment/selfmanaged/selfmanaged-azure/_index.md
-deployment/selfmanaged/selfmanaged-coreweave/_index.md
-deployment/selfmanaged/selfmanaged-crusoe/_index.md
-deployment/selfmanaged/selfmanaged-gcp/_index.md
-deployment/selfmanaged/selfmanaged-generic/_index.md
-deployment/selfmanaged/selfmanaged-nebius/_index.md
-deployment/selfmanaged/selfmanaged-oci/_index.md
 integrations/_index.md
 integrations/agents/_index.md
 integrations/opentelemetry/_index.md
 integrations/wandb/_index.md
-oss-deployment/_index.md
 oss-deployment/kind-deployment/_index.md
-oss-deployment/plugin-setup/_index.md
 security/_index.md
 security/architecture/_index.md
 security/compliance/_index.md
