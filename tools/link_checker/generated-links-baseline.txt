@@ -30,6 +30,23 @@ flyte/community/resources.md
 union/community/resources.md
 
 # ---------------------------------------------------------------------------
+# THE SAME TWO PAGES, IN THEIR PRE-RENAME FORM, FROM THE PINNED TAGS.
+#
+# `api-reference/flyte-context.md` and `contributing-docs/llm-docs.md` were
+# rewritten on main to stop documenting `page.md` and the section bundles. That
+# fixes `latest` and every future cut. It does NOT fix a pin: each enumerated
+# tag is immutable and keeps the content it was cut with, and CI builds all of
+# them from the same infra, so the old links are rebuilt on every run.
+#
+# These stay until the last pin carrying them rolls out of the retention window.
+# Removing them because main looks clean is what put them back here.
+# ---------------------------------------------------------------------------
+flyte/api-reference/page.md
+union/api-reference/page.md
+flyte/community/resources/page.md
+union/community/resources/page.md
+
+# ---------------------------------------------------------------------------
 # DOC-1511 site A -- `absolutize_links()` resolves an author-written `../x/_index`
 # one level too high, dropping a path segment. The gemini and anthropic pages are
 # frozen v2.5.8 snapshots of removed plugins and are never regenerated, so these
