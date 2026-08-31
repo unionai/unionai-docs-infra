@@ -42,8 +42,9 @@ def test_attr_reads_shortcode_parameters():
     assert _attr(blob, "missing") == ""
 
 
-def test_children_counts_dirs_and_leaves_but_not_the_index(tmp_path):
-    (tmp_path / "sub").mkdir()
+def test_children_counts_sections_and_leaves_but_not_the_index(tmp_path):
+    """A subdirectory counts only when it holds an `_index.md`."""
+    page(tmp_path / "sub", "_index", title="Sub")
     page(tmp_path, "_index")
     page(tmp_path, "leaf")
     assert children_of(tmp_path) == {"sub", "leaf"}
@@ -141,3 +142,28 @@ def test_there_is_no_parent_side_frontmatter_opt_out(tmp_path):
     import check_subpage_cards as m
     assert not hasattr(m, "OPT_OUT")
     assert "subpage_cards" not in m.CARD_DISABLED.pattern
+
+
+def test_a_directory_without_an_index_is_not_a_child(tmp_path):
+    """Only a directory holding `_index.md` is a page Hugo renders.
+
+    Counting every directory finds things the shortcode cannot card: `_static`,
+    `STUB.txt` placeholders, and an `images/` asset folder. The last case is the
+    sharp one: it made a page look like a section with one child, so the check
+    demanded cards for a grid that would have been empty, and the shortcode
+    errors on an empty grid. The page could not have satisfied the check at all.
+    """
+    (tmp_path / "images").mkdir()
+    (tmp_path / "images" / "diagram.png").write_bytes(b"")
+    (tmp_path / "stub").mkdir()
+    (tmp_path / "stub" / "STUB.txt").write_text("placeholder")
+    page(tmp_path / "real", "_index", title="Real")
+    page(tmp_path, "leaf", title="Leaf")
+    assert children_of(tmp_path) == {"real", "leaf"}
+
+
+def test_a_page_whose_only_subdirectory_is_assets_has_no_children(tmp_path):
+    """So it is not a section page, and needs no cards."""
+    (tmp_path / "images").mkdir()
+    (tmp_path / "images" / "x.png").write_bytes(b"")
+    assert children_of(tmp_path) == set()
