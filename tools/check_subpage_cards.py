@@ -121,8 +121,19 @@ def icon_of(page_dir: Path, name: str) -> str:
 
 
 def children_of(page_dir: Path) -> set:
-    """Immediate children, by the name each is served under."""
-    return ({p.name for p in page_dir.iterdir() if p.is_dir()} |
+    """Immediate children Hugo will render, by the name each is served under.
+
+    A directory counts only when it holds an `_index.md`. Counting every
+    directory finds things Hugo never renders and the shortcode cannot card:
+    `_static` beside the site root, five `STUB.txt` placeholders under
+    `tutorials`, and an `images/` folder that is the ONLY subdirectory of
+    `tutorials/data-processing/micro-batching`. That last one made the page look
+    like a section with one child, so the check demanded cards for a grid that
+    would have been empty -- and the shortcode errors on an empty grid, so the
+    page could not have satisfied the check at all.
+    """
+    return ({p.name for p in page_dir.iterdir()
+             if p.is_dir() and (p / "_index.md").is_file()} |
             {p.stem for p in page_dir.glob("*.md") if p.name != "_index.md"})
 
 
@@ -166,9 +177,10 @@ def main() -> int:
         if rel.parts and rel.parts[0] in excludes:
             continue
         d = index.parent
-        has_child = any(p.is_dir() for p in d.iterdir()) or \
-                    any(p.name != "_index.md" for p in d.glob("*.md"))
-        if not has_child:
+        # One source of truth for "what are this page's children". A second copy
+        # of the rule here is how micro-batching stayed flagged after
+        # children_of() was fixed: the helper said zero children, this said one.
+        if not children_of(d):
             continue
 
         text = index.read_text(encoding="utf-8")
