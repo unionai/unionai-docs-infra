@@ -112,3 +112,32 @@ def test_a_child_with_no_icon_is_not_a_clash(tmp_path):
         if i:
             seen.setdefault(i, []).append(name)
     assert not {i: n for i, n in seen.items() if len(n) > 1}
+
+
+def test_a_child_opts_out_of_its_card(tmp_path):
+    """`card_enabled: false` on the CHILD suppresses that page's card only."""
+    from check_subpage_cards import card_disabled
+    page(tmp_path, "quiet", title="Quiet", card_enabled="false")
+    page(tmp_path, "loud", title="Loud")
+    page(tmp_path, "explicit", title="Explicit", card_enabled="true")
+    assert card_disabled(tmp_path, "quiet")
+    assert not card_disabled(tmp_path, "loud"), "absent means carded"
+    assert not card_disabled(tmp_path, "explicit"), "true means carded"
+
+
+def test_the_opt_out_reads_the_child_not_the_parent(tmp_path):
+    """It is a property of the page being carded, not of the page doing the carding."""
+    from check_subpage_cards import card_disabled
+    (tmp_path / "_index.md").write_text("---\ntitle: P\ncard_enabled: false\n---\n")
+    page(tmp_path, "child", title="Child")
+    assert not card_disabled(tmp_path, "child"), "the parent's key must not suppress a child"
+
+
+def test_there_is_no_parent_side_frontmatter_opt_out(tmp_path):
+    """`subpage_cards: false` is gone. A page needing no cards goes in the baseline.
+
+    One file holds every exemption rather than two mechanisms doing the same job.
+    """
+    import check_subpage_cards as m
+    assert not hasattr(m, "OPT_OUT")
+    assert "subpage_cards" not in m.CARD_DISABLED.pattern
