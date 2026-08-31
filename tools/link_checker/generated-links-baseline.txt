@@ -20,13 +20,14 @@
 # from an immutable tag, so a link broken inside one can never be fixed there.
 
 # ---------------------------------------------------------------------------
-# DOC-1506 -- two content pages still document the old `page.md` name, so the
-# link resolves to a file the DOC-1432 rename removed. Content fix, not code.
+# A code-span EXAMPLE of link syntax, not a real link. The generator rewrites
+# links inside backticks, so `[Resources](../resources.md)` in llm-docs.md is
+# resolved and reported. Fixing that means teaching the resolver about code
+# spans; until then this is the honest exemption.
 # ---------------------------------------------------------------------------
-flyte/api-reference/page.md
-union/api-reference/page.md
-flyte/community/resources/page.md
-union/community/resources/page.md
+
+flyte/community/resources.md
+union/community/resources.md
 
 # ---------------------------------------------------------------------------
 # DOC-1511 site A -- `absolutize_links()` resolves an author-written `../x/_index`

@@ -36,7 +36,7 @@ def _built(tmp_path: Path) -> tuple[Path, Path]:
         (out / url_dir / "index.html").write_text("<html></html>")
         (out / (url_dir + ".md")).write_text("# page\n")
     P.root_page(out).write_text("# Documentation\n")
-    (out / "guide" / P.BUNDLE_NAME).write_text("# bundle\n")
+    (out / "guide" / P.RETIRED_BUNDLE_NAME).write_text("# bundle\n")
     return content, out
 
 
@@ -63,7 +63,7 @@ def test_url_dir_round_trips(tmp_path):
 def test_bundles_are_not_twins(tmp_path):
     _content, out = _built(tmp_path)
     names = {p.name for p in P.iter_page_twins(out)}
-    assert P.BUNDLE_NAME not in names
+    assert P.RETIRED_BUNDLE_NAME not in names
     assert names == {"guide.md", "caching.md", "deploy.md"}
     # The root intermediate is not a twin either, but iter_pages yields it.
     assert P.root_page(out) not in set(P.iter_page_twins(out))

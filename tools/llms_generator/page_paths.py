@@ -15,7 +15,7 @@ would be `/docs/<version>/<variant>.md`, outside the variant tree, and
 `llms.txt` is the root's agent surface.
 
 The root page is still RENDERED, because the whole generator walks the tree
-from it -- `llms-full.txt`, the `llms.txt` index and the root `_section.md` all
+from it -- `llms-full.txt` and the `llms.txt` index both
 start there. Stage 1 hands it to stage 2 as `ROOT_INTERMEDIATE`, a build
 intermediate with no `.md` extension that stage 2 deletes once it is done. So
 it is never served and never matched by a `*.md` glob.
@@ -52,9 +52,14 @@ it now lives rather than a second copy of it.
 from pathlib import Path
 from typing import Iterator, Optional
 
-# The one `.md` file name in the built tree that is NOT a page twin. Section
-# bundles stay at `<dir>/_section.md`; the rename does not touch them.
-BUNDLE_NAME = "_section.md"
+# Section bundles are retired (DOC-1509): the page twin now carries a complete
+# `## Subpages` listing with each child's description and headings, and no peer
+# docs site ships a bundle tier at all. `<path>/_section.md` and the older
+# `<path>/section.md` both 301 to `<path>.md` at the edge.
+#
+# The name is kept only so a stale bundle left in a dist tree by an older build
+# is not mistaken for a page twin and rewritten as one.
+RETIRED_BUNDLE_NAME = "_section.md"
 
 PAGE_SUFFIX = ".md"
 
@@ -66,7 +71,7 @@ ROOT_INTERMEDIATE = ".llm-root"
 
 def is_page_twin(path: Path) -> bool:
     """True for a served per-page markdown twin (not a bundle, not the root)."""
-    return path.suffix == PAGE_SUFFIX and path.name != BUNDLE_NAME
+    return path.suffix == PAGE_SUFFIX and path.name != RETIRED_BUNDLE_NAME
 
 
 def iter_page_twins(variant_dir: Path) -> Iterator[Path]:
