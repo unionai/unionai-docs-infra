@@ -20,9 +20,13 @@ SCOPE
 Authored content only. `content/api-reference/` is generated and deliberately
 has no cards; running this over it would fail on 70 pages by design.
 
-A page opts out with `subpage_cards: false` in its front matter. Use it for a
-section whose landing page is a document in its own right rather than a
-signpost -- and say why in a comment, because the next person will wonder.
+A section page that should not have cards at all is recorded in the baseline,
+with a reason. There is no parent-side front-matter opt-out: one file holds
+every exemption rather than two mechanisms doing the same job.
+
+A CHILD opts out of being carded with `card_enabled: false` in its own front
+matter. That suppresses its HTML card only; the markdown twin's `## Subpages`
+listing is always comprehensive.
 
 WHAT THIS DELIBERATELY DOES NOT CHECK: SIBLING ICON COLLISIONS
 
@@ -61,7 +65,11 @@ from pathlib import Path
 
 MARKER = re.compile(r"\{\{[<%]\s*subpage-cards\b")
 LINK_CARD = re.compile(r"\{\{[<%]\s*link-card\b")
-OPT_OUT = re.compile(r"^subpage_cards:\s*false\s*$", re.MULTILINE)
+# A CHILD opts out of getting a card, with `card_enabled: false` in its own
+# front matter. There is no parent-side frontmatter opt-out: a page that should
+# not have cards at all is recorded in the baseline, so every exemption lives in
+# one file instead of two places.
+CARD_DISABLED = re.compile(r"^card_enabled:\s*false\s*$", re.MULTILINE)
 
 # A hand-authored card plus the body line under it.
 CARD_WITH_BODY = re.compile(
@@ -89,6 +97,19 @@ def description_of(page_dir: Path, name: str) -> str:
 def _attr(blob: str, key: str) -> str:
     m = re.search(rf'{key}="([^"]*)"', blob)
     return m.group(1) if m else ""
+
+
+def card_disabled(page_dir: Path, name: str) -> bool:
+    """True when the child at `name` has opted out of being carded.
+
+    This suppresses its HTML card only. The markdown twin's `## Subpages`
+    listing stays comprehensive, because that is a machine index: a page missing
+    from it is undiscoverable rather than merely unadvertised.
+    """
+    for cand in (page_dir / name / "_index.md", page_dir / f"{name}.md"):
+        if cand.is_file():
+            return bool(CARD_DISABLED.search(frontmatter(cand.read_text(encoding="utf-8"))))
+    return False
 
 
 def icon_of(page_dir: Path, name: str) -> str:
@@ -138,7 +159,7 @@ def main() -> int:
             if line:
                 baseline.add(line)
 
-    missing, opted_out, legacy, grandfathered, ok = [], [], [], [], 0
+    missing, legacy, grandfathered, ok = [], [], [], 0
     uncovered, out_of_sync, iconless = [], [], []
     for index in sorted(args.content.rglob("_index.md")):
         rel = index.relative_to(args.content)
@@ -151,9 +172,7 @@ def main() -> int:
             continue
 
         text = index.read_text(encoding="utf-8")
-        if OPT_OUT.search(frontmatter(text)):
-            opted_out.append(str(rel))
-        elif MARKER.search(text):
+        if MARKER.search(text):
             ok += 1
         elif LINK_CARD.search(text):
             legacy.append(str(rel))
@@ -171,6 +190,8 @@ def main() -> int:
                 if want and body.strip() and body.strip() != want:
                     out_of_sync.append((str(rel), name, body.strip(), want))
             for name in sorted(kids - carded):
+                if card_disabled(d, name):
+                    continue
                 if f"{rel} -> {name}" not in baseline:
                     uncovered.append((str(rel), name))
             for card in CARD_TAG.findall(text):
@@ -185,9 +206,9 @@ def main() -> int:
         else:
             missing.append(str(rel))
 
-    total = ok + len(opted_out) + len(legacy) + len(grandfathered) + len(missing)
+    total = ok + len(legacy) + len(grandfathered) + len(missing)
     print(f"check-subpage-cards: {total} section page(s) with children "
-          f"({ok} with cards, {len(opted_out)} opted out"
+          f"({ok} with cards"
           + (f", {len(legacy)} hand-authored" if legacy else "")
           + (f", {len(grandfathered)} in the baseline" if grandfathered else "") + ")")
 
@@ -236,7 +257,7 @@ def main() -> int:
     print("")
     print("       Add {{< subpage-cards >}} where the cards belong -- usually after")
     print("       the intro prose, not at the top. If this page genuinely should not")
-    print("       have them, set `subpage_cards: false` in its front matter and say why.")
+    print("       have them, add it to the baseline file with a reason.")
     print("")
     for p in missing:
         print(f"  {p}")

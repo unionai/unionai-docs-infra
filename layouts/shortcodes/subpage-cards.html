@@ -28,6 +28,15 @@
        PARAMETERS
          weight  (bool, default true)  order by front-matter weight, else by title
          cols    (int, optional)       fixed column count, as with {{< grid >}}
+
+       A CHILD OPTS OUT WITH `card_enabled: false`
+
+       Set on the child, not here, and it suppresses that page's card only. The
+       markdown twin's `## Subpages` listing is ALWAYS comprehensive: it is a
+       machine index an agent reads to decide what to fetch, and a page missing
+       from it is undiscoverable rather than merely unadvertised. Decluttering a
+       human landing page is an editorial choice; hiding a page from agents is a
+       different decision and needs a different key.
 */ -}}
 
 {{- $page := .Page -}}
@@ -46,7 +55,12 @@
 {{- $cols := .Get "cols" -}}
 <div class="grid-container"{{ with $cols }} style="grid-template-columns: repeat({{ . }}, 1fr)"{{ end }}>
 {{- range $children -}}
-  {{- if (partial "page-allowed.html" .).allowed -}}
+  {{- $carded := true -}}
+  {{- /* `default` is wrong here: Hugo treats false as falsy, so
+         `.Params.card_enabled | default true` yields true for an explicit
+         false and the opt-out would silently do nothing. */ -}}
+  {{- if isset .Params "card_enabled" -}}{{- $carded = .Params.card_enabled -}}{{- end -}}
+  {{- if and $carded (partial "page-allowed.html" .).allowed -}}
     <a class="link-card" href="{{ .RelPermalink }}">
       {{- with .Params.icon -}}
       <sl-icon class="link-card-icon" name="{{ . }}" aria-hidden="true"></sl-icon>

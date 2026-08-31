@@ -5,8 +5,12 @@
 # explicit that they must not be auto-carded -- deciding whether a landing page
 # wants cards, and what belongs above them, is an editorial call per page.
 #
-# Delete a line when the page gets `{{< subpage-cards >}}`, or when it gets
-# `subpage_cards: false` because it is a document rather than a signpost.
+# Delete a line when the page gets `{{< subpage-cards >}}`.
+#
+# A page that should never have cards -- a document rather than a signpost --
+# stays here permanently, with the reason in a comment above it. That is the one
+# entry kind that does not shrink, and it is why this file also replaced the
+# `subpage_cards: false` front-matter key: one place to look, not two.
 # Never add a line to make a build pass: a new entry means the gate caught the
 # thing it exists to catch.
 #
