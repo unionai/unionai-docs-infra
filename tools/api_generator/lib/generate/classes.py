@@ -53,8 +53,20 @@ def generate_class_link(
     nameParts = fullname.split(".")
     pkg_base = os.path.relpath(pkg_root, os.path.dirname(relative_to_file))
     if flatten:
+        # `pkg_base` is already relative to the file being written, so the module
+        # page is `pkg_base/<module>`. The extra `..` that used to lead this made
+        # every link climb one level too far. For a class in the page's own module
+        # -- the common case, and a link to an anchor on the page itself --
+        # `pkg_base` is `.` and the result was `.././<module>#anchor`.
+        #
+        # That form is wrong source-relatively, so Hugo could not resolve it and
+        # passed it through to the HTML untouched, where the browser resolved it
+        # against the page URL (one level deeper) and it landed back on the page
+        # by accident. The `.md` twin has no such luck: it resolves from the
+        # source directory and 404s. 1,649 broken links on v1, 802 of them these.
+        # DOC-1525.
         anchor = generate_anchor_from_name(fullname)
-        result = f"{os.path.join('..', pkg_base, '.'.join(nameParts[0:-1])).lower()}#{anchor}"
+        result = f"{os.path.join(pkg_base, '.'.join(nameParts[0:-1])).lower()}#{anchor}"
         return result
     elif single_package_flat:
         # DOC-1335: class pages sit beside the module body at the section root.
