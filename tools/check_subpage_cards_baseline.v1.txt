@@ -1,0 +1,138 @@
+# Section pages with children that have no subpage cards on the v1 line, as of
+# 2026-09-01.
+#
+# A RATCHET, not a permission slip. The gate's job is to stop a NEW section page
+# shipping with no way forward for a reader; these predate it. DOC-1509 is
+# explicit that they must not be auto-carded -- deciding whether a landing page
+# wants cards, and what belongs above them, is an editorial call per page.
+#
+# Delete a line when the page gets `{{< subpage-cards >}}`.
+#
+# Separate from the v2 file because the two lines carry different content: 13 of
+# these paths also exist on v2, and a v1 exemption must not silence the gate
+# there. DOC-1525.
+#
+# 106 entries. By area: integrations 50, tutorials 20, user-guide 16, deployment 14, architecture 4, community 2.
+
+# The site root is a redirect to user-guide. No reader ever sees it, so it will
+# never want cards. This entry is permanent.
+_index.md
+
+architecture/_index.md
+architecture/component-architecture/_index.md
+architecture/control-plane/_index.md
+architecture/extending-flyte/_index.md
+community/_index.md
+community/contributing-docs/_index.md
+deployment/_index.md
+deployment/byoc/_index.md
+deployment/byoc/enabling-aws-resources/_index.md
+deployment/byoc/enabling-azure-resources/_index.md
+deployment/byoc/enabling-gcp-resources/_index.md
+deployment/byoc/single-sign-on-setup/_index.md
+deployment/configuration-reference/_index.md
+deployment/flyte-configuration/_index.md
+deployment/flyte-connectors/_index.md
+deployment/flyte-deployment/_index.md
+deployment/flyte-plugins/_index.md
+deployment/selfmanaged/_index.md
+deployment/selfmanaged/architecture/_index.md
+deployment/selfmanaged/configuration/_index.md
+integrations/_index.md
+integrations/connectors/_index.md
+integrations/connectors/airflow-connector/_index.md
+integrations/connectors/bigquery-connector/_index.md
+integrations/connectors/chatgpt-connector/_index.md
+integrations/connectors/databricks-connector/_index.md
+integrations/connectors/mmcloud-connector/_index.md
+integrations/connectors/openai-batch-connector/_index.md
+integrations/connectors/perian-connector/_index.md
+integrations/connectors/sagemaker-inference-connector/_index.md
+integrations/connectors/sensor/_index.md
+integrations/connectors/slurm-connector/_index.md
+integrations/connectors/snowflake-connector/_index.md
+integrations/deprecated-integrations/_index.md
+integrations/deprecated-integrations/bigquery-plugin/_index.md
+integrations/deprecated-integrations/databricks-plugin/_index.md
+integrations/deprecated-integrations/k8s-pod-plugin/_index.md
+integrations/deprecated-integrations/snowflake-plugin/_index.md
+integrations/external-service-backend-plugins/_index.md
+integrations/external-service-backend-plugins/athena-plugin/_index.md
+integrations/external-service-backend-plugins/aws-batch-plugin/_index.md
+integrations/external-service-backend-plugins/flyteinteractive-plugin/_index.md
+integrations/external-service-backend-plugins/hive-plugin/_index.md
+integrations/flyte-operators/_index.md
+integrations/flyte-operators/airflow-plugin/_index.md
+integrations/flytekit-plugins/_index.md
+integrations/flytekit-plugins/comet-ml-plugin/_index.md
+integrations/flytekit-plugins/dbt-plugin/_index.md
+integrations/flytekit-plugins/dolt-plugin/_index.md
+integrations/flytekit-plugins/duckdb-plugin/_index.md
+integrations/flytekit-plugins/greatexpectations-plugin/_index.md
+integrations/flytekit-plugins/memray-plugin/_index.md
+integrations/flytekit-plugins/mlflow-plugin/_index.md
+integrations/flytekit-plugins/modin-plugin/_index.md
+integrations/flytekit-plugins/neptune-plugin/_index.md
+integrations/flytekit-plugins/nim-plugin/_index.md
+integrations/flytekit-plugins/ollama-plugin/_index.md
+integrations/flytekit-plugins/onnx-plugin/_index.md
+integrations/flytekit-plugins/pandera-plugin/_index.md
+integrations/flytekit-plugins/papermill-plugin/_index.md
+integrations/flytekit-plugins/sql-plugin/_index.md
+integrations/flytekit-plugins/wandb-plugin/_index.md
+integrations/flytekit-plugins/whylogs-plugin/_index.md
+integrations/native-backend-plugins/_index.md
+integrations/native-backend-plugins/k8s-dask-plugin/_index.md
+integrations/native-backend-plugins/k8s-spark-plugin/_index.md
+integrations/native-backend-plugins/kfmpi-plugin/_index.md
+integrations/native-backend-plugins/kfpytorch-plugin/_index.md
+integrations/native-backend-plugins/kftensorflow-plugin/_index.md
+integrations/native-backend-plugins/ray-plugin/_index.md
+tutorials/bioinformatics/_index.md
+tutorials/bioinformatics/blast/_index.md
+tutorials/compound-ai-systems/_index.md
+tutorials/diffusion-models/_index.md
+tutorials/feature-engineering/_index.md
+tutorials/feature-engineering/exploratory-data-analysis/_index.md
+tutorials/feature-engineering/feast-integration/_index.md
+tutorials/finance/_index.md
+tutorials/flytelab/_index.md
+tutorials/language-models/_index.md
+tutorials/model-training/_index.md
+tutorials/model-training/forecasting-sales/_index.md
+tutorials/model-training/house-price-prediction/_index.md
+tutorials/model-training/mnist-classifier/_index.md
+tutorials/model-training/nlp-processing/_index.md
+tutorials/model-training/pima-diabetes/_index.md
+tutorials/parallel-processing-and-job-scheduling/_index.md
+tutorials/retrieval-augmented-generation/_index.md
+tutorials/serving/_index.md
+tutorials/time-series/_index.md
+user-guide/administration/_index.md
+user-guide/core-concepts/_index.md
+user-guide/core-concepts/actors/_index.md
+user-guide/core-concepts/artifacts/_index.md
+user-guide/core-concepts/launch-plans/_index.md
+user-guide/core-concepts/serving/_index.md
+user-guide/core-concepts/tasks/_index.md
+user-guide/core-concepts/tasks/task-hardware-environment/_index.md
+user-guide/core-concepts/tasks/task-software-environment/_index.md
+user-guide/core-concepts/workflows/_index.md
+user-guide/data-input-output/_index.md
+user-guide/development-cycle/_index.md
+user-guide/development-cycle/remote-management/_index.md
+user-guide/development-cycle/testing/_index.md
+user-guide/getting-started/_index.md
+user-guide/programming/_index.md
+
+# The tutorials index is a CURATED set: its cards point at individual tutorials
+# (language-models/sentiment-classifier and so on), not at its section children.
+# "Every child needs a card" is the wrong expectation for a featured list, so
+# these three stay until someone decides the page should be exhaustive instead.
+tutorials/_index.md -> feature-engineering
+tutorials/_index.md -> flytelab
+tutorials/_index.md -> model-training
+
+# A hand-authored set on a deployment walkthrough, where `manual` is one route
+# among several presented in prose rather than a peer needing its own card.
+deployment/selfmanaged/byok-data-plane-setup-on-aws/_index.md -> manual

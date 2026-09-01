@@ -247,9 +247,14 @@ check-generated-content:
 # The cards are placed by an explicit shortcode rather than injected (DOC-1509),
 # so this is what stops a new section page shipping with no way forward for a
 # reader. The baseline holds the pages that predate the gate; it shrinks.
+# One baseline per documentation line. The two lines carry different content, so
+# a v1 exemption must not silence the gate for a v2 page that happens to share a
+# path -- 13 of v1's cardless section pages exist on v2 as well. DOC-1525.
+CARD_BASELINE := unionai-docs-infra/tools/check_subpage_cards_baseline.$(if $(VERSION),$(VERSION),v2).txt
+
 check-subpage-cards:
 	@$(UV) unionai-docs-infra/tools/check_subpage_cards.py \
-		--baseline unionai-docs-infra/tools/check_subpage_cards_baseline.txt
+		--baseline $(CARD_BASELINE)
 
 check-icon-names:
 	@$(UV) unionai-docs-infra/tools/check_icon_names.py
