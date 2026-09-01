@@ -1011,8 +1011,81 @@ class LLMDocBuilder:
             count += 1
             return f'[{link_text}]({absolute_url})'
 
-        return re.sub(MD_LINK_RE, replace_link, text), count
+        # Fenced code is an example, not navigation. Rewriting a link inside
+        # one corrupts the sample: the contributing guide shows
+        # `[`@task`](../../api-reference/...)` as the WRONG way to link, and
+        # absolutizing it turned that illustration into a real-looking URL that
+        # resolves to nothing. Split on fences and only rewrite outside them.
+        parts = re.split(r'(?m)^(\s*```.*)$', text)
+        out, in_fence = [], False
+        for i, part in enumerate(parts):
+            if i % 2 == 1:                       # the fence marker line itself
+                in_fence = not in_fence
+                out.append(part)
+                continue
+            if in_fence:
+                out.append(part)
+                continue
+            new_part, n = re.subn(MD_LINK_RE, replace_link, part)
+            out.append(new_part)
+        return "".join(out), count
 
+
+    def strip_html_comments(self, variant: str, version: str = None):
+        """Drop `<!-- ... -->` blocks from the page twins.
+
+        Hugo does not render an HTML comment, so it is not on the page a reader
+        sees. It was landing in the twin, which is the page an AGENT sees, and
+        the two surfaces are supposed to carry the same content.
+
+        What leaked was editorial scaffolding: "TODO: Add screenshot", "TODO: add
+        nbck when podtemplste section added in union". Worse, the links inside
+        those comments were absolutized like any other link, so the twin offered
+        an agent a set of URLs that resolve to nothing and that no reader can
+        see. Four of v1's remaining broken twin links were exactly this, and
+        every one of them was a false alarm about a real page.
+
+        Fenced code is left alone: a comment inside a code block is part of the
+        example, not scaffolding. DOC-1525.
+        """
+        version = version or self.version
+        variant_dir = (self.base_path / 'dist' / 'docs' / version / variant).resolve()
+        stripped = files = 0
+        for content_file in iter_page_twins(variant_dir):
+            try:
+                content = content_file.read_text(encoding='utf-8')
+            except Exception:
+                continue
+            out, n = [], 0
+            in_fence = False
+            buf = []
+            for line in content.split("\n"):
+                if line.lstrip().startswith("```"):
+                    in_fence = not in_fence
+                if in_fence:
+                    out.append(line)
+                    continue
+                if buf:
+                    buf.append(line)
+                    if "-->" in line:
+                        n += 1
+                        buf = []
+                    continue
+                if "<!--" in line and "-->" not in line:
+                    buf = [line]
+                    continue
+                if "<!--" in line and "-->" in line:
+                    n += 1
+                    continue
+                out.append(line)
+            if buf:                      # unterminated: keep it rather than eat the tail
+                out.extend(buf)
+            if n:
+                content_file.write_text("\n".join(out), encoding='utf-8')
+                stripped += n
+                files += 1
+        if not self.quiet:
+            print(f"Stripped {stripped} HTML comment(s) from {files} twin(s) in {variant}")
 
     def prepend_preambles(self, variant: str, version: str = None):
         """Put the identity block at the top of every page twin.
@@ -1306,6 +1379,8 @@ def main():
 
 
             # Convert relative links to absolute URLs
+            builder.strip_html_comments(variant)
+
             builder.absolutize_links(variant)
 
             # Last, so the block is not itself link-rewritten or heading-scanned.
