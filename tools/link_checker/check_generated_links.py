@@ -112,6 +112,7 @@ def main() -> int:
 
     scope = build_scope(args.dist)
     broken, out_of_scope, code_like, skipped = [], 0, 0, 0
+    used = set()
     total = 0
 
     for md in sorted(args.dist.rglob("*.md")):
@@ -129,8 +130,10 @@ def main() -> int:
             if not in_scope(path, scope):
                 out_of_scope += 1
                 continue
-            if without_version(path) in excluded:
+            key = without_version(path)
+            if key in excluded:
                 skipped += 1
+                used.add(key)
                 continue
             if not resolves(args.dist, path):
                 broken.append((rel, url))
@@ -142,6 +145,22 @@ def main() -> int:
         print(f"  {code_like} captured from code samples, not URLs -- not checked")
         if skipped:
             print(f"  {skipped} excluded by {args.exclude}")
+        # A baseline entry that matches nothing is dead weight, and worse than
+        # inert: it still suppresses that exact link if it ever comes back, so
+        # the ratchet quietly loses a tooth. They accumulate on their own -- a
+        # pinned tag rolling out of the window retires every entry that existed
+        # only to cover it -- so nobody would think to look. Reported, never
+        # fatal: a stale entry is untidy, not broken. DOC-1525.
+        stale = sorted(excluded - used)
+        if stale:
+            print(f"  {len(stale)} baseline entr(y/ies) matched nothing IN THIS BUILD")
+            print(f"    Only delete these from a build that covers every served tree.")
+            print(f"    A local build is usually 2 trees and CI is 8, so most of a")
+            print(f"    local list is covered by a pinned tag this build never made.")
+            for entry in stale[:10]:
+                print(f"    {entry}")
+            if len(stale) > 10:
+                print(f"    ... and {len(stale) - 10} more")
 
     if not broken:
         print("check-generated-links: OK")
