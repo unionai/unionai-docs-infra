@@ -316,3 +316,27 @@ def test_a_target_with_no_twin_keeps_its_resolved_path(tmp_path):
         f"[Diagram]({BASE}/user-guide/tasks/task-configuration/diagram.png)"
         f" [Gone]({BASE}/user-guide/tasks/nonexistent-section)\n"
     )
+
+
+def test_a_link_inside_fenced_code_is_left_alone(tmp_path):
+    """Fenced code is an example, not navigation.
+
+    The contributing guide shows `[`@task`](../../api-reference/...)` as the
+    WRONG way to link. Absolutizing it turned that illustration into a
+    real-looking URL resolving to nothing, and the link checker then reported
+    the guide as having a broken link. DOC-1525.
+    """
+    builder, root = _tree(tmp_path)
+    page = _page(
+        root,
+        "user-guide/tasks/task-configuration/caching",
+        "Real [Traces](../task-programming/traces).\n\n"
+        "```markdown\n"
+        "Do not write [`@task`](../../api-reference/...) like this.\n"
+        "```\n",
+    )
+    builder.absolutize_links("union")
+    out = page.read_text(encoding="utf-8")
+    assert "](../../api-reference/...)" in out, "fenced example must survive verbatim"
+    assert "https://www.union.ai/docs/v2/union/api-reference/..." not in out
+    assert out.count("https://") == 1, "only the real link outside the fence is rewritten"
