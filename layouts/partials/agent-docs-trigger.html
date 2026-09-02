@@ -1,7 +1,0 @@
-{{- $agentPage := site.GetPage "/api-reference/flyte-context" -}}
-{{- with $agentPage -}}
-{{- $isActive := hasPrefix $.RelPermalink .RelPermalink -}}
-<a id="agent-docs-trigger" {{ if $isActive }}class="active"{{ end }} href="{{- .RelPermalink -}}" title="Docs for AI agents" aria-label="Docs for AI agents">
-    <sl-icon name="robot"></sl-icon>
-</a>
-{{- end -}}

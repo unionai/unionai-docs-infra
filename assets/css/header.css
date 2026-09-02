@@ -469,47 +469,6 @@ header .toggle-sidebar {
   color: var(--union-color);
 }
 
-/* Icon-only sibling of #support-trigger, linking to the AI-agent docs page. Deliberately
-   has no visible label — it's a secondary affordance, so the name lives in title/aria-label. */
-#agent-docs-trigger {
-  height: 34px;
-  width: 34px;
-  box-sizing: border-box;
-  margin-left: 0.5rem;
-  border-radius: 6px;
-  background: var(--code-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-hairline);
-  color: var(--text-color);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition: border-color 0.2s, box-shadow 0.2s, color 0.2s, background-color 0.2s;
-}
-
-#agent-docs-trigger sl-icon {
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-#agent-docs-trigger:hover {
-  border-color: var(--separator);
-  box-shadow: var(--shadow-card);
-}
-
-#agent-docs-trigger.active {
-  background-color: color-mix(in srgb, var(--union-color) 12%, var(--code-bg));
-  border-color: var(--union-color);
-  color: var(--union-color-dark);
-}
-
-[data-theme="dark"] #agent-docs-trigger.active {
-  background-color: color-mix(in srgb, var(--union-color) 20%, var(--code-bg));
-  color: var(--union-color);
-}
-
 .signup-icon {
   display: none;
   flex-shrink: 0;
