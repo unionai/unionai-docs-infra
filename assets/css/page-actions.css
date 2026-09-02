@@ -88,7 +88,10 @@
 /* The menu: same face as the version dropdown (.version-item) and the button
    label. Shoelace would otherwise use its own font stack and size. */
 .page-actions-menu,
+.page-actions-menu sl-menu-item,
 .page-actions-menu sl-menu-item::part(base) {
+  /* On the host as well: Shoelace's own `:host { font-family: var(--sl-font-sans) }`
+     would otherwise win over `inherit` on the part and hand it the system font. */
   font-family: inherit;
   font-size: 0.84rem;
   font-weight: 500;
