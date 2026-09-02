@@ -602,6 +602,40 @@ Then commit the changed files. This single command regenerates all generated con
 
 **How to fix:** Fix the typo, or add the intended term to the project's allowed-words list.
 
+### Check Icon Names (`check-icon-names`)
+
+**What it checks:** That every `sl-icon` name and gemoji reference resolves against the vendored icon lists in `tools/icon_sets/`.
+
+**Why it fails:** A name from a different icon set (Lucide names such as `git-branch` or `zap` are the usual culprits) or a typo. An unknown name renders as a blank slot rather than an error, which is why this is a gate.
+
+**How to fix:** `make check-icon-names` lists the offending names. Pick the Bootstrap Icons equivalent.
+
+### Check Subpage Cards (`check-subpage-cards`)
+
+**What it checks:** That `{{< subpage-cards >}}` usages and the descriptions they draw on stay consistent with the baseline.
+
+**How to fix:** Run the check locally and update the baseline file if the change is intended.
+
+### Check Determinism (`check-determinism`)
+
+**What it checks:** That two builds of the same commit produce identical output.
+
+**Why it fails:** Something clock-derived or ordering-dependent entered the build. This is why `<lastmod>` is deliberately omitted from sitemaps.
+
+### Check DCO (`check-dco`)
+
+**What it checks:** That every commit carries a `Signed-off-by` trailer.
+
+**How to fix:** `git commit -s`, or `git rebase --signoff` for a series. This one is required by branch protection, so a merge is blocked until it passes.
+
+### Check Search Benchmark Labels (`check-search-labels`)
+
+**What it checks:** The labelled query set used by the search benchmark stays valid against current content.
+
+### Which checks block a merge
+
+Most of the above block. **Four are advisory and do not block:** `check-markdownlint`, `check-spelling`, and the two drift checks (`check-api-docs`, `check-helm-docs`), which are named "advisory, non-blocking" in their workflows. A red mark on those is information, not a stop. Keeping the two style checks advisory is a deliberate decision, not an oversight.
+
 ### Pull request build and preview
 
 **What it does:** `build-pr.yml` builds the full site (`make dist`) for the PR and uploads it as an artifact; `deploy-pr-preview.yml` then deploys that artifact to a per-branch Cloudflare Pages preview (see [Pull request previews](#pull-request-previews)). The build half reports as the required `Build and deploy docs` status check.
