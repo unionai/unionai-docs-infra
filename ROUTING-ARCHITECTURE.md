@@ -1,5 +1,14 @@
 # Union.ai Web Routing Architecture
 
+> **Last verified 2026-09-02** against the live Cloudflare rulesets and production responses.
+> The Cloudflare rule tables below were read from the API, not from memory: dynamic redirects
+> `b97ef0221e4b49a1a8c2cb614248b1f8` (17 rules, ruleset version 71) and transforms
+> `60866e7f204a4848ba5ec3670ea095eb` (3 rules). Re-read both before trusting the tables, since
+> they are edited in the dashboard and this file cannot know about it.
+>
+> Rule counts and status codes drift. If you are debugging, probe the live URL first
+> (`curl -sI`), then reconcile with this document, and fix the document when it is wrong.
+
 This document describes the complete request routing system that serves `union.ai`, `www.union.ai`, `docs.flyte.org`, `docs-legacy.flyte.org`, and related domains. The system spans three services: Cloudflare (DNS + rules + static hosting), AWS CloudFront (path-based reverse proxy), and Webflow (corporate site).
 
 ## Overview
@@ -64,13 +73,11 @@ The **docs** project serves both v2 docs (via `web-docs.union.ai`) and the legac
 
 > **Build source:** as of 2026-05-13, the `docs` project's builds are produced by **GitHub Actions** (`.github/workflows/build-and-deploy.yml` on `unionai/unionai-docs`, both `main` and `v1` branches) and pushed via `wrangler pages deploy` (Direct Upload mode). CF Pages' native build runner is disabled (`source.config.deployments_enabled: false`). The project's stored `build_config` (`make dist` → `dist/`) and `HUGO_VERSION` env vars are no longer read. Deployment `source` field shows `ad_hoc` (wrangler) rather than `github:push` (CF native).
 >
-> Verify what's live with: `curl https://www.union.ai/docs/build-info.json` (main) or `curl https://www.union.ai/docs/v1/build-info.json` (v1) — returns `"builder": "github-actions"` plus the GHA run URL of the live deployment.
+> **Verifying what is live: the documented command no longer works.** Each build still writes `dist/docs/build-info.json`, but the F3 fallback rule (Phase 2, rule 17) now intercepts any `/docs/*` path that is not a version root, so `https://www.union.ai/docs/build-info.json` returns a 302 to the user guide instead of the JSON. `/docs/v2/build-info.json` and `/docs/v1/build-info.json` are swallowed the same way by F1 and F2. The fallbacks carry explicit passthrough allowlists (`versions.json`, `llms.txt`, `sitemap.xml`); `build-info.json` was never added to them, so an incident-response diagnostic is unreachable at the edge. Tracked in DOC-1531. Until it is fixed, read the deployment's own URL instead, for example `curl https://<deployment-hash>.docs-dog.pages.dev/docs/build-info.json`, or read the GHA run directly.
 
 The v1 docs are served from `v1.docs-dog.pages.dev` — this is a deployment alias within the same **docs** Pages project, not a separate project. Built and deployed by the same GHA workflow on the `v1` branch with `--branch=v1`.
 
 The **docs-builder** project was previously used for preview/staging Git-connected builds. After the 2026-05 GHA-build migration it has no role; it remains in the dashboard as an orphan with auto-deploys disabled (1,714 historical deployments make bulk-delete via API expensive vs. its zero-cost inert state).
-
-The Admin@flyte.org account has **no Cloudflare Pages projects**.
 
 The Admin@flyte.org account has **no Cloudflare Pages projects**.
 
@@ -84,28 +91,60 @@ Before traffic reaches CloudFront, Cloudflare processes its own zone rules for `
 
 #### Redirect Rules (Dynamic Redirects)
 
-Processed in order (11 active as of 2026-07-24):
+Ruleset `b97ef0221e4b49a1a8c2cb614248b1f8` (phase `http_request_dynamic_redirect`), processed in order. **17 rules, all enabled, ruleset version 71 as of 2026-09-02.** This is the only mechanism in the stack that can use regular expressions and capture groups; bulk redirect lists cannot (see "Which mechanism handles what" below).
 
 | # | Match | Target | Code | Purpose |
 |---|-------|--------|------|---------|
 | 1 | `union.ai` (bare domain) | `https://www.union.ai{path}` | 302 | Canonicalize to www |
 | 2 | `https://apps.*` | Strip `apps.` prefix | 301 | Legacy apps subdomain |
 | 3 | `www.union.ai/docs/` (bare, with trailing slash) | `/docs/v2/` | 302 | Docs root defaults to v2 |
-| 4 | `www.union.ai/docs/byoc/*` | `/docs/v1/byoc/*` | 302 | Unversioned byoc = v1 |
-| 5 | `www.union.ai/docs/serverless/*` | `/docs/v1/serverless/*` | 302 | Unversioned serverless = v1 |
-| 6 | `www.union.ai/docs/flyte/*` | `/docs/v1/flyte/*` | 302 | Unversioned flyte = v1 |
-| 7 | `www.union.ai/docs/selfmanaged/*` | `/docs/v1/selfmanaged/*` | 302 | Unversioned selfmanaged = v1 |
-| 8 | `staging.union.ai/try-2.0` | Staging Cloudflare Pages URL | 302 | Staging vanity URL |
-| 9 | `www.union.ai` + `/docs/v1` or `/docs/v1/*` (excl. flyte/union/byoc/selfmanaged/serverless) | `/docs/v1/union/user-guide/` | 302 | **F1: v1 fallback** — bare/unknown v1 path → v1 landing |
-| 10 | `www.union.ai` + `/docs/v2` or `/docs/v2/*` (excl. flyte/union/byoc/selfmanaged/serverless) | `/docs/v2/union/user-guide/` | 302 | **F2: v2 fallback** — bare/unknown v2 path → v2 landing |
+| 4 | `/docs/byoc/*` | `/docs/v1/byoc/*` | 302 | Unversioned byoc = v1 |
+| 5 | `/docs/serverless/*` | `/docs/v1/serverless/*` | 302 | Unversioned serverless = v1 |
+| 6 | `/docs/flyte/*` | `/docs/v1/flyte/*` | 302 | Unversioned flyte = v1 |
+| 7 | `/docs/selfmanaged/*` | `/docs/v1/selfmanaged/*` | 302 | Unversioned selfmanaged = v1 |
+| 8 | `staging.union.ai/try-2.0` | Staging Pages URL | 302 | Staging vanity URL |
+| 9 | `/docs/stable/*` | `/docs/v2/*` | 302 | **`stable` alias.** Static: v2 always serves the newest cut, so this never needs re-pointing |
+| 10 | `^/docs/[^/]+/[^/]+/_?section\.md$` | that tree's `llms.txt` | 301 | Retired bundle name at a variant root (DOC-1509) |
+| 11 | `^/docs/[^/]+/[^/]+/.+/_?section\.md$` | `<path>.md` | 301 | Retired bundle name → the page twin (DOC-1509) |
+| 12 | `^/docs/[^/]+/[^/]+/page\.md$` | that tree's `llms.txt` | 301 | Retired twin name at a variant root (DOC-1432) |
+| 13 | `^/docs/[^/]+/[^/]+/.+/page\.md$` | `<path>.md` | 301 | Retired twin name → the page twin (DOC-1432) |
+| 14 | exact list: `/docs.md`, `/docs/{latest,v2,v1}.md`, `/docs/{latest,v2,v1}/{union,flyte}.md` | that tree's `llms.txt` | 301 | A tree root has no twin of its own; its agent surface is the index (DOC-1432) |
+| 15 | `/docs/v1` or `/docs/v1/*`, excluding the five variant prefixes, `versions.json` and `llms.txt` | `/docs/v1/union/user-guide/` | 302 | **F1: v1 fallback** (DOC-1330) |
+| 16 | `/docs/v2` or `/docs/v2/*`, same exclusions | `/docs/v2/union/user-guide/` | 302 | **F2: v2 fallback** (DOC-1330) |
+| 17 | `/docs` or `/docs/*`, excluding `^/docs/(v[0-9][^/]*\|latest\|stable)(/\|$)`, `/docs/llms.txt`, `/docs/sitemap.xml` | `/docs/v2/union/user-guide/` | 302 | **F3: docs-root fallback** (DOC-1358 / DOC-1320) |
 
-*(One further rule beyond these ten is active but not material to `/docs/*` routing. Plus a **URL Rewrite Rule**, "to public docs url", that rewrites any path containing the token `HhI8nGjMQ1x5SrxSip29` to `/`.)*
+**Key behaviors.**
 
-**Key behavior**: Any request to `www.union.ai/docs/{variant}/*` without an explicit version prefix (`v1` or `v2`) is redirected to v1. This is because v1 was the original URL structure before versioning was introduced. The bare `/docs/` path, however, redirects to v2 (the current default). The **F1/F2 fallbacks** (rules 9–10) catch a bare or unrecognized version root (`/docs/v2`, `/docs/v2/<unknown>`) and land it on that version's user-guide home instead of a 404.
+- Any request to `/docs/{variant}/*` without a version prefix goes to **v1**, because v1 was the URL structure before versioning. The bare `/docs/` path goes to **v2**. Rules 4 to 7.
+- Rules 10 to 13 exist because the agent-facing surface **consolidated on one shape, `<path>.md`**. The earlier names `page.md`, `section.md` and `_section.md` are retired, and these rules keep old links and old agent habits working with a single 301 rather than a 404. See the LLM-optimized documentation page for the shape that is current.
+- **The three fallbacks are catch-alls, and they swallow more than 404s.** F1, F2 and F3 turn any unrecognized path under their prefix into a 302 to a user guide, so a missing file does not 404, it redirects. Each therefore needs an explicit passthrough allowlist for real non-page assets, and the allowlists are hand-maintained: F1 and F2 exempt `versions.json` and `llms.txt`, F3 exempts `/docs/llms.txt` and `/docs/sitemap.xml`. **Anything not on a list becomes unreachable the moment it is added to the build.** That is exactly how `/docs/build-info.json` was lost (see the Pages note in Phase 1, and DOC-1531). When you add a file at a tree root, add it to the allowlist in the same change.
+- A path **inside** a variant tree still 404s properly, because the variant prefixes are excluded: `/docs/v2/union/nonexistent/` returns 404, verified 2026-09-02.
 
-#### Transform Rules
+#### Transform Rules (URL rewrites, not redirects)
 
-- URLs containing the string `HhI8nGjMQ1x5SrxSip29` are rewritten to `/`. This appears to be a cleanup rule for a preview/staging URL token.
+Ruleset `60866e7f204a4848ba5ec3670ea095eb` (phase `http_request_transform`), 3 rules. A rewrite changes the path Cloudflare fetches **without changing the URL in the browser**, which is why content negotiation lives here and not in the redirect ruleset.
+
+| # | Match | Rewrite | Purpose |
+|---|-------|---------|---------|
+| 1 | path contains `HhI8nGjMQ1x5SrxSip29` | `/` | Cleanup for a preview/staging URL token |
+| 2 | `/docs/*` **and** `Accept` contains `text/markdown`, at a variant root | that tree's `llms.txt` | **Content negotiation** (DOC-1501) |
+| 3 | `/docs/*` **and** `Accept` contains `text/markdown`, any other page | the page's `.md` twin | **Content negotiation** (DOC-1501) |
+
+So an agent can either append `.md` to a URL or send `Accept: text/markdown` to the ordinary URL and get the same Markdown back. Verified 2026-09-02: `curl -H "Accept: text/markdown" https://www.union.ai/docs/v2/union/user-guide/` returns `200 text/markdown; charset=utf-8`.
+
+**Reading these rulesets requires the right token.** The dynamic redirect ruleset reads with `CF_TOKEN_UNION_RULES_EDIT`; the transform ruleset needs `CF_TOKEN_TRANSFORM_EDIT` and returns "request is not authorized" with the other. Both are in `~/.zshenv`.
+
+#### Which mechanism handles what
+
+Three mechanisms redirect on this zone, and the choice is not stylistic:
+
+| Need | Mechanism | Why |
+|---|---|---|
+| A pattern with a capture group (`page.md` → `<path>.md`) | **Dynamic redirect rule** | Bulk redirect lists have no regex and no capture groups |
+| One of thousands of fixed old-URL to new-URL pairs | **Bulk redirect list**, from `redirects.csv` in the repo | Version-controlled, reviewable, scales to thousands of rows |
+| Serve different content at the same URL | **Transform rule** (rewrite) | A redirect would change the URL; content negotiation must not |
+
+The repo shows what is version-controlled, not what is possible. Regex redirects **are** available on this zone and are in active use (rules 10 to 14); the absence of capture groups in `redirects.csv` is a property of bulk redirect lists, not of the plan.
 
 #### Legacy Page Rules
 
@@ -114,9 +153,9 @@ Processed in order (11 active as of 2026-07-24):
 | `sandbox.union.ai/*` | `https://signup.union.ai` | 302 |
 | `docs.union.ai/HhI8nGjMQ1x5SrxSip29/*` | `https://docs.union.ai/*` | 302 |
 
-#### Bulk Redirects (8,142 entries)
+#### Bulk Redirects
 
-A single bulk redirect list named "redirects" containing 8,142 entries (as of 2026-07-24; sourced from `unionai-docs-infra/redirects.csv`), broken down by source prefix:
+A single bulk redirect list named "redirects", sourced from `unionai-docs-infra/redirects.csv`, which holds **8,756 rows as of 2026-09-02**. Broken down by source prefix:
 
 - **~6,256 entries** from `www.union.ai/*` and `docs.union.ai/*` (legacy categories):
   - `www.union.ai/docs/byoc/*` style mappings (unversioned → versioned)
@@ -128,7 +167,11 @@ A single bulk redirect list named "redirects" containing 8,142 entries (as of 20
   
   Each entry targets a specific `https://www.union.ai/docs/v2/flyte/<v2-path>` destination. Most entries use `subpath_matching=TRUE` to absorb trailing-slash and minor URL-form variants.
 
-All bulk redirects use 302 (temporary) status codes with query string preservation.
+**The bulk list is deliberately mixed, not one code.** Counted 2026-09-02 across the 8,756 rows: **6,357 are 302 and 2,399 are 301**, and that split is a policy rather than drift. A 301 is cached by the browser and effectively permanent, so it is used where the target *is* the content the old URL described. A 302 is used where the target is a judgment call, typically a retired page landing on the nearest sensible ancestor, so a better target stays reachable later. **Do not normalise these to a single code.** The reasoning is in `README.md` › "Choosing 301 vs 302".
+
+Query strings are preserved either way. The dynamic redirect rules in the table above are mostly 302; the retired-name rules (10 to 14) are 301, because those names are retired for good.
+
+The list is deployed by `tools/redirect_generator/deploy_redirects.py` via the `deploy-redirects.yml` workflow, which runs on `workflow_dispatch` and on pushes to `main` or `v1` that touch the `unionai-docs-infra` pointer or `versions.toml`. **One Cloudflare list serves both branches**, so the workflow is serialized on a single concurrency group that is deliberately not keyed on the branch, and never cancels in progress: each run replaces the whole list, so two in flight are a last-writer-wins race, and back-to-back runs spend an account-wide bulk-operation budget (five runs in twenty minutes hit Cloudflare's rate limit twice on 2026-08-26).
 
 **Note**: The `_r_/flyte/*` portion of this list is the landing zone for the `docs.flyte.org` / `docs-legacy.flyte.org` catch-all (see Phase 5). After the flyte.org-zone normalization rules rewrite a request to `www.union.ai/_r_/flyte/<canonical-path>`, this list maps it to the canonical v2 destination. Sourced from `unionai-docs-infra/redirects.csv` and deployed by `tools/redirect_generator/deploy_redirects.py` via the `unionai-docs/.github/workflows/deploy-redirects.yml` CI workflow (auto-runs when the infra submodule pointer or either line's `versions.toml` changes on `main` or `v1`). **Not every item comes from the CSV:** redirects for retired version pins are derived at deploy time from the `retired` list in each line's `versions.toml`, so a pin's retirement and its redirect cannot drift apart — see VERSIONING.md › "Retired pins redirect themselves".
 
@@ -420,9 +463,9 @@ Browser
   → Cloudflare Pages: serves v1 docs
 ```
 
-## Docs versioning (v2.x.y.z) — in progress (DOC-1245)
+## Docs versioning (v2.x.y.z) — LIVE since 2026-07-29 (DOC-1245)
 
-The v2 docs are gaining **per-release semantic versioning** (`prds` `docs_versioning` PRD, DOC-1245). This section describes the target routing; it is **not fully live yet**. The design deliberately reuses the existing v1/v2 mechanism (separate builds served under `/docs/<version>/` path prefixes) rather than inventing a new one, and — critically — **requires no CloudFront change** (CloudFront is Terraform-managed; see Infrastructure Notes) and **no change to the ~8,142 existing redirects**.
+Per-release semantic versioning is **live on both lines** (`prds` `docs_versioning` PRD, DOC-1245). As of 2026-09-02 the v2 line serves `v2.6.10.0` at `/docs/v2` and the v1 line serves `v1.16.28.3` at `/docs/v1`. The design reuses the existing v1/v2 mechanism (separate builds served under `/docs/<version>/` path prefixes), and it needed **no CloudFront change** (CloudFront is Terraform-managed; see Infrastructure Notes) and **no change to the existing bulk redirects**.
 
 ### The URL model ("A2")
 
@@ -441,8 +484,30 @@ Making `/docs/v2` serve *stable* rather than *main* also fixes the original movi
 
 - **CloudFront: no change.** The existing `/docs/*` → `docs` origin behavior already catches `/docs/latest/…`, `/docs/stable/…`, and `/docs/v2.x.y.z/…` (none match the more-specific `/docs/v1*`). Nothing new to route.
 - **The `docs` origin's deploy assembles the versions.** The production build (`build-and-deploy.yml`) additionally emits, into one dist served by `web-docs.union.ai`: `docs/latest/` (main, noindex), `docs/v2/` (the newest cut, indexed), and `docs/v2.x.y.z/` (each **older** enumerated tag, noindex — the newest is served only at `docs/v2`). Immutable pinned builds are cached (built once), so a normal merge rebuilds only `docs/latest/`; a cut rebuilds `docs/v2/` + rotates the outgoing stable into a new pinned tree. Orchestrated by **`unionai-docs-infra/scripts/build_versions.sh`** (line-aware: it derives the line from the stable tag, so the same script serves `/docs/v1` on the v1 branch and skips the `latest` build for a secondary line (v1, whose /docs/latest URL is v2's)), driven by **`versions.toml`** at the repo root.
-- **One new Cloudflare redirect rule:** `/docs/stable/*` → `/docs/v2/*` (static). `/docs/latest` is served, not redirected.
+- **One Cloudflare redirect rule:** `/docs/stable/*` → `/docs/v2/*` (static). This is live as rule 9 in the Phase 2 table. `/docs/latest` is served, not redirected.
 - **No change to bulk redirects** — they keep landing on the real, canonical `/docs/v2/…` (no double-hop).
+
+### What is actually served today (verified 2026-09-02)
+
+| URL | Serves | `robots` meta |
+|---|---|---|
+| `/docs/v2/…` | `v2.6.10.0`, the newest cut | `index,follow` |
+| `/docs/latest/…` | `main`, rebuilt every merge | `noindex,nofollow` |
+| `/docs/v2.6.9.0/…` and the other enumerated pins | that immutable cut | `noindex,nofollow` |
+| `/docs/stable/…` | 302 to `/docs/v2/…` | n/a |
+| `/docs/v1/…` | `v1.16.28.3` | `index,follow` |
+
+Only the two stable trees are indexed. The `robots` values above were read off the live pages, not inferred.
+
+### Pin retention has a hard ceiling
+
+`enumerated` cannot grow indefinitely. **Cloudflare Pages caps one deployment at 20,000 files, and each enumerated pin materializes another full site tree of roughly 3,000 files.** Seven trees broke the deploy outright on 2026-08-21. The list is therefore kept short on purpose, currently three pins per line, and this is a deploy constraint rather than a cost or reader-experience judgement.
+
+### Retired pins redirect themselves
+
+A pin leaves `enumerated` and arrives in `retired` in the same edit, made by `manifest.py --promote`. **Its redirect is derived from the `retired` list at deploy time, so do not add a row to `redirects.csv` for it** (DOC-1497). The pin's retirement and its redirect cannot drift apart because they come from one source. Verified 2026-09-02: `/docs/v2.6.0.0/union/user-guide/` returns 301 to `/docs/v2/union/user-guide/`.
+
+`versions.toml` also carries two per-line switches: `latest` (whether the line owns the global `/docs/latest` URL, true only for the primary line) and `indexed` (whether the line's stable tree is search-indexed, defaulting to true).
 
 ### Cutting a version — the one-merge model
 
@@ -467,8 +532,15 @@ The CloudFront configuration is managed via Terraform. Manual changes to the Clo
 
 ### Bulk Redirect Limits
 
-The bulk redirect list contains 8,142 entries (fetched via paginated API, 500 items per page). Cloudflare's limit for bulk redirect lists is 20,000 entries on the Enterprise plan, so there's substantial headroom.
+The list holds 8,756 rows as of 2026-09-02 (fetched via paginated API, 500 items per page). Cloudflare's limit for bulk redirect lists is 20,000 entries on the Enterprise plan, so there is substantial headroom. The tighter ceiling in this stack is the **20,000 files per Pages deployment** cap, which is what bounds pin retention (see "Pin retention has a hard ceiling").
 
 ### Redirect Status Codes
 
-Almost all redirects use **302 (temporary)**. This means browsers and search engines do not cache the redirects permanently. If these mappings are considered stable, switching to 301 (permanent) would improve performance for repeat visitors and signal to search engines that the old URLs should be deindexed in favor of the new ones.
+The bulk list is **mixed on purpose**: 6,357 rows at 302 and 2,399 at 301 as of 2026-09-02. An earlier version of this document recommended normalising everything to 301 for SEO. **Do not do that.** The choice is about reversibility, not ranking: a 301 is cached by the browser and cannot cleanly be taken back, so it is right only where the target is certain. See `README.md` › "Choosing 301 vs 302". The dynamic redirect rules are likewise a mix: canonicalization and fallbacks are 302, retired-name rules are 301.
+
+### Redirect Hygiene
+
+Two properties are maintained deliberately and are easy to break:
+
+- **One hop.** A redirect should land on a final URL, not on another redirect. 442 rows were retargeted in a 2026-08-31 pass to flatten chains, with 60 of 60 spot-checks verified one-hop. When you add a row, point it at the page that actually serves, not at a URL you know will redirect again.
+- **Trailing slashes.** An exact-match row misses the other form and produces a soft 404. Either set `subpath_matching=TRUE` or enumerate both `/x` and `/x/`. See `CLOUDFLARE-REDIRECT-FIX.md`.

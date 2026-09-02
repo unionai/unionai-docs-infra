@@ -45,13 +45,19 @@ rule, no redesign. Concretely, moving from `{v2 primary, v1 secondary}` to
    - `api-packages.toml [docs_version]`: series `v3.`.
    - `versions.toml`: `latest = true` (default); `stable = "v3.x.y.z"` (the first v3 cut).
 
-4. **Update the cross-line registry** — `served-versions.toml` (this repo):
-   - Add a `[v3]` table with `latest = true`, `stable = "v3.x.y.z"`, `enumerated = []`.
-   - Set `[v2].latest = false`.
-   - The selector line order and latest-ownership are **derived** from this file
-     (`run_hugo.sh` sorts the `[vN]` tables newest-first and gives `/docs/latest` to the
-     line with `latest = true`), so **no `run_hugo.sh` code change is needed** — just this
-     config.
+4. **Hand `/docs/latest` to the new primary.** There is **no cross-line registry file to
+   edit**: `served-versions.toml` was deleted (DOC-1330) and `run_hugo.sh` now derives the
+   registry by reading every line's own `versions.toml`, this line's from the working tree
+   and the others' from `origin`. So the only edits are:
+   - on `main`: `versions.toml` gets `latest = true` (the default) and `stable = "v3.x.y.z"`;
+   - on the new `v2` branch: `versions.toml` gets `latest = false`.
+
+   The selector's line order and latest-ownership are derived from those files, so **no
+   `run_hugo.sh` change is needed**. The line name itself comes from the `stable` tag's
+   prefix, so there is no separate field to keep in sync.
+
+   Note that the derivation reads the other lines from `origin`, so the new branch must be
+   **pushed** before a build on another branch can see it in the selector.
 
 5. **Edge routing (eng / Terraform — the one non-repo step).** Today `/docs/v2` is served
    by `main`'s deployment. Once `main` is v3, add a CloudFront behavior so:
@@ -78,9 +84,10 @@ rule, no redesign. Concretely, moving from `{v2 primary, v1 secondary}` to
 - **File budgets.** Each line is its own Cloudflare Pages deployment (own 20k budget), so
   three lines don't compete on the ceiling.
 - **No framework changes.** The version scheme, cut/regen/fold, inline-tag machinery, and
-  selector/footer are all line-generic. The only *code* touched is config
-  (`served-versions.toml`, the two branches' `versions.toml` + `api-packages.toml`) plus
-  the branch's CI shape and the one CloudFront behavior.
-- **Retiring the oldest line.** If you ever stop serving `v1`, drop its `[v1]` table from
-  `served-versions.toml`, remove its CloudFront behavior, and archive the branch. The
-  tags remain in git.
+  selector/footer are all line-generic. The only *code* touched is config (each branch's
+  `versions.toml` + `api-packages.toml`) plus the branch's CI shape and the one CloudFront
+  behavior.
+- **Retiring the oldest line.** If you ever stop serving `v1`, remove its CloudFront
+  behavior and archive the branch. Once the branch is gone the selector stops listing the
+  line by itself, because the registry is derived from the branches that exist. The tags
+  remain in git.

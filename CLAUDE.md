@@ -1,6 +1,13 @@
 # CLAUDE.md — unionai-docs / unionai-docs-infra
 
-This file provides guidance for working with the Union.ai documentation repositories. It is shared between `unionai-docs` (parent) and `unionai-docs-infra` (submodule).
+This file provides guidance for working with the Union.ai documentation repositories.
+
+> **There are two copies of this file and they have drifted.** `unionai-docs/CLAUDE.md` and
+> `unionai-docs-infra/CLAUDE.md` were meant to be the same file. They are not: the parent's copy
+> carries two sections this one lacks (self-managed context, and the API-reference autolinking
+> rules). Treat the **parent's copy as the fuller one** for content authoring, and this one as
+> the build-infrastructure view. Check both before trusting either. Reconciling them is tracked
+> in DOC-1530.
 
 ## Project Overview
 
@@ -188,7 +195,8 @@ highlight_keys = true      # Show key replacements
 
 - Pre-build checks block absolute URLs to union.ai/docs — use `{{< docs_home {variant} >}}` instead
 - Hugo version must be >= the pin in `unionai-docs-infra/.hugoversion` (currently 0.161.1). **The floor equals the pin** so local dev and CI build with the same Hugo; `pre-flight.sh` fails below it and warns above it (brew tracks latest, so running ahead of CI is the common skew and the one a floor cannot catch).
-- Python 3.8+ required for build tools
+- Python >= 3.10 required for the build tools (`requires-python` in
+  `unionai-docs-infra/pyproject.toml`); CI runs 3.12
 
 ## API Documentation
 
@@ -199,8 +207,35 @@ Generated from Python packages using `tools/api_generator`:
 
 ## Redirects
 
-Managed in `unionai-docs-infra/redirects.csv`. Applied to CloudFlare by Union employee.
+Managed in `unionai-docs-infra/redirects.csv` and **deployed automatically**, not by hand. The
+`deploy-redirects.yml` workflow in `unionai-docs` pushes the whole list to Cloudflare on
+`workflow_dispatch` and on pushes to `main` or `v1` that touch the infra pointer or
+`versions.toml`.
+
+Two things to know before adding a row:
+
+- **Retired version pins need no row.** Their redirects are derived at deploy time from the
+  `retired` list in each line's `versions.toml`. A test fails if you add one (DOC-1497).
+- **`redirects.csv` cannot do patterns.** It becomes a Cloudflare Bulk Redirect List, which has
+  no regex and no capture groups. Pattern redirects live in the zone's dynamic redirect ruleset,
+  edited in the dashboard.
+
+Full picture, including the three fallback catch-alls and content negotiation:
+`unionai-docs-infra/ROUTING-ARCHITECTURE.md`.
 
 ## LLM Documentation Pipeline
 
-The build generates `llms.txt` (page index) and `llms-full.txt` (complete docs) for each variant, optimized for LLM consumption.
+The build generates, for each variant:
+
+- **`<path>.md`** — a clean Markdown twin of every page, served at the page's own URL with `.md`
+  appended. A section landing page's twin ends with a `## Subpages` list, which makes it the
+  index for its section. Each twin opens with an identity block naming the product and version
+  line.
+- **`llms.txt`** — the page index, with H2/H3 headings per entry.
+- **`llms-full.txt`** — the whole variant as one file.
+
+**One shape: `<path>.md`.** The older names `page.md`, `section.md` and `_section.md` are retired
+and no longer generated; Cloudflare 301s them to the page twin. Do not describe them as current.
+
+Readers and agents also reach a twin by sending `Accept: text/markdown` to the ordinary page URL.
+Details: `unionai-docs-infra/README.md` and the LLM-optimized documentation page in the docs.
