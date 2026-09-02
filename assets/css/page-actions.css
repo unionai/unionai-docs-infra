@@ -45,9 +45,14 @@
   border-color: var(--separator);
   box-shadow: var(--shadow-card);
 }
-.page-actions sl-dropdown {
+/* sl-dropdown wraps the slotted trigger in two internal boxes that do not
+   stretch on their own; without this the chevron sits 16px tall at the top. */
+.page-actions sl-dropdown,
+.page-actions sl-dropdown::part(base),
+.page-actions sl-dropdown::part(trigger) {
   display: flex;
   align-items: stretch;
+  height: 100%;
 }
 
 .page-actions-primary,
