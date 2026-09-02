@@ -49,11 +49,13 @@
   border-radius: 0 6px 6px 0;
   padding-inline: 0.45rem;
 }
-/* base.css underlines every `.main-content a`, and this button lives inside it.
-   Scoped to beat that rule rather than !important. */
+/* base.css underlines and colours every `.main-content a`, and this button lives
+   inside it. Scoped to beat that rule rather than !important; the label takes the
+   header buttons' text colour, not the link colour. */
 .main-content .page-actions .page-actions-primary,
 .main-content .page-actions .page-actions-primary:hover {
   text-decoration: none;
+  color: var(--text-color);
 }
 
 /* Shoelace renders a prefix slot with no gap of its own. */
