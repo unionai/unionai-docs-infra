@@ -96,15 +96,52 @@
   font-size: 0.84rem;
   font-weight: 500;
 }
-/* Shoelace renders a prefix slot with no gap of its own. */
+/* Each item is a boxed icon beside a two-line label: the action, and one line
+   saying what it does. The label slot is laid out as a column; Shoelace's own
+   label part is a flex row, so it is told to let the column fill it. */
+.page-actions-menu {
+  min-width: 19rem;
+}
 .page-actions-menu sl-menu-item::part(base) {
-  gap: 0.5rem;
+  gap: 0.75rem;
+  padding-block: 0.4rem;
 }
-.page-actions-menu sl-icon[slot="prefix"] {
-  margin-inline-end: 0.15rem;
+.page-actions-menu sl-menu-item::part(label) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.3;
 }
-.page-actions-menu sl-icon[slot="suffix"] {
-  margin-inline-start: 0.5rem;
+.page-actions-menu .pa-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--code-bg);
+  color: var(--text-color);
+  font-size: 1rem;
+}
+.page-actions-menu .pa-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-color);
+}
+.page-actions-menu .pa-sub {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-color-light);
+}
+/* The vendored brand marks (partials/icons/*.html) size and colour like an
+   <sl-icon>: 1em, currentColor. */
+.page-actions .brand-icon,
+.page-actions-menu .brand-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .page-actions-primary:focus-visible,
