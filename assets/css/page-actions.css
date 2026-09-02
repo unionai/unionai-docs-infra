@@ -30,27 +30,32 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.7rem;
-  border: 1px solid var(--border-1, var(--text-3));
-  background: var(--bg-1, transparent);
-  color: var(--text-2);
+  /* Same chrome as the header buttons (#support-trigger, #search-trigger):
+     6px corners, --border-color hairline, --code-bg fill, hairline shadow. */
+  border: 1px solid var(--border-color);
+  background: var(--code-bg);
+  box-shadow: var(--shadow-hairline);
+  color: var(--text-color);
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s, color 0.2s, background-color 0.2s;
 }
 .page-actions-primary {
-  border-radius: 0.5rem 0 0 0.5rem;
+  border-radius: 6px 0 0 6px;
   border-right: 0;
   white-space: nowrap;
 }
 .page-actions-toggle {
-  border-radius: 0 0.5rem 0.5rem 0;
+  border-radius: 0 6px 6px 0;
   padding-inline: 0.45rem;
 }
-/* base.css underlines every `.main-content a`, and this button lives inside it.
-   Scoped to beat that rule rather than !important. */
+/* base.css underlines and colours every `.main-content a`, and this button lives
+   inside it. Scoped to beat that rule rather than !important; the label takes the
+   header buttons' text colour, not the link colour. */
 .main-content .page-actions .page-actions-primary,
 .main-content .page-actions .page-actions-primary:hover {
   text-decoration: none;
+  color: var(--text-color);
 }
 
 /* Shoelace renders a prefix slot with no gap of its own. */
@@ -63,8 +68,8 @@
 
 .page-actions-primary:hover,
 .page-actions-toggle:hover {
-  background: var(--bg-2, rgba(128, 128, 128, 0.08));
-  color: var(--text-1);
+  border-color: var(--separator);
+  box-shadow: var(--shadow-card);
 }
 .page-actions-primary:focus-visible,
 .page-actions-toggle:focus-visible {
@@ -74,6 +79,15 @@
 .page-actions sl-icon {
   font-size: 1em;
   flex-shrink: 0;
+}
+/* The out-of-site marker: smaller and quieter than the action's own icon. */
+.page-actions .page-actions-ext,
+.page-actions-menu .page-actions-ext {
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+.page-actions-menu sl-icon[slot="suffix"] {
+  margin-inline-start: 0.5rem;
 }
 
 /* Narrow screens: the label is the first thing to go, not the button. An agent
