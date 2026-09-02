@@ -34,6 +34,7 @@
      title="Open this page in Claude">
     <sl-icon name="stars" aria-hidden="true"></sl-icon>
     <span>Open in Claude</span>
+    <sl-icon class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon>
   </a>
 
   <sl-dropdown placement="bottom-end" distance="4" hoist>
@@ -42,11 +43,15 @@
       <sl-icon name="chevron-down" aria-hidden="true"></sl-icon>
     </button>
     <sl-menu class="page-actions-menu">
+      {{- /* The two out-of-site actions carry a diagonal arrow, the usual sign
+           that a choice leaves the site. */ -}}
       <sl-menu-item value="claude">
         <sl-icon slot="prefix" name="stars"></sl-icon>Open in Claude
+        <sl-icon slot="suffix" class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon>
       </sl-menu-item>
       <sl-menu-item value="chatgpt">
         <sl-icon slot="prefix" name="chat-dots"></sl-icon>Open in ChatGPT
+        <sl-icon slot="suffix" class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon>
       </sl-menu-item>
       <sl-menu-item value="copy">
         <sl-icon slot="prefix" name="clipboard"></sl-icon>Copy page

@@ -78,6 +78,15 @@
   font-size: 1em;
   flex-shrink: 0;
 }
+/* The out-of-site marker: smaller and quieter than the action's own icon. */
+.page-actions .page-actions-ext,
+.page-actions-menu .page-actions-ext {
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+.page-actions-menu sl-icon[slot="suffix"] {
+  margin-inline-start: 0.5rem;
+}
 
 /* Narrow screens: the label is the first thing to go, not the button. An agent
    affordance that disappears on a laptop is worse than one without a word on it. */
