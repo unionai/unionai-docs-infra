@@ -1,5 +1,8 @@
 # Docs versioning
 
+> **Last verified 2026-09-02** against both lines' `versions.toml` and production responses.
+> Live state is in "Status" at the end of this file.
+
 How the Union/Flyte docs versioning system works (DOC-1245). This is the reference for
 maintainers. For the step-by-step of cutting a version see
 [`CUTTING-A-DOCS-VERSION.md`](./CUTTING-A-DOCS-VERSION.md); for the URL/edge routing see
@@ -177,15 +180,25 @@ PR. Merge it to cut.
 
 ## The selector and the footer
 
-- **`served-versions.toml`** (this repo) is the cross-line registry the version selector
-  reads. It lists every line's `latest` / `stable` / `enumerated` pins, so the selector on
-  any page can show all lines even though a given deployment only holds its own line.
-  Keep it in sync when a line cuts (automation tracked in DOC-1292).
+- **The cross-line registry is derived, not stored (DOC-1330).** `scripts/run_hugo.sh`
+  builds the selector's menu JSON by reading **every line's own `versions.toml`**: this
+  line's from the working tree, the other lines' from `origin` (`git show origin/<branch>:
+  versions.toml`). Nothing is hand-maintained.
+- **There used to be a `served-versions.toml` in this repo, and it is gone.** It restated
+  both lines' `stable` + `enumerated` so any page could list both, which made it a cache
+  with no invalidation. The cut workflow runs in `unionai-docs` and cannot write to the
+  infra repo, so every cut needed a companion hand-edit here. The first cut after go-live
+  (`v2.5.16.1`, docs#1324) duly shipped a page whose footer said `2.5.16.1` while its
+  selector said `2.5.16.0`, and whose freshly pinned `/docs/v2.5.16.0` tree was built but
+  missing from the menu. The data was never missing: each branch's `versions.toml` is
+  authoritative for its own line and is updated by the cut, which is why the footer was
+  right. So the build reads the originals. **Do not reintroduce a registry file.**
+- If a build cannot see the other lines' refs (a shallow or single-branch CI checkout), the
+  derivation degrades to listing only the lines it can see rather than failing the build.
 - **`layouts/partials/versions.html`** renders the selector as one flat list grouped by
   line, with `LATEST` / `STABLE` badges on the primary line and bare version numbers
-  elsewhere. `scripts/run_hugo.sh` builds the menu JSON from `served-versions.toml`; the
-  line order and which line owns `/docs/latest` are **derived** from the registry (the
-  line with `latest = true`), so no code changes when lines are added.
+  elsewhere. The line order and which line owns `/docs/latest` are **derived** (the line
+  with `latest = true`), so no code changes when lines are added.
 - **`layouts/partials/version-footer.html`** stamps each page with the exact component
   versions from `data/version-manifest.json` (SDK, plugins, backend, the `union` SDK).
 
@@ -262,7 +275,7 @@ wins automatically and a human has to intervene.
 |---|---|---|
 | `versions.toml` | each branch root | build plan: `stable` tag + older `enumerated` pins |
 | `data/version-manifest.json` | committed by the cut, per tag | the footer's pinned component versions |
-| `served-versions.toml` | this repo | cross-line registry the selector reads |
+| _(retired)_ `served-versions.toml` | — | **Gone (DOC-1330).** The selector derives the cross-line registry from each line's own `versions.toml`. Do not reintroduce it |
 | `api-packages.toml [docs_version]` | each branch | which SDK/passenger/backend the line resolves |
 | `scripts/build_versions.sh` | this repo | assembles the multi-version dist (line-aware) |
 | `scripts/cut-docs-version.sh` | this repo | tags the cut (inline-first) |
@@ -271,18 +284,29 @@ wins automatically and a human has to intervene.
 | `.github/workflows/docs-cut.yml` | each branch | manual version bump PR (no regen) |
 | `.github/workflows/build-and-deploy.yml` | each branch | materializes the tag + deploys |
 
-## Status (2026-07)
+## Status (verified 2026-09-02)
 
-Live today: the v2 + v1 lines, inline tags, the `flyte-sdk` auto-signal, manual dispatch
-(regen + cut), the flat selector, and the component footer.
+Live on both lines, and verified against production rather than recalled:
 
-Tracked follow-ups (Linear, all `docsy`-labelled):
+| | |
+|---|---|
+| v2 stable | `v2.6.10.0` at `/docs/v2`, `index,follow` |
+| v1 stable | `v1.16.28.3` at `/docs/v1`, `index,follow` |
+| `/docs/latest` | `main` tip, `noindex,nofollow` |
+| pins | 3 enumerated per line, each `noindex,nofollow` |
+| retired-pin redirects | derived and working (`/docs/v2.6.0.0/…` → 301 → `/docs/v2/…`) |
+| `/docs/stable/*` | 302 to `/docs/v2/*`, live as rule 9 in the dynamic redirect ruleset |
 
-- **DOC-1296** — release signals from `flytekit` / `flyteplugins-union` / `flyteorg/flyte`
-  / `union`, so *every* component release auto-bumps (the "Automatic bumps" table above is
-  the target; only `flyte-sdk` is wired today). Includes the main-side v1 driver.
-- **DOC-1292** — auto-sync `served-versions.toml` on cut (done by hand today).
-- **DOC-1295** — make `enumerated` (pins) a deliberate choice, not auto-rotate every cut.
-- **DOC-1294** — link footer versions to PyPI / GitHub.
-- **DOC-1291** — noindex the v1 line to concentrate search on v2.
-- **DOC-1290** — moving redirect so the current stable's numeric URL resolves.
+Also live: inline tags, the `flyte-sdk` auto-signal, manual dispatch (regen + cut), the flat
+selector, and the component footer.
+
+**Ticket statuses drift; do not trust a list in this file.** For the current picture, filter
+Linear's Documentation team by the `docsy` label. Two notes that are worth keeping because
+they change how you read the sections above:
+
+- **DOC-1292 is moot.** It tracked auto-syncing `served-versions.toml` on cut. That file was
+  deleted and the registry is derived now (see "The selector and the footer"), so there is
+  nothing left to sync.
+- **DOC-1296** is the reason the "Automatic bumps" table is a target rather than a
+  description: only the `flyte-sdk` signal is wired today. Every other row in that table is
+  reached by manual dispatch.
