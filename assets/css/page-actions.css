@@ -90,9 +90,9 @@
 .page-actions-menu,
 .page-actions-menu sl-menu-item,
 .page-actions-menu sl-menu-item::part(base) {
-  /* On the host as well: Shoelace's own `:host { font-family: var(--sl-font-sans) }`
-     would otherwise win over `inherit` on the part and hand it the system font. */
-  font-family: inherit;
+  /* The site token, not `inherit`: Shoelace's hosts set their own font stack
+     (--sl-font-sans), so inheritance through them lands on the system font. */
+  font-family: var(--font-sans);
   font-size: 0.84rem;
   font-weight: 500;
 }
