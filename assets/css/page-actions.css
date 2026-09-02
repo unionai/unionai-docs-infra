@@ -16,38 +16,65 @@
   margin-bottom: 1rem;
 }
 
+/* ONE box, the same chrome and size as the header buttons (#support-trigger,
+   #search-trigger, .version-btn): 34px tall, 6px corners, --border-color
+   hairline, --code-bg fill, hairline shadow, 0.84rem/500 label. The two parts
+   inside carry no chrome of their own, so there is no seam where they meet;
+   a single hairline divider separates the chevron. `overflow: hidden` keeps
+   the parts inside the rounded corners; the menu panel is hoisted to <body>
+   by sl-dropdown, so it is not clipped. */
 .page-actions {
   display: flex;
   align-items: stretch;
   flex-shrink: 0;
-  font-size: var(--type-crumb);
-  line-height: var(--lh-crumb);
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--code-bg);
+  box-shadow: var(--shadow-hairline);
+  overflow: hidden;
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.page-actions:hover {
+  border-color: var(--separator);
+  box-shadow: var(--shadow-card);
+}
+/* sl-dropdown wraps the slotted trigger in two internal boxes that do not
+   stretch on their own; without this the chevron sits 16px tall at the top. */
+.page-actions sl-dropdown,
+.page-actions sl-dropdown::part(base),
+.page-actions sl-dropdown::part(trigger) {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
 }
 
 .page-actions-primary,
 .page-actions-toggle {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.7rem;
-  /* Same chrome as the header buttons (#support-trigger, #search-trigger):
-     6px corners, --border-color hairline, --code-bg fill, hairline shadow. */
-  border: 1px solid var(--border-color);
-  background: var(--code-bg);
-  box-shadow: var(--shadow-hairline);
-  color: var(--text-color);
+  gap: 6px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
   text-decoration: none;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s, color 0.2s, background-color 0.2s;
 }
 .page-actions-primary {
-  border-radius: 6px 0 0 6px;
-  border-right: 0;
   white-space: nowrap;
 }
 .page-actions-toggle {
-  border-radius: 0 6px 6px 0;
-  padding-inline: 0.45rem;
+  padding-inline: 8px;
+  border-left: 1px solid var(--border-color);
 }
 /* base.css underlines and colours every `.main-content a`, and this button lives
    inside it. Scoped to beat that rule rather than !important; the label takes the
@@ -58,26 +85,72 @@
   color: var(--text-color);
 }
 
-/* Shoelace renders a prefix slot with no gap of its own. */
+/* The menu: same face as the version dropdown (.version-item) and the button
+   label. Shoelace would otherwise use its own font stack and size. */
+.page-actions-menu,
+.page-actions-menu sl-menu-item,
 .page-actions-menu sl-menu-item::part(base) {
-  gap: 0.5rem;
+  /* The site token, not `inherit`: Shoelace's hosts set their own font stack
+     (--sl-font-sans), so inheritance through them lands on the system font. */
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 500;
 }
-.page-actions-menu sl-icon[slot="prefix"] {
-  margin-inline-end: 0.15rem;
+/* Each item is a boxed icon beside a two-line label: the action, and one line
+   saying what it does. The label slot is laid out as a column; Shoelace's own
+   label part is a flex row, so it is told to let the column fill it. */
+.page-actions-menu {
+  min-width: 19rem;
+}
+.page-actions-menu sl-menu-item::part(base) {
+  gap: 0.75rem;
+  padding-block: 0.4rem;
+}
+.page-actions-menu sl-menu-item::part(label) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.3;
+}
+.page-actions-menu .pa-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--code-bg);
+  color: var(--text-color);
+  font-size: 1rem;
+}
+.page-actions-menu .pa-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-color);
+}
+.page-actions-menu .pa-sub {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-color-light);
+}
+/* The vendored brand marks (partials/icons/*.html) size and colour like an
+   <sl-icon>: 1em, currentColor. */
+.page-actions .brand-icon,
+.page-actions-menu .brand-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
-.page-actions-primary:hover,
-.page-actions-toggle:hover {
-  border-color: var(--separator);
-  box-shadow: var(--shadow-card);
-}
 .page-actions-primary:focus-visible,
 .page-actions-toggle:focus-visible {
   outline: 2px solid var(--union-color);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 .page-actions sl-icon {
-  font-size: 1em;
+  font-size: 1rem;
   flex-shrink: 0;
 }
 /* The out-of-site marker: smaller and quieter than the action's own icon. */
@@ -85,9 +158,6 @@
 .page-actions-menu .page-actions-ext {
   font-size: 0.75em;
   opacity: 0.7;
-}
-.page-actions-menu sl-icon[slot="suffix"] {
-  margin-inline-start: 0.5rem;
 }
 
 /* Narrow screens: the label is the first thing to go, not the button. An agent
@@ -97,6 +167,6 @@
     display: none;
   }
   .page-actions-primary {
-    padding-inline: 0.55rem;
+    padding-inline: 10px;
   }
 }

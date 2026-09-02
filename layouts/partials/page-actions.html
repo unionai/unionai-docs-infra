@@ -32,7 +32,7 @@
      href="https://claude.ai/new?q={{ $prompt | urlquery }}"
      target="_blank" rel="noopener noreferrer"
      title="Open this page in Claude">
-    <sl-icon name="stars" aria-hidden="true"></sl-icon>
+    {{ partial "icons/claude.html" . }}
     <span>Open in Claude</span>
     <sl-icon class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon>
   </a>
@@ -42,22 +42,28 @@
             aria-label="More ways to use this page">
       <sl-icon name="chevron-down" aria-hidden="true"></sl-icon>
     </button>
+    {{- /* Each item: a boxed icon, a title, and one line saying what it does.
+         The two out-of-site actions carry a diagonal arrow on the title. */ -}}
     <sl-menu class="page-actions-menu">
-      {{- /* The two out-of-site actions carry a diagonal arrow, the usual sign
-           that a choice leaves the site. */ -}}
       <sl-menu-item value="claude">
-        <sl-icon slot="prefix" name="stars"></sl-icon>Open in Claude
-        <sl-icon slot="suffix" class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon>
+        <span slot="prefix" class="pa-icon">{{ partial "icons/claude.html" . }}</span>
+        <span class="pa-title">Open in Claude <sl-icon class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon></span>
+        <span class="pa-sub">Ask questions about this page</span>
       </sl-menu-item>
       <sl-menu-item value="chatgpt">
-        <sl-icon slot="prefix" name="chat-dots"></sl-icon>Open in ChatGPT
-        <sl-icon slot="suffix" class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon>
+        <span slot="prefix" class="pa-icon">{{ partial "icons/openai.html" . }}</span>
+        <span class="pa-title">Open in ChatGPT <sl-icon class="page-actions-ext" name="arrow-up-right" aria-hidden="true"></sl-icon></span>
+        <span class="pa-sub">Ask questions about this page</span>
       </sl-menu-item>
       <sl-menu-item value="copy">
-        <sl-icon slot="prefix" name="clipboard"></sl-icon>Copy page
+        <span slot="prefix" class="pa-icon"><sl-icon name="copy" aria-hidden="true"></sl-icon></span>
+        <span class="pa-title">Copy page</span>
+        <span class="pa-sub">Copy page as Markdown for LLMs</span>
       </sl-menu-item>
       <sl-menu-item value="markdown">
-        <sl-icon slot="prefix" name="filetype-md"></sl-icon>View as Markdown
+        <span slot="prefix" class="pa-icon"><sl-icon name="markdown" aria-hidden="true"></sl-icon></span>
+        <span class="pa-title">View as Markdown</span>
+        <span class="pa-sub">View this page as plain text</span>
       </sl-menu-item>
     </sl-menu>
   </sl-dropdown>
