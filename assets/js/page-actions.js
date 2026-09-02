@@ -47,12 +47,9 @@
     }
   }
 
-  // Delegated on `document`, deliberately. Binding straight to the <sl-menu>
-  // did not work: the element is parsed before Shoelace defines it, the
-  // autoloader upgrades it afterwards, and `hoist` re-parents the panel out to
-  // the body when it opens. A listener attached at DOMContentLoaded ends up on
-  // the wrong object. `sl-select` bubbles and is composed, so document sees it
-  // wherever the panel has been moved to.
+  // Delegated on `document`: `sl-select` bubbles and is composed, so it
+  // reaches document wherever `hoist` has re-parented the open panel, with no
+  // dependency on when Shoelace's autoloader upgrades the elements.
   function onSelect(event) {
     var menu = event.target;
     if (!menu || menu.tagName !== "SL-MENU") return;
@@ -83,15 +80,5 @@
     }
   }
 
-  // Bind only once <sl-menu> is DEFINED. Shoelace is loaded by its autoloader,
-  // so at script time the element is still an unknown tag; a listener registered
-  // before that never receives sl-select, while an identical one registered
-  // afterwards does. whenDefined is the documented way to wait for it.
-  if (window.customElements && customElements.whenDefined) {
-    customElements.whenDefined("sl-menu").then(function () {
-      document.addEventListener("sl-select", onSelect);
-    });
-  } else {
-    document.addEventListener("sl-select", onSelect);
-  }
+  document.addEventListener("sl-select", onSelect);
 })();
