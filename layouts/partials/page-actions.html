@@ -1,0 +1,59 @@
+{{- /*
+  The page-actions split button: "Open in Claude" plus a menu of the other three.
+
+  Every action is built from ONE fact -- the page's `.md` twin URL -- which is
+  this page's permalink with the trailing slash swapped for `.md`. That address
+  works at every level of the tree, including the variant roots, where it
+  redirects to that tree's llms.txt (DOC-1432).
+
+  The twin is what makes the AI actions worth having: it opens with the identity
+  block naming the product, the version line and the index, so a model handed the
+  URL knows what it is reading without being told (DOC-1509).
+*/ -}}
+{{- /* ABSOLUTE, via site-host: the docs build runs with a path-only baseURL, so
+     .Permalink is a path and a model handed one cannot fetch anything (DOC-1287). */ -}}
+{{- /* TWO urls, because the four actions need different ones.
+
+     Same-origin (view, copy): the RELATIVE path, so a Cloudflare preview or a
+     localhost build shows the markdown of the page you are actually looking at
+     rather than production's.
+
+     Handed to a model (Claude, ChatGPT): the ABSOLUTE url, because a path is
+     not fetchable by anything off-site -- and this build runs with a path-only
+     baseURL, so .Permalink is a path (DOC-1287). site-host.html exists for it. */ -}}
+{{- $host := partial "site-host.html" . -}}
+{{- $rel := printf "%s.md" (strings.TrimSuffix "/" .RelPermalink) -}}
+{{- if eq .RelPermalink "/" -}}{{- $rel = printf "%sllms.txt" .RelPermalink -}}{{- end -}}
+{{- $md := printf "%s%s" $host $rel -}}
+{{- $prompt := printf "Read %s so I can ask questions about it." $md -}}
+
+<div class="page-actions" data-md-url="{{ $rel }}" data-md-abs="{{ $md }}">
+  <a class="page-actions-primary"
+     href="https://claude.ai/new?q={{ $prompt | urlquery }}"
+     target="_blank" rel="noopener noreferrer"
+     title="Open this page in Claude">
+    <sl-icon name="stars" aria-hidden="true"></sl-icon>
+    <span>Open in Claude</span>
+  </a>
+
+  <sl-dropdown placement="bottom-end" distance="4" hoist>
+    <button slot="trigger" class="page-actions-toggle"
+            aria-label="More ways to use this page">
+      <sl-icon name="chevron-down" aria-hidden="true"></sl-icon>
+    </button>
+    <sl-menu class="page-actions-menu">
+      <sl-menu-item value="claude">
+        <sl-icon slot="prefix" name="stars"></sl-icon>Open in Claude
+      </sl-menu-item>
+      <sl-menu-item value="chatgpt">
+        <sl-icon slot="prefix" name="chat-dots"></sl-icon>Open in ChatGPT
+      </sl-menu-item>
+      <sl-menu-item value="copy">
+        <sl-icon slot="prefix" name="clipboard"></sl-icon>Copy page
+      </sl-menu-item>
+      <sl-menu-item value="markdown">
+        <sl-icon slot="prefix" name="filetype-md"></sl-icon>View as Markdown
+      </sl-menu-item>
+    </sl-menu>
+  </sl-dropdown>
+</div>

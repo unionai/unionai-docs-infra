@@ -114,6 +114,7 @@
     {{- range .Site.Params.custom_js }}
     <script lang="javascript" src="{{ partial "asset-url.html" (printf "js/%s" .) }}"></script>
     {{- end }}
+    <link rel="stylesheet" href="{{ partial "asset-url.html" "css/page-actions.css" }}" />
     <link rel="stylesheet" href="{{ partial "asset-url.html" "css/responsive.css" }}" />
     {{ if not hugo.IsProduction }}
     <link rel="stylesheet" href="{{ partial "asset-url.html" "css/dev_mode.css" }}" />
@@ -167,7 +168,10 @@
           </sl-alert>
         </div>
         {{- end -}}
-        {{- partial "breadcrumb.html" . -}}
+        <div class="breadcrumb-row">
+          {{- partial "breadcrumb.html" . -}}
+          {{- partial "page-actions.html" . -}}
+        </div>
         {{- block "main" . -}}{{- end -}}
         {{- partial "version-footer.html" . -}}
       </main>

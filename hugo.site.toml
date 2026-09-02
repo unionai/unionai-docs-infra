@@ -53,6 +53,7 @@ custom_js = [
   "codeblock-linker.js",
   "codeblock-copy-strip.js",
   "image-lightbox.js",
+  "page-actions.js",
 ]
 
 [params.variant_weights]
