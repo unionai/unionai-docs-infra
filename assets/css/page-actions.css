@@ -30,20 +30,23 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.7rem;
-  border: 1px solid var(--border-1, var(--text-3));
-  background: var(--bg-1, transparent);
-  color: var(--text-2);
+  /* Same chrome as the header buttons (#support-trigger, #search-trigger):
+     6px corners, --border-color hairline, --code-bg fill, hairline shadow. */
+  border: 1px solid var(--border-color);
+  background: var(--code-bg);
+  box-shadow: var(--shadow-hairline);
+  color: var(--text-color);
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s, color 0.2s, background-color 0.2s;
 }
 .page-actions-primary {
-  border-radius: 0.5rem 0 0 0.5rem;
+  border-radius: 6px 0 0 6px;
   border-right: 0;
   white-space: nowrap;
 }
 .page-actions-toggle {
-  border-radius: 0 0.5rem 0.5rem 0;
+  border-radius: 0 6px 6px 0;
   padding-inline: 0.45rem;
 }
 /* base.css underlines every `.main-content a`, and this button lives inside it.
@@ -63,8 +66,8 @@
 
 .page-actions-primary:hover,
 .page-actions-toggle:hover {
-  background: var(--bg-2, rgba(128, 128, 128, 0.08));
-  color: var(--text-1);
+  border-color: var(--separator);
+  box-shadow: var(--shadow-card);
 }
 .page-actions-primary:focus-visible,
 .page-actions-toggle:focus-visible {
