@@ -167,7 +167,9 @@ A single bulk redirect list named "redirects", sourced from `unionai-docs-infra/
   
   Each entry targets a specific `https://www.union.ai/docs/v2/flyte/<v2-path>` destination. Most entries use `subpath_matching=TRUE` to absorb trailing-slash and minor URL-form variants.
 
-**Bulk redirects now use 301 (permanent)** with query string preservation, verified 2026-09-02: `docs.union.ai/administration` returns `301` to `/docs/v2/union/user-guide/user-management`. The dynamic redirect rules in the table above are still mostly 302; the retired-name rules (10 to 14) are 301.
+**The bulk list is deliberately mixed, not one code.** Counted 2026-09-02 across the 8,756 rows: **6,357 are 302 and 2,399 are 301**, and that split is a policy rather than drift. A 301 is cached by the browser and effectively permanent, so it is used where the target *is* the content the old URL described. A 302 is used where the target is a judgment call, typically a retired page landing on the nearest sensible ancestor, so a better target stays reachable later. **Do not normalise these to a single code.** The reasoning is in `README.md` › "Choosing 301 vs 302".
+
+Query strings are preserved either way. The dynamic redirect rules in the table above are mostly 302; the retired-name rules (10 to 14) are 301, because those names are retired for good.
 
 The list is deployed by `tools/redirect_generator/deploy_redirects.py` via the `deploy-redirects.yml` workflow, which runs on `workflow_dispatch` and on pushes to `main` or `v1` that touch the `unionai-docs-infra` pointer or `versions.toml`. **One Cloudflare list serves both branches**, so the workflow is serialized on a single concurrency group that is deliberately not keyed on the branch, and never cancels in progress: each run replaces the whole list, so two in flight are a last-writer-wins race, and back-to-back runs spend an account-wide bulk-operation budget (five runs in twenty minutes hit Cloudflare's rate limit twice on 2026-08-26).
 
@@ -534,7 +536,7 @@ The list holds 8,756 rows as of 2026-09-02 (fetched via paginated API, 500 items
 
 ### Redirect Status Codes
 
-The bulk redirect list now uses **301 (permanent)**, so browsers and search engines cache the mappings and the old URLs are deindexed in favour of the new ones. The earlier version of this document recommended that change while the list was still on 302; it has been made. The dynamic redirect rules are a mix: the canonicalization and fallback rules are 302, and the retired-name rules (`page.md`, `_section.md`, tree-root `.md`, retired pins) are 301, because those names are retired for good.
+The bulk list is **mixed on purpose**: 6,357 rows at 302 and 2,399 at 301 as of 2026-09-02. An earlier version of this document recommended normalising everything to 301 for SEO. **Do not do that.** The choice is about reversibility, not ranking: a 301 is cached by the browser and cannot cleanly be taken back, so it is right only where the target is certain. See `README.md` › "Choosing 301 vs 302". The dynamic redirect rules are likewise a mix: canonicalization and fallbacks are 302, retired-name rules are 301.
 
 ### Redirect Hygiene
 

@@ -285,7 +285,16 @@ This exercises the same artifact CI built and deployed, which makes it a better 
 
 ### Build provenance
 
-Each build writes `dist/docs/build-info.json` (served at `/docs/build-info.json`) recording the builder, workflow file, run URL, commit, and timestamp — so incident response can verify what's actually serving production.
+Each build writes `dist/docs/build-info.json` recording the builder, workflow file, run URL, commit, and timestamp, so incident response can verify what is actually serving production.
+
+> **It is written but not reachable at `/docs/build-info.json`.** The F3 docs-root fallback
+> redirect intercepts any `/docs/*` path that is not a version root, and `build-info.json` was
+> never added to the rule's passthrough allowlist, so the URL 302s to the user guide. The
+> per-line copies are swallowed the same way by F1 and F2. Tracked in **DOC-1531**. Until it is
+> fixed, read it from the deployment's own host
+> (`curl https://<deployment-hash>.docs-dog.pages.dev/docs/build-info.json`) or read the GHA run.
+> This is the general hazard described in `SITEMAPS-AND-SEARCH.md`: a file added at a tree root
+> is invisible unless the allowlist is edited in the same change.
 
 ## API reference documentation
 
@@ -320,7 +329,7 @@ Each row in `redirects.csv` has seven columns:
 | ------ | -------------------------- |
 | 1      | Source URL                 |
 | 2      | Target URL                 |
-| 3      | HTTP status code (e.g., 302) |
+| 3      | HTTP status code, `301` or `302` — see below |
 | 4      | Include subdomains (TRUE/FALSE) |
 | 5      | Subpath matching (TRUE/FALSE) |
 | 6      | Preserve query string (TRUE/FALSE) |
@@ -342,9 +351,11 @@ where the target is certain.
 The SEO difference is small for retired content (Search Console moves the URL out of
 "Not found" either way); the reversibility difference is not.
 
-Existing populations follow this: the 308 `docs.union.ai` rows are 301 (a retired host, the
-move is permanent), while the ~2,130 v1 variant-consolidation rows are 302 (a living
-structure that may change again). **Do not normalise these to a single code.**
+Existing populations follow this. Counted 2026-09-02 across 8,756 rows: **6,357 are 302 and
+2,399 are 301**. Of the 351 `docs.union.ai` rows, 318 are 301 (a retired host, the move is
+permanent), while the v1 variant-consolidation rows are 302 (a living structure that may change
+again). **Do not normalise these to a single code**, and do not infer the population's code from
+one `curl`.
 
 ### Automatic redirect detection
 
@@ -364,7 +375,17 @@ A companion check, `make check-deleted-pages` (`check_deleted_pages.py`), verifi
 
 ### Deploying redirects to Cloudflare
 
-Redirects are deployed to Cloudflare automatically via GitHub Actions (`deploy-redirects.yml`) when `redirects.csv` is modified on the `main` branch. The `deploy_redirects.py` script reads the CSV, converts it to the Cloudflare API format, and replaces all items in the Bulk Redirect List with a single `PUT /accounts/{account_id}/rules/lists/{list_id}/items`, then polls the returned bulk-operation until it completes.
+Redirects are deployed to Cloudflare automatically via GitHub Actions (`deploy-redirects.yml`). The `deploy_redirects.py` script reads the CSV, converts it to the Cloudflare API format, and replaces all items in the Bulk Redirect List with a single `PUT /accounts/{account_id}/rules/lists/{list_id}/items`, then polls the returned bulk-operation until it completes.
+
+**What actually triggers it:** a push to `main` **or `v1`** that touches the `unionai-docs-infra`
+submodule pointer or `versions.toml`, plus `workflow_dispatch`. Note that `redirects.csv` lives in
+*this* repo, so editing it does not trigger anything by itself: the deploy fires when the parent
+repo's pointer bump lands.
+
+**One Cloudflare list serves both lines.** Each run replaces the whole list, so two deploys in
+flight are a last-writer-wins race, and the list is always read from both branches. The workflow
+is serialized on a single concurrency group that is deliberately not keyed on the branch, and
+never cancels in progress.
 
 The workflow can also be triggered manually from the Actions tab in GitHub.
 
