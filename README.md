@@ -28,7 +28,7 @@ Deeper topic docs that this README deliberately does not duplicate:
 - **[`VERSIONING.md`](./VERSIONING.md)** — how the versioning system works, and what gets built per line.
 - **[`CUTTING-A-DOCS-VERSION.md`](./CUTTING-A-DOCS-VERSION.md)** — the step-by-step of cutting a version.
 - **[`ROUTING-ARCHITECTURE.md`](./ROUTING-ARCHITECTURE.md)** — URL and edge routing, including the Cloudflare rules.
-- **[`SITEMAPS-AND-SEARCH.md`](./SITEMAPS-AND-SEARCH.md)** — how the docs are discovered, by Google (the `/docs/sitemap.xml` index) and by our own on-site search (the Algolia crawler). Read this before changing anything's indexability: the two consumers follow different rules, and `noindex` does **not** mean "not searchable".
+- **[`SITEMAPS-AND-SEARCH.md`](./SITEMAPS-AND-SEARCH.md)** — how the docs are discovered, by Google (the `/docs/sitemap.xml` index) and by our own on-site search (the build-time Algolia index). Read this before changing anything's indexability: the two consumers follow different rules, and `noindex` does **not** mean "not searchable".
 - **[`RUNBOOK-new-major-line.md`](./RUNBOOK-new-major-line.md)** — adding a new major line.
 
 ## Table of contents

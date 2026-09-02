@@ -12,9 +12,10 @@ they are the same system. Companion to [`ROUTING-ARCHITECTURE.md`](./ROUTING-ARC
 - **Google** follows a single index at **`/docs/sitemap.xml`**, which lists only the
   **indexed** trees (today `v2 × {union, flyte}`). One URL, referenced once from the
   marketing site's root `robots.txt`.
-- **Algolia** consumes the sitemaps as crawl seeds and indexes **every** tree, including the
-  `noindex` ones, because `noindex` is a directive to external search engines and has nothing
-  to say about our own site search.
+- **Algolia does not crawl the site.** Since 2026-08-13 the search index is built from the
+  built output in `dist/` and pushed at deploy time by `make index-search`. It indexes **every**
+  tree, including the `noindex` ones, because it never reads a `robots` meta tag. Sitemaps are
+  for Google only. See [`tools/algolia_indexer/README.md`](./tools/algolia_indexer/README.md).
 - **`noindex` does not mean "not searchable".** Keeping those two ideas separate is what
   prevents a repeat of the incident described below.
 - **A file at the `/docs` root is invisible without a Cloudflare exclusion.** A catch-all
@@ -221,47 +222,49 @@ The search widget ([`layouts/partials/search.html`](./layouts/partials/search.ht
 same two segments from `window.location` and filters on them, so a reader only ever searches
 the surface they are on.
 
-### The crawler indexes noindex trees deliberately
+### The hosted Crawler is retired — the index is built from `dist/`
 
-`ignoreNoIndex: true` is set on the crawler. Without it the crawler honours `noindex` like any
-well-behaved robot — which in August 2026 nearly deleted **v1's 48,706 records, 56% of the
-index**, the moment v1 was made `noindex` for Google. It was stopped only by the crawler's
-`safetyChecks.beforeIndexPublishing.maxLostRecordsPercentage: 10`, which failed closed on a
-56% loss.
+> **This section used to describe a hosted Algolia Crawler. That is no longer how the served
+> index is produced.** Since the 2026-08-13 cutover the index is built at deploy time from the
+> built site and pushed by `make index-search`, which runs in `build-and-deploy.yml` after a
+> successful production deploy. The mechanism, its record shapes and the reasoning are
+> documented in [`tools/algolia_indexer/README.md`](./tools/algolia_indexer/README.md), which
+> is the authority. Do not tune a crawler; there isn't one feeding the served index.
 
-**Leave that safety check where it is.** It is the only thing that caught the error, and it
-guards losses only — a large *gain* publishes without complaint.
+What this changes for the rest of this document:
 
-### Config that matters
+- **`noindex` and site-search membership are now independent knobs.** Under the Crawler they
+  were the same knob, because the Crawler obeyed `noindex`, and making v1 `noindex` for Google
+  nearly deleted v1's 48,706 records, 56% of the index. It was caught only by a crawl safety
+  check. That failure mode is gone by construction: the indexer reads `dist/`, so it never sees
+  a `robots` meta tag.
+- **Index membership follows the build, not a seed list.** Whatever exists at
+  `dist/docs/<version>/<variant>/**/<path>.md` is indexed. There is no `sitemaps` seed,
+  no `startUrls`, no `exclusionPatterns` and no `renderJavaScript` setting to keep in step.
+  Served implies searchable; a tree that is not built produces no records.
+- **Pins are handled by granularity, not exclusion**: current surfaces are indexed at full
+  anchor granularity and pinned trees at page level, so a pin does not multiply the record
+  count. See the indexer README.
 
-| Setting | Value | Why |
-|---|---|---|
-| `ignoreNoIndex` | `true` | keeps `noindex` trees searchable on-site |
-| `sitemaps` | all six | direct crawl seeds |
-| `startUrls` | v1, v2 roots | a page to begin link-crawling from |
-| `exclusionPatterns` | `**.md`, `**.txt` | the LLM twin of every page, and the 8 MB `llms-full.txt` |
-| | `/docs/v*.*.*.*/**` | pins: each is a near-complete corpus copy (~37k records) |
-| | `component-gallery-*`, `__docs_builder__` | internal/scaffold pages |
-| `renderJavaScript` | `false` | the crawler does not execute JS — see gotchas |
+**Check which Algolia application you are looking at before trusting any evidence.** The site
+queries application `42EK9RXSGL`. The retired Crawler wrote to a **different** application,
+`ZK72K15QRI`, which still exists and still answers queries with stale records. A query against
+the retired app looks exactly like a query against the live one.
 
-**Seeds are not the same as permission.** Removing a tree from `exclusionPatterns` allows it to
-be crawled; it does not cause it to be *found*. `/docs/latest` stayed at zero records until it
-was added to `sitemaps`, because no static link points at it (the version selector is a JS
-`onclick`, not an anchor, and `renderJavaScript` is off).
-
-### Keeping the two in step
+### Keeping the widget and the index in step
 
 The widget's set of searchable versions is derived from the **version menu** — badged entries
 (LATEST/STABLE) are the built-and-indexed trees, bare numbers are pins — rather than a second
 hardcoded list. A pin falls back to its line's stable; an unknown segment drops the version
 filter instead of matching zero records and showing an empty box.
 
-If you change the crawler's `exclusionPatterns`, check that derivation still agrees with it.
+Because index membership now follows the build, that derivation and the index agree by
+construction: both are functions of what was built.
 
 ## Gotchas
 
 - **Do not make `baseURL` absolute to fix `<loc>`.** `layouts/_default/single.md` and
-  `list.md` already emit `https://www.union.ai{{ .Permalink }}` into the `<path>.md`/`_section.md`
+  `list.md` already emit `https://www.union.ai{{ .Permalink }}` into the `<path>.md`
   outputs, so they would double-prefix; and previews and `make serve` would emit production
   URLs from every `.Permalink` consumer, making a preview impossible to check against itself.
   Prefix at the template via `site-host.html` instead.
@@ -271,25 +274,27 @@ If you change the crawler's `exclusionPatterns`, check that derivation still agr
 - **A file at the `/docs` root needs a Cloudflare exclusion**, and the PR preview cannot
   detect its absence. See above.
 - **The emitted `/docs/**/robots.txt` governs nothing.** Only the host-root file does.
-- **`noindex` is not "unsearchable".** It is a directive to external engines; every
-  well-behaved robot obeys it, including ours, so enumerate the consumers before flipping it.
+- **`noindex` is not "unsearchable".** It is a directive to external engines. Our own index is
+  built from `dist/` and does not read it, so a `noindex` tree stays searchable on-site.
 - **The version selector is JS-only**, so no non-JS crawler can traverse between version
-  trees. Sitemaps are the only inter-tree discovery path we have.
+  trees. Sitemaps are the only inter-tree discovery path Google has. Our own index does not
+  need one, because it reads the build directly.
 - **`<lastmod>` in the index is deliberately omitted** — clock-derived output would make two
   builds of identical content differ, which `check-determinism` asserts against.
 
 ## Changing things
 
-**Add a variant** — no action. The index enumerates `INDEXED_LABELS × VARIANTS` and lists only
-sitemaps that exist on disk. Add it to the crawler's `sitemaps` for faster Algolia discovery.
+**Add a variant** — no action, for either consumer. The sitemap index enumerates
+`INDEXED_LABELS × VARIANTS` and lists only sitemaps that exist on disk, and the search index is
+built from whatever the build produced.
 
 **Make a line indexable** — set `indexed` in that line's `versions.toml`. Its stable tree then
 builds indexed and joins the sitemap index *if the primary line builds it*; otherwise the
 index needs a deliberate change (see "Who writes it").
 
-**Withhold a line from Google** — the inverse, and **check the crawler first**. Confirm
-`ignoreNoIndex: true` is still set before the noindex build reaches production, or the next
-scheduled crawl deletes that line from on-site search.
+**Withhold a line from Google** — the inverse, and safe for on-site search. `noindex` affects
+external engines only; the search index is built from `dist/` and never reads the meta tag, so a
+noindexed line stays fully searchable on the site. This is the one thing the Crawler got wrong.
 
 **Retire a tree** — it drops out of the index automatically, since the index is generated from
 what was built.
@@ -306,7 +311,9 @@ what was built.
 | `/docs/llms.txt` + per-line files | generated by the LLM docs pipeline (see README) |
 | Root `llms.txt` | Webflow SEO settings, **Upload** control — **not ours** |
 | Which trees are indexed | each line's `versions.toml` (`indexed`) |
-| Algolia crawler config | Algolia dashboard / Crawler REST API — **not in this repo** |
+| Search index pipeline | `tools/algolia_indexer/` (build-time; **in this repo**) |
+| Search index push | `make index-search`, run by `build-and-deploy.yml` after a successful deploy |
+| Live Algolia application | `42EK9RXSGL` (the retired Crawler wrote to `ZK72K15QRI`) |
 | Root `robots.txt`, marketing sitemap | Webflow — **not ours** |
 | Cloudflare redirect rules | Cloudflare dashboard — see `ROUTING-ARCHITECTURE.md` |
 
