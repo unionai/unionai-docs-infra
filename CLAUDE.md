@@ -1,13 +1,11 @@
 # CLAUDE.md — unionai-docs / unionai-docs-infra
 
-This file provides guidance for working with the Union.ai documentation repositories.
+This file provides guidance for working with the Union.ai documentation repositories. It is shared between `unionai-docs` (parent) and `unionai-docs-infra` (submodule).
 
-> **There are two copies of this file and they have drifted.** `unionai-docs/CLAUDE.md` and
-> `unionai-docs-infra/CLAUDE.md` were meant to be the same file. They are not: the parent's copy
-> carries two sections this one lacks (self-managed context, and the API-reference autolinking
-> rules). Treat the **parent's copy as the fuller one** for content authoring, and this one as
-> the build-infrastructure view. Check both before trusting either. Reconciling them is tracked
-> in DOC-1530.
+## Selfmanaged & Selfhosted Context
+
+For selfhosted or selfmanaged context, refer to the Notion guide:
+https://www.notion.so/3108cc06513d81a08bb1d3b9135385f1
 
 ## Project Overview
 
@@ -148,6 +146,34 @@ Navigation: lower `weight` = higher position. `weight: 0` or missing = alphabeti
 
 ## Content Authoring
 
+### API-reference autolinking
+
+Inline `` `code` `` and Python code blocks are automatically linked to their API reference at runtime by `inline-code-linker.js` and `codeblock-linker.js` (loaded for every page; data comes from `linkmap/*-linkmap.json`).
+
+**Do not write explicit Markdown links for identifiers the autolinker already handles.** Write the bare backticked identifier and let the linker wrap it.
+
+```markdown
+✅  A `flyte.io.File` is a reference to an offloaded file.
+✅  Call `flyte.init()` before submitting a run.
+
+❌  A [`flyte.io.File`](../../api-reference/flyte-sdk/packages/flyte.io/file) is a reference …
+❌  Call [`flyte.init()`](../../api-reference/flyte-sdk/packages/flyte/_index#init) …
+```
+
+What the linker matches (in inline code, exact `<code>` text):
+- Fully-qualified identifiers from any loaded linkmap: `flyte.io.File`, `flyte.report.log()`, `flyte.errors.OOMError`, `flyteplugins.bigquery.BigQueryConfig`, …
+- A trailing `()` is stripped before lookup, so `` `flyte.init()` `` and `` `flyte.init` `` both link.
+- A leading `@` is stripped (decorator form).
+- `ClassName.method` falls back to `<class-url>#method` when the class is in the linkmap.
+
+What it does **not** match — keep an explicit link in these cases:
+- Link text that isn't a pure single backticked identifier (e.g. `` [`Resources` API reference](…) ``, `` [`Trigger` and `Cron`](…) ``).
+- Bare short names (e.g. `` `Trigger` ``, `` `Resources` ``) — the SDK linkmap only emits fully-qualified keys. Prefer `` `flyte.Trigger` ``. (Plugin linkmaps do emit both forms.)
+- Links to specific anchors that aren't `#methodname` (e.g. arbitrary `#section-ids`).
+- Cross-page links (`./other-page`) and non-API-ref URLs.
+
+To check whether an identifier is autolinkable, grep `linkmap/*.json` for it. If it's there, drop the explicit `[...](…)` wrapper.
+
 ### Notices
 
 ```markdown
@@ -194,9 +220,8 @@ highlight_keys = true      # Show key replacements
 ## Build Constraints
 
 - Pre-build checks block absolute URLs to union.ai/docs — use `{{< docs_home {variant} >}}` instead
-- Hugo version must be >= the pin in `unionai-docs-infra/.hugoversion` (currently 0.161.1). **The floor equals the pin** so local dev and CI build with the same Hugo; `pre-flight.sh` fails below it and warns above it (brew tracks latest, so running ahead of CI is the common skew and the one a floor cannot catch).
-- Python >= 3.10 required for the build tools (`requires-python` in
-  `unionai-docs-infra/pyproject.toml`); CI runs 3.12
+- Hugo version must be >= the pin in `unionai-docs-infra/.hugoversion` (currently 0.161.1). **The floor equals the pin** so local dev and CI build with the same Hugo; `pre-flight.sh` fails below it and warns above it (brew tracks latest, so running ahead of CI is the common skew and the one a floor cannot catch)
+- Python >= 3.10 required for the build tools (`requires-python` in `unionai-docs-infra/pyproject.toml`); CI runs 3.12
 
 ## API Documentation
 
@@ -207,32 +232,19 @@ Generated from Python packages using `tools/api_generator`:
 
 ## Redirects
 
-Managed in `unionai-docs-infra/redirects.csv` and **deployed automatically**, not by hand. The
-`deploy-redirects.yml` workflow in `unionai-docs` pushes the whole list to Cloudflare on
-`workflow_dispatch` and on pushes to `main` or `v1` that touch the infra pointer or
-`versions.toml`.
-
-Two things to know before adding a row:
-
-- **Retired version pins need no row.** Their redirects are derived at deploy time from the
-  `retired` list in each line's `versions.toml`. A test fails if you add one (DOC-1497).
-- **`redirects.csv` cannot do patterns.** It becomes a Cloudflare Bulk Redirect List, which has
-  no regex and no capture groups. Pattern redirects live in the zone's dynamic redirect ruleset,
-  edited in the dashboard.
-
-Full picture, including the three fallback catch-alls and content negotiation:
-`unionai-docs-infra/ROUTING-ARCHITECTURE.md`.
+Managed in `unionai-docs-infra/redirects.csv` and **deployed automatically** by the
+`deploy-redirects.yml` workflow; nobody applies them by hand. Retired version pins need no row
+(their redirects are derived from `versions.toml`), and the CSV cannot express patterns, since it
+becomes a Cloudflare Bulk Redirect List. Pattern redirects are dynamic redirect rules in the
+Cloudflare dashboard. See `unionai-docs-infra/ROUTING-ARCHITECTURE.md`.
 
 ## LLM Documentation Pipeline
 
-The build generates, for each variant:
-
-- **`<path>.md`** — a clean Markdown twin of every page, served at the page's own URL with `.md`
-  appended. A section landing page's twin ends with a `## Subpages` list, which makes it the
-  index for its section. Each twin opens with an identity block naming the product and version
-  line.
-- **`llms.txt`** — the page index, with H2/H3 headings per entry.
-- **`llms-full.txt`** — the whole variant as one file.
+For each variant the build generates a clean Markdown twin of every page at **`<path>.md`**
+(served at the page's own URL with `.md` appended), plus **`llms.txt`** (the page index) and
+**`llms-full.txt`** (the whole variant in one file). A section landing page's twin ends with a
+`## Subpages` list, so it is the index for its section, and every twin opens with an identity
+block naming the product and version line.
 
 **One shape: `<path>.md`.** The older names `page.md`, `section.md` and `_section.md` are retired
 and no longer generated; Cloudflare 301s them to the page twin. Do not describe them as current.
