@@ -86,9 +86,9 @@ A **made-up deep subpath under a known prefix** (e.g. `docs.union.ai/administrat
 
 ### Verification (after deploy)
 ```bash
-curl -sSI "https://docs.union.ai/administration"          # 302 → …/user-guide/user-management        (exact, unchanged)
-curl -sSI "https://docs.union.ai/administration/"         # 302 → …/user-guide/user-management/        (trailing slash — FIXED)
-curl -sSI "https://docs.union.ai/getting-started/?utm=x"  # 302 → …/user-guide/?utm=x                  (slash + query preserved)
+curl -sSI "https://docs.union.ai/administration"          # 301 → …/user-guide/user-management        (exact, unchanged)
+curl -sSI "https://docs.union.ai/administration/"         # 301 → …/user-guide/user-management/        (trailing slash — FIXED)
+curl -sSI "https://docs.union.ai/getting-started/?utm=x"  # 301 → …/user-guide/?utm=x                  (slash + query preserved)
 curl -sSI "https://docs.union.ai/bogusxyz123"             # 302 → …/docs/v2/union/user-guide/          (unknown slug — FIXED, was 200 stub)
 ```
 
