@@ -173,7 +173,7 @@ highlight_active = true
 
 The developer site shows in red any pages missing from the variant. For a page to exist in a variant, it must be listed in the `variants:` frontmatter at the top of the file. Clicking on a red page gives you the path you need to add.
 
-See [Contributing docs and examples](https://union.ai/docs/flyte/community/contributing-docs) for authoring guidelines.
+See [Contributing docs and examples](https://www.union.ai/docs/v2/flyte/community/contributing-docs) for authoring guidelines.
 
 ## Managing tutorial pages
 
