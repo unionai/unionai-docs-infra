@@ -56,7 +56,7 @@ Deeper topic docs that this README deliberately does not duplicate:
   - [Overview](#overview)
   - [Generated output structure](#generated-output-structure)
   - [Processing pipeline](#processing-pipeline)
-  - [Section bundles](#section-bundles-sectionmd)
+  - [Section landing twins carry the section index](#section-landing-twins-carry-the-section-index)
   - [Key implementation details](#key-implementation-details)
   - [Updating the LLM docs](#updating-the-llm-docs)
 - [CI checks on pull requests](#ci-checks-on-pull-requests)
@@ -211,7 +211,7 @@ This is the main production build command. `make dist` runs `scripts/build_dist.
 5. **`make update-redirects`** — detects moved pages and appends to `redirects.csv`. Runs *after* the API/Helm regen so the redirect detector sees the regenerated content dirs and doesn't flag them as removed pages.
 6. **`make check-links`** — internal-link check (non-fatal).
 7. **Hugo builds** — builds every variant in `$(VARIANTS)` (flyte, union) into `dist/`. Runs sequentially by default; set `PARALLEL_HUGO=true` to build variants in parallel. Each variant build also runs `process_shortcodes.py` to emit the per-page markdown twins.
-8. **`make llm-docs`** — generates the LLM-optimized bundles and indexes (`llms.txt`, `llms-full.txt`, `_section.md`) for each variant.
+8. **`make llm-docs`** — generates the LLM-optimized indexes (`llms.txt`, `llms-full.txt`) for each variant and adds headings to each section landing twin's `## Subpages` list.
 
 `make dist` is the single command that regenerates everything. If CI checks are failing, running `make dist` locally and committing the changed files will usually fix them.
 
@@ -384,14 +384,19 @@ python3 tools/redirect_generator/deploy_redirects.py --dry-run
 
 ### Overview
 
-The build generates LLM-optimized documentation at four levels of granularity, designed for AI coding agents and AI search engines:
+The build generates LLM-optimized documentation at three levels of granularity, designed for AI coding agents and AI search engines:
 
 | File | Scope | Description |
 |------|-------|-------------|
-| `<path>.md` | Per page | Clean Markdown twin of every page, served at the page's own URL with `.md` appended, with links to other twins. The variant root has none: `llms.txt` is its agent surface |
-| `_section.md` | Per section | Single-file bundle holding one level of a section: its own pages in full, plus each sub-section's landing page and a link onward |
+| `<path>.md` | Per page | Clean Markdown twin of every page, served at the page's own URL with `.md` appended, with links to other twins. A section landing page's twin ends with a `## Subpages` list, which makes it the index for its section. The variant root has none: `llms.txt` is its agent surface |
 | `llms.txt` | Per variant | Page index with H2/H3 headings, grouped by section |
 | `llms-full.txt` | Per variant | Entire documentation as one file with hierarchical link references |
+
+> **One shape, `<path>.md`.** The surface deliberately consolidated on the single
+> `<path>.md` form. The earlier names **`page.md`, `section.md` and `_section.md` are
+> retired and are no longer generated**; Cloudflare 301s all three to the page twin (or to
+> the tree's `llms.txt` at a variant root). Do not reintroduce them, and do not describe
+> them as current anywhere. See `ROUTING-ARCHITECTURE.md` Phase 2, rules 10 to 14.
 
 ### Generated output structure
 
@@ -401,13 +406,10 @@ dist/docs/v2/llms.txt                       # Version discovery: lists variants
 dist/docs/v2/{variant}/
 ├── llms.txt                                # Page index with headings
 ├── llms-full.txt                           # Full consolidated doc
-├── _section.md                             # Root section bundle (one level down)
-├── user-guide.md                           # User Guide landing page  (/user-guide/)
+├── user-guide.md                           # User Guide landing twin, ends with ## Subpages
 ├── user-guide/
-│   ├── _section.md                         # Section bundle (one level down)
-│   ├── task-configuration.md               # Section landing page (/user-guide/task-configuration/)
+│   ├── task-configuration.md               # Section landing twin (/user-guide/task-configuration/)
 │   ├── task-configuration/
-│   │   ├── _section.md                     # Section bundle (one level down)
 │   │   ├── resources.md                    # Leaf page (/user-guide/task-configuration/resources/)
 │   │   ├── caching.md
 │   │   └── ...
@@ -416,9 +418,12 @@ dist/docs/v2/{variant}/
 ```
 
 The twin for the page served at `<path>/` is the file `<path>.md`, so it sits BESIDE
-that page's directory rather than inside it. A section therefore ends up with both
-`a/b.md` (its landing page) and `a/b/_section.md` (its bundle). The variant root gets
-no twin: it would land outside the variant tree, at `/docs/<version>/<variant>.md`.
+that page's directory rather than inside it. The variant root gets no twin: it would land
+outside the variant tree, at `/docs/<version>/<variant>.md`. Appending `.md` to a variant
+root therefore redirects to that tree's `llms.txt`.
+
+Every twin opens with a short identity block naming the product, the version line and the
+index URL, so a model handed one file knows what it is reading with no other context.
 
 ### Processing pipeline
 
@@ -435,35 +440,27 @@ The LLM docs are produced in two stages that run at different points in `make di
 
 1. **Lookup tables**: Traverses all twins depth-first via `## Subpages` links, building a lookup table mapping URL paths and anchors to hierarchical titles (e.g. `"user-guide/task-configuration/resources"` → `"Configure tasks > Resources"`).
 2. **`llms-full.txt`**: Processes all pages, converting internal twin links to hierarchical bold references (e.g. `**Configure tasks > Resources**`).
-3. **Subpage enhancement**: Adds H2/H3 headings to `## Subpages` listings in the twins.
-4. **Section bundles**: Generates `_section.md` for every section that holds more than its own landing page.
-5. **Link absolutization**: Converts all relative links in the twins to absolute URLs (`https://www.union.ai/docs/...`).
-6. **`llms.txt`**: Creates the page index with headings and bundle references.
+3. **Subpage enhancement**: Adds H2/H3 headings to the `## Subpages` listing in each section landing twin.
+4. **Link absolutization**: Converts all relative links in the twins to absolute URLs (`https://www.union.ai/docs/...`).
+5. **`llms.txt`**: Creates the page index with headings.
 
-### Section bundles (`_section.md`)
+### Section landing twins carry the section index
 
-Every section that holds more than its own landing page gets a `_section.md`. There is
-no opt-in flag: a bundle appears wherever there is something to bundle. A section whose
-whole subtree is one `_index.md` gets none, because its content already lives at its own
-page URL and its parent inlines it in full.
+A section landing page's twin ends with a `## Subpages` block listing every page directly
+beneath it: each child's title, its URL and that child's own H2 and H3 headings. One fetch
+therefore tells an agent what a section contains and which page to read next, which is the
+job the separate bundle files used to do.
 
-A bundle holds exactly **one level** of the tree, in this order:
+The `## Subpages` block is stripped from both Algolia indices, because `parse_sections()`
+in `build_records.py` drops it. A search record for a section landing page holds none of
+its children's titles.
 
-1. a manifest header saying what is included in full and what is abridged
-2. the section's landing page, in full
-3. the section's own leaf pages, in full
-4. each immediate sub-section's landing page, in full, each followed immediately by
-   `→ Full section: <url>/_section.md` when that sub-section has more beneath it
-
-There is no trailing link block. Onward links sit next to the content they abridge
-because a size-capped fetch cuts the tail: at a 100K cap a trailing block lost a third
-of all onward links, from files that still looked complete.
-
-Links to a page the bundle actually carries become hierarchical bold references; every
-other link becomes an absolute URL, so a link deeper into the subtree stays usable.
-
-Bundling the whole subtree instead of one level made the root bundle a second copy of
-`llms-full.txt` (4,087K). One level caps the largest bundle at ~263K.
+> **Retired: the `_section.md` bundles.** Until DOC-1509 the build also emitted a
+> `_section.md` per section, a single file holding one level of the tree. They are no longer
+> generated. The section landing twin plus its `Subpages` list covers the same need with one
+> file shape instead of two, and `_section.md` URLs 301 to the twin. Two stale comments in
+> `tools/llms_generator/build_llm_docs.py` (lines 931 and 1180) still mention bundles; they
+> describe nothing the code does.
 
 ### Key implementation details
 
