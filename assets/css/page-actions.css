@@ -1,0 +1,88 @@
+/* The page-actions split button, sitting on the breadcrumb row.
+   Uses the same tokens as the rest of the chrome so it inherits both themes. */
+
+.breadcrumb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+/* The breadcrumb already carries the 16px gap to the H1; the row owns it now,
+   so the crumb inside must not add a second one. */
+.breadcrumb-row .breadcrumb {
+  margin-bottom: 0;
+}
+.breadcrumb-row {
+  margin-bottom: 1rem;
+}
+
+.page-actions {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  font-size: var(--type-crumb);
+  line-height: var(--lh-crumb);
+}
+
+.page-actions-primary,
+.page-actions-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border-1, var(--text-3));
+  background: var(--bg-1, transparent);
+  color: var(--text-2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.page-actions-primary {
+  border-radius: 0.5rem 0 0 0.5rem;
+  border-right: 0;
+  white-space: nowrap;
+}
+.page-actions-toggle {
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding-inline: 0.45rem;
+}
+/* base.css underlines every `.main-content a`, and this button lives inside it.
+   Scoped to beat that rule rather than !important. */
+.main-content .page-actions .page-actions-primary,
+.main-content .page-actions .page-actions-primary:hover {
+  text-decoration: none;
+}
+
+/* Shoelace renders a prefix slot with no gap of its own. */
+.page-actions-menu sl-menu-item::part(base) {
+  gap: 0.5rem;
+}
+.page-actions-menu sl-icon[slot="prefix"] {
+  margin-inline-end: 0.15rem;
+}
+
+.page-actions-primary:hover,
+.page-actions-toggle:hover {
+  background: var(--bg-2, rgba(128, 128, 128, 0.08));
+  color: var(--text-1);
+}
+.page-actions-primary:focus-visible,
+.page-actions-toggle:focus-visible {
+  outline: 2px solid var(--union-color);
+  outline-offset: 2px;
+}
+.page-actions sl-icon {
+  font-size: 1em;
+  flex-shrink: 0;
+}
+
+/* Narrow screens: the label is the first thing to go, not the button. An agent
+   affordance that disappears on a laptop is worse than one without a word on it. */
+@media (max-width: 60rem) {
+  .page-actions-primary span {
+    display: none;
+  }
+  .page-actions-primary {
+    padding-inline: 0.55rem;
+  }
+}
