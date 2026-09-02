@@ -124,9 +124,13 @@ which was the correct intermediate state — the request reaching Pages and find
 proof the exclusion works. `/docs/zzz-unknown.xml` still redirects, confirming the exclusion is
 exact rather than a blanket `.xml` passthrough.
 
-**Any future file added at the `/docs` root needs its own clause.** There are now three
-(`versions.json`, `llms.txt`, `sitemap.xml`); the pattern is one `and not (... eq "<path>")`
-per file.
+**Any future file added at the `/docs` root needs its own clause.** There are now four
+(`versions.json`, `llms.txt`, `sitemap.xml`, `build-info.json`); the pattern is one
+`and not (... eq "<path>")` per file.
+
+`build-info.json` is the cautionary case: it predated the fallbacks, so nobody added a clause, and
+it sat unreachable and unnoticed until an audit probed it on 2026-09-02. Nothing reported a
+problem, because the failure mode is a 200 on the wrong page rather than an error.
 
 > **Trap: the PR preview cannot detect this.** Previews are served from
 > `*.docs-dog.pages.dev`, where the `www.union.ai` zone rules do not apply. The index will

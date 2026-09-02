@@ -73,7 +73,20 @@ The **docs** project serves both v2 docs (via `web-docs.union.ai`) and the legac
 
 > **Build source:** as of 2026-05-13, the `docs` project's builds are produced by **GitHub Actions** (`.github/workflows/build-and-deploy.yml` on `unionai/unionai-docs`, both `main` and `v1` branches) and pushed via `wrangler pages deploy` (Direct Upload mode). CF Pages' native build runner is disabled (`source.config.deployments_enabled: false`). The project's stored `build_config` (`make dist` → `dist/`) and `HUGO_VERSION` env vars are no longer read. Deployment `source` field shows `ad_hoc` (wrangler) rather than `github:push` (CF native).
 >
-> **Verifying what is live: the documented command no longer works.** Each build still writes `dist/docs/build-info.json`, but the F3 fallback rule (Phase 2, rule 17) now intercepts any `/docs/*` path that is not a version root, so `https://www.union.ai/docs/build-info.json` returns a 302 to the user guide instead of the JSON. `/docs/v2/build-info.json` and `/docs/v1/build-info.json` are swallowed the same way by F1 and F2. The fallbacks carry explicit passthrough allowlists (`versions.json`, `llms.txt`, `sitemap.xml`); `build-info.json` was never added to them, so an incident-response diagnostic is unreachable at the edge. Tracked in DOC-1531. Until it is fixed, read the deployment's own URL instead, for example `curl https://<deployment-hash>.docs-dog.pages.dev/docs/build-info.json`, or read the GHA run directly.
+> **Verify what is live with:**
+> ```
+> curl https://www.union.ai/docs/build-info.json      # the main line
+> curl https://www.union.ai/docs/v1/build-info.json   # the v1 line
+> ```
+> Each returns `"builder": "github-actions"` plus the GHA run URL, commit and timestamp of the
+> live deployment. **Those are the only two that exist**: each line writes one file, and it is
+> served from that line's own deployment. There is no `/docs/v2/build-info.json` or
+> `/docs/latest/build-info.json`.
+>
+> Both URLs were unreachable until 2026-09-02: the fallback rules (Phase 2, rules 15 and 17) swept
+> them up and returned a 302 to a user guide, so the diagnostic failed silently at exactly the
+> moment you would reach for it. Fixed by adding each path to its rule's passthrough allowlist
+> (ruleset v71 → v73).
 
 The v1 docs are served from `v1.docs-dog.pages.dev` — this is a deployment alias within the same **docs** Pages project, not a separate project. Built and deployed by the same GHA workflow on the `v1` branch with `--branch=v1`.
 

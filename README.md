@@ -287,14 +287,16 @@ This exercises the same artifact CI built and deployed, which makes it a better 
 
 Each build writes `dist/docs/build-info.json` recording the builder, workflow file, run URL, commit, and timestamp, so incident response can verify what is actually serving production.
 
-> **It is written but not reachable at `/docs/build-info.json`.** The F3 docs-root fallback
-> redirect intercepts any `/docs/*` path that is not a version root, and `build-info.json` was
-> never added to the rule's passthrough allowlist, so the URL 302s to the user guide. The
-> per-line copies are swallowed the same way by F1 and F2. Tracked in **DOC-1531**. Until it is
-> fixed, read it from the deployment's own host
-> (`curl https://<deployment-hash>.docs-dog.pages.dev/docs/build-info.json`) or read the GHA run.
-> This is the general hazard described in `SITEMAPS-AND-SEARCH.md`: a file added at a tree root
-> is invisible unless the allowlist is edited in the same change.
+Read it at **`/docs/build-info.json`** (the main line) or **`/docs/v1/build-info.json`** (the v1
+line). Each line writes one file, served from its own deployment; there is no `/docs/v2/` or
+`/docs/latest/` copy.
+
+> **Both URLs were unreachable until 2026-09-02.** The `/docs/*` fallback redirect rules swept
+> them up and returned a 302 to a user guide, so the diagnostic failed silently. Fixed by adding
+> each path to its rule's passthrough allowlist. This is the general hazard described in
+> `SITEMAPS-AND-SEARCH.md`: **a file added at a tree root is invisible unless the Cloudflare
+> allowlist is edited in the same change**, and a PR preview cannot detect it, because the zone
+> rules do not apply to `docs-dog.pages.dev`.
 
 ## API reference documentation
 
