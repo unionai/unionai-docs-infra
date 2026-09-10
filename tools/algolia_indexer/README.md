@@ -172,5 +172,8 @@ push_records.py --index union-markdown  --settings settings.markdown.json
 ```
 
 Credentials come from the environment, never from arguments:
-`ALGOLIA_DOCS_2_APPLICATION_ID`, `ALGOLIA_DOCS_2_WRITE_API_KEY`.
-`ALGOLIA_DOCS_1_*` is the old crawled app and is never written to.
+`ALGOLIA_DOCS_2_APPLICATION_ID`, `ALGOLIA_DOCS_2_WRITE_API_KEY`. Despite the `_2_` name these are
+**the live production app** (`42EK9RXSGL`) — the one the site queries.
+
+`ALGOLIA_DOCS_1_*` pointed at the retired Crawler's app, which **has since been deleted**. Those
+variables are dead; do not reintroduce a reference to them.

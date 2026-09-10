@@ -22,8 +22,10 @@ Credentials come from the environment, never from arguments:
   ALGOLIA_DOCS_2_APPLICATION_ID   (the new "unionai-docs-2" app)
   ALGOLIA_DOCS_2_WRITE_API_KEY
 
-ALGOLIA_DOCS_1_* is the live prod app ("union.ai docs") and is never written to
-by this tool.
+ALGOLIA_DOCS_1_* pointed at the OLD crawled app, which has since been deleted.
+Those variables are dead. (This line previously called DOCS_1 "the live prod
+app" -- true only before the 2026-08-13 cutover, when DOCS_2 was still the new
+app being built out. DOCS_2 is production now.)
 
 Usage:
     push_records.py --records records.json --index union --dry-run

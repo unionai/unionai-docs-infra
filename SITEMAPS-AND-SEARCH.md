@@ -274,10 +274,13 @@ What this changes for the rest of this document:
   anchor granularity and pinned trees at page level, so a pin does not multiply the record
   count. See the indexer README.
 
-**Check which Algolia application you are looking at before trusting any evidence.** The site
-queries application `42EK9RXSGL`. The retired Crawler wrote to a **different** application,
-`ZK72K15QRI`, which still exists and still answers queries with stale records. A query against
-the retired app looks exactly like a query against the live one.
+**The site queries application `42EK9RXSGL`** — the app the indexer writes to as
+`ALGOLIA_DOCS_2_*`. There is now only one, so a query cannot silently hit the wrong app.
+
+*Historical:* the retired Crawler wrote to a separate application, `ZK72K15QRI`
+(`ALGOLIA_DOCS_1_*`), which answered with stale records indistinguishable from live ones. **That
+application has since been deleted**, closing the trap. The `ALGOLIA_DOCS_1_*` variables refer to
+it and are dead.
 
 ### Keeping the widget and the index in step
 
@@ -343,7 +346,7 @@ what was built.
 | Keyword index / Ask AI index | `union` (`build_records.py`) / `union-markdown` (`build_markdown_records.py`) |
 | Ask AI agent prompt | `tools/algolia_indexer/ask-ai-prompt.md` |
 | Search index push | `make index-search`, run by `build-and-deploy.yml` after a successful deploy |
-| Live Algolia application | `42EK9RXSGL` (the retired Crawler wrote to `ZK72K15QRI`) |
+| Live Algolia application | `42EK9RXSGL`, written as `ALGOLIA_DOCS_2_*`. The Crawler's old app `ZK72K15QRI` (`ALGOLIA_DOCS_1_*`) has been deleted |
 | Root `robots.txt`, marketing sitemap | Webflow — **not ours** |
 | Cloudflare redirect rules | Cloudflare dashboard — see `ROUTING-ARCHITECTURE.md` |
 
