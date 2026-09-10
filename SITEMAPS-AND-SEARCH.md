@@ -12,10 +12,11 @@ they are the same system. Companion to [`ROUTING-ARCHITECTURE.md`](./ROUTING-ARC
 - **Google** follows a single index at **`/docs/sitemap.xml`**, which lists only the
   **indexed** trees (today `v2 × {union, flyte}`). One URL, referenced once from the
   marketing site's root `robots.txt`.
-- **Algolia does not crawl the site.** Since 2026-08-13 the search index is built from the
-  built output in `dist/` and pushed at deploy time by `make index-search`. It indexes **every**
-  tree, including the `noindex` ones, because it never reads a `robots` meta tag. Sitemaps are
-  for Google only. See [`tools/algolia_indexer/README.md`](./tools/algolia_indexer/README.md).
+- **Algolia does not crawl the site.** Since 2026-08-13 the search indexes are built from the
+  built output in `dist/` and pushed at deploy time by `make index-search`. They index **every**
+  tree, including the `noindex` ones, because nothing reads a `robots` meta tag. Sitemaps are
+  for Google only. There are **two** indexes — `union` for keyword search and `union-markdown`
+  for Ask AI. See [`tools/algolia_indexer/README.md`](./tools/algolia_indexer/README.md).
 - **`noindex` does not mean "not searchable".** Keeping those two ideas separate is what
   prevents a repeat of the incident described below.
 - **A file at the `/docs` root is invisible without a Cloudflare exclusion.** A catch-all
@@ -217,15 +218,37 @@ line and a periodic check; not worth a standing maintenance commitment.
 
 ### Index shape
 
-One shared index (`union`), faceted by **`version × variant`**, where both come from the URL:
+**Two indexes, one Algolia application (`42EK9RXSGL`)**, both built from `dist/` by
+`make index-search`:
+
+| Index | Consumer | Chunking |
+|---|---|---|
+| `union` | keyword site search | per heading anchor, so a hit deep-links to a section |
+| `union-markdown` | the **Ask AI** agent | per page, so a model retrieves a whole explanation |
+
+They share one modal — the header control is a single *Search + Ask AI* button — and both cover
+every version and variant. Neither is restricted to a line at build time.
+
+Both are scoped by **`version × variant`**, where both come from the URL:
 
 ```js
 const match = url.pathname.match(/^\/docs\/([^/]+)\/([^/]+)/);
 ```
 
 The search widget ([`layouts/partials/search.html`](./layouts/partials/search.html)) reads the
-same two segments from `window.location` and filters on them, so a reader only ever searches
-the surface they are on.
+same two segments from `window.location`, so a reader only ever searches the surface they are
+on. The two indexes apply that scope by different mechanisms: `union` filters with a
+`facetFilters` array, while `union-markdown` declares `version`/`variant` as `filterOnly` facets
+and Ask AI passes a `filters` string (`version:v2 AND variant:union`). If no version/variant
+resolves for a path, the page logs a console warning that answers may span versions.
+
+> **`nbHits` means different things in the two indexes.** `union` sets `distinct` on
+> `url_without_anchor`, so its `nbHits` counts **pages**; use facet counts for records.
+> `union-markdown` sets no `attributeForDistinct`, so its `nbHits` counts **records**. The two
+> numbers are not comparable.
+
+See [`tools/algolia_indexer/README.md`](./tools/algolia_indexer/README.md) for record shapes,
+the pin-granularity rule and the retention window.
 
 ### The hosted Crawler is retired — the index is built from `dist/`
 
@@ -251,10 +274,13 @@ What this changes for the rest of this document:
   anchor granularity and pinned trees at page level, so a pin does not multiply the record
   count. See the indexer README.
 
-**Check which Algolia application you are looking at before trusting any evidence.** The site
-queries application `42EK9RXSGL`. The retired Crawler wrote to a **different** application,
-`ZK72K15QRI`, which still exists and still answers queries with stale records. A query against
-the retired app looks exactly like a query against the live one.
+**The site queries application `42EK9RXSGL`** — the app the indexer writes to as
+`ALGOLIA_DOCS_2_*`. There is now only one, so a query cannot silently hit the wrong app.
+
+*Historical:* the retired Crawler wrote to a separate application, `ZK72K15QRI`
+(`ALGOLIA_DOCS_1_*`), which answered with stale records indistinguishable from live ones. **That
+application has since been deleted**, closing the trap. The `ALGOLIA_DOCS_1_*` variables refer to
+it and are dead.
 
 ### Keeping the widget and the index in step
 
@@ -317,8 +343,10 @@ what was built.
 | Root `llms.txt` | Webflow SEO settings, **Upload** control — **not ours** |
 | Which trees are indexed | each line's `versions.toml` (`indexed`) |
 | Search index pipeline | `tools/algolia_indexer/` (build-time; **in this repo**) |
+| Keyword index / Ask AI index | `union` (`build_records.py`) / `union-markdown` (`build_markdown_records.py`) |
+| Ask AI agent prompt | `tools/algolia_indexer/ask-ai-prompt.md` |
 | Search index push | `make index-search`, run by `build-and-deploy.yml` after a successful deploy |
-| Live Algolia application | `42EK9RXSGL` (the retired Crawler wrote to `ZK72K15QRI`) |
+| Live Algolia application | `42EK9RXSGL`, written as `ALGOLIA_DOCS_2_*`. The Crawler's old app `ZK72K15QRI` (`ALGOLIA_DOCS_1_*`) has been deleted |
 | Root `robots.txt`, marketing sitemap | Webflow — **not ours** |
 | Cloudflare redirect rules | Cloudflare dashboard — see `ROUTING-ARCHITECTURE.md` |
 
