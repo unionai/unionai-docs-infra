@@ -4,12 +4,13 @@ Generates the on-site search index from the **built docs** rather than by
 crawling the published site, and pushes it to Algolia.
 
 ```
-build_records.py   dist/**/<path>.md ->  records.json
-push_records.py    records.json     ->  Algolia (scoped per line)
-build_synonyms.py  migration tables ->  synonyms.draft.json
-settings.json      index settings for the search index
-settings.askai.json               settings for the Ask AI index
-ask-ai-prompt.md   the Ask AI agent's system prompt
+build_records.py            dist/**/<path>.md ->  records.json      (keyword)
+build_markdown_records.py   dist/**/<path>.md ->  md-records.json   (retrieval)
+push_records.py             either records file ->  Algolia (scoped per line)
+build_synonyms.py           migration tables  ->  synonyms.draft.json
+settings.json               index settings for `union`
+settings.markdown.json      index settings for `union-markdown`
+ask-ai-prompt.md            the Ask AI agent's system prompt
 ```
 
 ## Why build-time, not crawled
@@ -83,36 +84,56 @@ delete pass removes records for pages that disappeared.
 verbatim from the crawler's settings, and no record we generate carries it, so
 it advertised a filter that could never match.
 
-`version` and `variant` are what the frontend filters on, and what Ask AI must
-be given too -- see below.
+`version` and `variant` are what the frontend filters on, and what Ask AI must be given too --
+see below. On `union` they are ordinary facets (`facetFilters`); on `union-markdown` they are
+declared `filterOnly`, and Ask AI passes them as a `filters` string.
 
 ## Two indexes
 
-| index | contents | consumer |
-|---|---|---|
-| `union` | every version and variant | site search, faceted client-side |
-| `union_askai` | **v2 only** (`--only-version v2`) | Ask AI |
+| index | built by | contents | consumer |
+|---|---|---|---|
+| `union` | `build_records.py` | every version and variant, chunked **per heading anchor** | site search (DocSearch-style), faceted client-side |
+| `union-markdown` | `build_markdown_records.py` | every version and variant, chunked **per page** | the Ask AI agent |
 
-**`union_askai` is probably redundant — prefer scoping at query time.** It was
-built on the assumption that Agent Studio could not filter, because its
-agent-creation wizard never asks about facets. Algolia have since confirmed it
-accepts `searchParameters.facetFilters` per request, and can lock facets in the
-Algolia Search tool's `searchControls`.
+Both live in Algolia application `42EK9RXSGL` and both are pushed by `make index-search`.
+`--keep-pins` defaults to 6 in *both* builders, deliberately, so Ask AI retrieves over the same
+set of trees that search covers.
 
-Pointing the agent at the full `union` index and passing the page's own
-`version`/`variant` is strictly better, because Ask AI and search share one
-modal. With a fixed-version index the results list follows the reader while the
-answer does not, so the two halves of the same box describe different products
-and each lends the other false authority. With query-time scoping a v1 reader
-gets v1 results *and* a v1 answer.
+**Scoping is at query time, not by index.** Ask AI is pointed at the full `union-markdown`
+index and passed the reading page's own facets as a filter string
+(`filters: "version:v2 AND variant:union"`); the keyword widget passes the equivalent
+`facetFilters` array. `union-markdown` declares `version` and `variant` as `filterOnly` facets
+for exactly this. Neither index is restricted to a single line at build time.
 
-Either way the point stands: v1 is not merely stale for a v2 reader. The SDK
-was rewritten, so a v2 answer given to a v1 reader is wrong, and confidently
-so. Version is the dangerous axis — union/flyte differ on feature availability,
-v1/v2 differ on the whole API surface.
+> **Historical note.** An earlier design built a separate v2-only index called `union_askai`
+> via a `--only-version` flag. That index and that flag no longer exist. Query-time scoping
+> replaced them, for the reason below.
 
-`ask-ai-prompt.md` assumes the scoped-retrieval design and must be rewritten if
-that assumption is ever dropped.
+Query-time scoping is what keeps the modal coherent. Ask AI and search share one box, so with a
+fixed-version index the results list would follow the reader while the answer did not — the two
+halves describing different products, each lending the other false authority. Scoped at query
+time, a v1 reader gets v1 results *and* a v1 answer.
+
+That matters more than staleness: v1 is not merely old for a v2 reader. The SDK was rewritten,
+so a v2 answer handed to a v1 reader is wrong, and confidently so. Version is the dangerous
+axis — union/flyte differ on feature availability, v1/v2 differ on the whole API surface.
+
+### Why a second index at all
+
+Not for cleanliness of text: we never crawl, we read the served `<path>.md` twin, so the prose is
+already free of navigation and layout artifacts. The real difference is **chunk shape**:
+
+- the keyword index splits per heading anchor, so a hit can deep-link to the exact section —
+  good for "jump me to the right place";
+- a model answering a question wants the whole explanation in one record. Anchor-level chunks
+  fragment an answer across several retrievals and lose the context that made the section
+  cohere.
+
+So `union-markdown` chunks per page, splitting only when a page exceeds the record limit, and
+splitting on heading boundaries when it must — never mid-sentence.
+
+`ask-ai-prompt.md` assumes this scoped-retrieval design and must be rewritten if that assumption
+is ever dropped.
 
 ## Traps worth knowing
 
@@ -137,9 +158,17 @@ that assumption is ever dropped.
 build_records.py --dist dist --out records.json                 # default window
 build_records.py --dist dist --out records.json --keep-pins -1  # every pin
 
-push_records.py --records records.json --index union --settings settings.json
-push_records.py --records records.json --index union_askai \
-                --settings settings.askai.json --only-version v2
+# keyword index
+build_records.py --dist dist --out records.json
+push_records.py  --records records.json --index union
+
+# Ask AI retrieval index
+build_markdown_records.py --dist dist --out md-records.json
+push_records.py  --records md-records.json --index union-markdown
+
+# settings are applied DELIBERATELY, never on a deploy (see the Makefile)
+push_records.py --index union           --settings settings.json
+push_records.py --index union-markdown  --settings settings.markdown.json
 ```
 
 Credentials come from the environment, never from arguments:

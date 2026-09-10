@@ -4,11 +4,12 @@ Config-as-code for the docs Ask AI agent. Kept beside `settings.json` so the
 agent's behaviour is reviewable in a PR rather than living only in the
 dashboard.
 
-**This prompt assumes facet-scoped retrieval.** Algolia confirmed Agent Studio
-can take `searchParameters.facetFilters` at request time, or lock facets in the
-Algolia Search tool's `searchControls`. The frontend must pass the **same**
-`version` + `variant` filters the search box already computes, against the full
-`union` index.
+**This prompt assumes facet-scoped retrieval, and that is what is deployed.**
+The agent retrieves from the full **`union-markdown`** index — the page-chunked
+retrieval corpus built by `build_markdown_records.py`, not the anchor-chunked
+`union` keyword index. `union-markdown` declares `version` and `variant` as
+`filterOnly` facets, and the frontend passes the **same** scope the search box
+computes, as a filter string (`version:v2 AND variant:union`).
 
 That matters for coherence as much as correctness: Ask AI and search share one
 modal, so if search is scoped to the reader's version while the answer comes
