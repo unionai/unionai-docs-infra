@@ -9,12 +9,13 @@ tests never install anything.
 """
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
 
-from check_api_names import Linkmap, run, spans  # noqa: E402
+from check_api_names import RESOLVER, Linkmap, run, spans  # noqa: E402
 
 LINKMAP = {
     "packages": {"flyte": "/f/", "flyte.io": "/f/io/", "flyteplugins.polars": "/p/"},
@@ -56,7 +57,8 @@ def check(tmp_path, capsys, pages, version="v2", resolver=None, exclude=None):
 def test_linked_names_pass(tmp_path, capsys):
     code, out = check(tmp_path, capsys, {"a.md": (
         "Use `flyte.io.DataFrame`, `flyte.io.DataFrame.from_df`, `flyte.init()`,\n"
-        "`@flyte.TaskEnvironment.task` and the `flyte.io` package.\n")})
+        "`@flyte.TaskEnvironment.task` and the `flyte.io` package.\n")},
+        resolver=sdk(real={"flyte.io.DataFrame.from_df", "flyte.TaskEnvironment.task"}))
     assert code == 0, out
     assert "5 linked" in out
 
@@ -142,6 +144,45 @@ def test_forced_links_need_a_target(tmp_path, capsys):
     assert code == 0, out
     code, out = check(tmp_path / "b", capsys, {"a.md": "`[[NoSuchThing]]`\n"})
     assert code == 1 and "NoSuchThing" in out
+
+
+def test_a_member_the_class_does_not_have_fails(tmp_path, capsys):
+    # The autolinker links `Class.anything` once Class is documented; the member must be real.
+    code, out = check(tmp_path, capsys, {"a.md": "`flyte.TaskEnvironment.nope`\n"})
+    assert code == 1
+    assert "member the class does not have" in out and "flyte.TaskEnvironment.nope" in out
+
+
+def test_members_need_the_sdk_and_do_not_pass_without_it(tmp_path, capsys):
+    code, out = check(tmp_path, capsys, {"a.md": "`flyte.TaskEnvironment.task`\n"},
+                      resolver=sdk(fails=True))
+    assert code == 2 and "COULD NOT CHECK" in out
+
+
+def test_resolver_accepts_attributes_parameters_and_fields(tmp_path):
+    # The real resolver script, run against a stand-in package rather than flyte.
+    pkg = tmp_path / "fakesdk"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text(
+        "import dataclasses\n"
+        "class Timeout:\n"
+        "    def __init__(self, max_runtime=None): pass\n"
+        "    def run(self): pass\n"
+        "@dataclasses.dataclass\n"
+        "class Spec:\n"
+        "    name: str\n"
+        "def gpu(device, quantity=1): pass\n")
+    names = ["fakesdk.Timeout.max_runtime", "fakesdk.Timeout.run", "fakesdk.Spec.name",
+             "fakesdk.gpu.quantity", "fakesdk.gpu.count", "fakesdk.Timeout.nope",
+             "fakesdk.Nope", "fakesdk.Timeout.run.x"]
+    p = subprocess.run([sys.executable, "-c", RESOLVER], input=json.dumps(names),
+                       capture_output=True, text=True, env={"PYTHONPATH": str(tmp_path)})
+    result = json.loads(p.stdout.rsplit("@@RESULT@@", 1)[1])
+    assert result == {
+        "fakesdk.Timeout.max_runtime": True, "fakesdk.Timeout.run": True,
+        "fakesdk.Spec.name": True, "fakesdk.gpu.quantity": True,
+        "fakesdk.gpu.count": False, "fakesdk.Timeout.nope": False,
+        "fakesdk.Nope": False, "fakesdk.Timeout.run.x": False}
 
 
 def test_forced_link_in_a_table_cell(tmp_path, capsys):

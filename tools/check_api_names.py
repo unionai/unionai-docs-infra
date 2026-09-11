@@ -15,7 +15,11 @@ HOW A NAME IS RESOLVED
   1. In the linkmap, by the rules assets/js/inline-code-linker.js uses: an exact
      key, ignoring a trailing `()` and a leading `@`, or `Class.member` whenever
      `Class` is a documented identifier. A documented package also counts. A
-     name that resolves here is one the reader sees linked.
+     name that resolves here is one the reader sees linked. The autolinker
+     links `Class.member` without knowing whether the member exists, so a
+     name that resolves only that way is also looked up in the SDK, where the
+     member must be an attribute, a parameter or a dataclass field: otherwise
+     `flyte.GPU.count` would pass because `flyte.GPU` is documented.
   2. Otherwise, in the released SDK the reference was generated from (the
      `version:` in the front matter of each [[sdks]] version_file in
      api-packages.toml), by importing it. A name that resolves here is real but
@@ -123,14 +127,19 @@ class Linkmap:
     def _last_segments(self, table: dict) -> set[str]:
         return {k.rsplit(".", 1)[-1] for k in table}
 
-    def resolves(self, name: str) -> bool:
-        """Plain inline code, as the autolinker's regular matching sees it."""
+    def resolution(self, name: str) -> str | None:
+        """How plain inline code resolves, as the autolinker's regular matching sees it:
+        "exact", "member" (only the class is documented), or None."""
         t = bare(name)
         if t in self.identifiers or t in self.methods or t in self.packages:
-            return True
+            return "exact"
         cls, _, _member = t.rpartition(".")
-        return bool(cls) and (cls in self.identifiers
-                              or cls in self._last_segments(self.identifiers))
+        if cls and (cls in self.identifiers or cls in self._last_segments(self.identifiers)):
+            return "member"
+        return None
+
+    def resolves(self, name: str) -> bool:
+        return self.resolution(name) is not None
 
     def resolves_forced(self, target: str) -> bool:
         """`[[target]]`: direct key, then `Class.method` by class name, then last segment."""
@@ -203,7 +212,7 @@ def sdk_specs(api_packages: Path, repo_root: Path) -> dict[str, str]:
 
 
 RESOLVER = r"""
-import importlib, json, sys
+import dataclasses, importlib, inspect, json, sys
 def exists(name):
     parts = name.split(".")
     for i in range(len(parts), 0, -1):
@@ -211,10 +220,21 @@ def exists(name):
             obj = importlib.import_module(".".join(parts[:i]))
         except Exception:
             continue
-        for p in parts[i:]:
-            if not hasattr(obj, p):
+        rest = parts[i:]
+        for j, p in enumerate(rest):
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+                continue
+            if j < len(rest) - 1:
                 return False
-            obj = getattr(obj, p)
+            # The last segment may be a parameter or a field rather than an attribute:
+            # `flyte.Timeout.max_runtime` is a constructor argument.
+            if dataclasses.is_dataclass(obj) and p in {f.name for f in dataclasses.fields(obj)}:
+                return True
+            try:
+                return p in inspect.signature(obj).parameters
+            except (TypeError, ValueError):
+                return False
         return True
     return False
 names = json.load(sys.stdin)
@@ -303,8 +323,9 @@ def run(content: Path, linkmap_dir: Path, exclude_file: Path | None, version: st
     excl = Exclusions.load(exclude_file)
     roots = lm.roots
 
-    missing, forced_missing, kit_keys, v1_names = [], [], [], []
-    pending: dict[str, list] = {}     # sdk root -> [(page, line, name)]
+    missing, forced_missing, kit_keys, v1_names, bad_members = [], [], [], [], []
+    pending: dict[str, list] = {}     # root -> [(page, line, name)], not in the linkmap
+    members: dict[str, list] = {}     # root -> [(page, line, name)], only the class is
     plugins_unchecked, linked, excluded, n_pages = [], 0, 0, 0
 
     for page, text in pages(content):
@@ -339,15 +360,29 @@ def run(content: Path, linkmap_dir: Path, exclude_file: Path | None, version: st
                 continue
             if root not in roots:
                 continue
-            if lm.resolves(s):
+            how = lm.resolution(s)
+            if how == "exact":
                 linked += 1
+            elif how == "member" and root in sdk_roots:
+                members.setdefault(root, []).append((page, n, s))
+            elif how == "member":
+                linked += 1   # a plugin class: not installed here, so the member cannot be checked
             else:
                 pending.setdefault(root, []).append((page, n, s))
 
     unlinked_real, could_not_run = [], []
-    for root, found in pending.items():
-        names = {bare(s) for _, _, s in found}
-        result = resolve_sdk(root, names)
+    for root in sorted(set(pending) | set(members)):
+        found, member_found = pending.get(root, []), members.get(root, [])
+        result = resolve_sdk(root, {bare(s) for _, _, s in found + member_found})
+        for page, n, s in member_found:
+            if result is not None and result.get(bare(s)):
+                linked += 1
+            elif excl.match(page, s):
+                excluded += 1
+            elif result is None:
+                could_not_run.append((page, n, s))
+            else:
+                bad_members.append((page, n, s))
         for page, n, s in found:
             if result is not None and result.get(bare(s)):
                 unlinked_real.append((page, n, s))
@@ -360,7 +395,8 @@ def run(content: Path, linkmap_dir: Path, exclude_file: Path | None, version: st
             else:
                 missing.append((page, n, s))
 
-    checked = linked + len(unlinked_real) + len(missing) + len(forced_missing) + excluded
+    checked = (linked + len(unlinked_real) + len(missing) + len(bad_members)
+               + len(forced_missing) + excluded)
     print(f"check-api-names: {n_pages} pages, {checked} API names "
           f"({linked} linked, {len(unlinked_real)} real but unlinked, {excluded} excluded)")
 
@@ -395,6 +431,11 @@ def run(content: Path, linkmap_dir: Path, exclude_file: Path | None, version: st
         print(f"\nFATAL: {len(kit_keys)} {{{{< key kit... >}}}} shortcode(s) on v2 pages. These render the")
         print("       Flyte 1 SDK's names (`union`, `flytekit`); v2 code uses `flyte`.")
         show(kit_keys, limit=50, fmt=loc)
+    if bad_members:
+        print(f"\nFATAL: {len(bad_members)} name(s) use a member the class does not have. The")
+        print("       class is documented, so the page shows a link, but the member is not an")
+        print("       attribute, parameter or field in the released SDK.")
+        show(bad_members, limit=50, fmt=loc)
     if missing:
         print(f"\nFATAL: {len(missing)} API name(s) do not exist, in the API reference or the SDK.")
         print("       Correct the name. If it is not a Python name at all, such as a log")
@@ -403,7 +444,7 @@ def run(content: Path, linkmap_dir: Path, exclude_file: Path | None, version: st
 
     if could_not_run:
         return 2
-    if missing or forced_missing or kit_keys:
+    if missing or bad_members or forced_missing or kit_keys:
         return 1
     print("check-api-names: OK")
     return 0
