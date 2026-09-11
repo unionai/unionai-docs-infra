@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-rendered-images check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names check-subpage-cards update-icon-names clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-rendered-images check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names check-subpage-cards check-api-names update-icon-names clean clean-generated
 all: usage
 
 usage:
@@ -255,6 +255,12 @@ CARD_BASELINE := unionai-docs-infra/tools/check_subpage_cards_baseline.$(if $(VE
 check-subpage-cards:
 	@$(UV) unionai-docs-infra/tools/check_subpage_cards.py \
 		--baseline $(CARD_BASELINE)
+
+# Every backticked API name on a hand-written page must exist. Exclusions live in
+# the docs repo, so a docs pull request can add its own.
+check-api-names:
+	@$(UV) unionai-docs-infra/tools/check_api_names.py \
+		--exclude-file .api-names-exclude
 
 check-icon-names:
 	@$(UV) unionai-docs-infra/tools/check_icon_names.py
