@@ -244,6 +244,66 @@ def existing_z(sdk_version: str) -> list[int]:
     return sorted(zs)
 
 
+def _versions_toml_tags() -> list[str]:
+    """Every tag versions.toml names: stable + enumerated + retired.
+
+    Retiring a pin does NOT delete its git tag (verified across both lines), so a
+    retired entry is as much a guarantee of tag existence as a live one.
+    """
+    if not VERSIONS_FILE.exists():
+        return []
+    try:
+        with open(VERSIONS_FILE, "rb") as f:
+            doc = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError) as e:
+        print(f"  Warning: could not read {VERSIONS_FILE.name}: {e}", file=sys.stderr)
+        return []
+    tags = [str(doc["stable"])] if doc.get("stable") else []
+    for key in ("enumerated", "retired"):
+        tags.extend(str(t) for t in doc.get(key, []))
+    return tags
+
+
+def _assert_tags_visible(sdk_version: str, zs: list[int]) -> None:
+    """Refuse to compute a cut when the tag read cannot be trusted.
+
+    `existing_z` reads `git tag --list`, which returns nothing on a shallow or
+    `--no-tags` clone. That is indistinguishable from a triple genuinely never cut:
+    both answers are `[]`, and one of them yields z=0 for a triple already cut three
+    times, which `--promote` then writes as a BACKWARDS `stable`.
+
+    versions.toml is the cross-check, because it is intent we already hold. Any tag it
+    names for THIS triple must be visible to git; when one is not, the tag read is
+    broken rather than the history, so exit instead of guessing. A triple versions.toml
+    says nothing about -- a genuine first cut against a new SDK release -- still
+    proceeds, and that is the case this must not break.
+
+    Why a guard and not just `fetch-depth: 0` on the workflow: four call sites across
+    two branches run this arithmetic, three had the flag and v1's regen-api-docs.yml
+    did not. It went unnoticed for a month because the one earlier time it fired, the
+    missing-tag answer happened to be CORRECT (flytekit 1.16.28 really was a new
+    triple, so z=0 was right). Getting the flag onto all four is the fix; this is what
+    makes the fifth call site fail loudly instead of silently. (docs#1598, DOC-1556.)
+    """
+    prefix = f"v{sdk_version}."
+    expected = sorted(
+        int(t[len(prefix):]) for t in _versions_toml_tags()
+        if t.startswith(prefix) and t[len(prefix):].isdigit()
+    )
+    missing = [z for z in expected if z not in zs]
+    if not missing:
+        return
+    named = ", ".join(f"{prefix}{z}" for z in missing)
+    sys.exit(
+        f"manifest: {VERSIONS_FILE.name} names {named} for SDK {sdk_version}, but "
+        f"`git tag --list {prefix}*` did not return "
+        f"{'them' if len(missing) > 1 else 'it'} (saw z={zs or 'none'}).\n"
+        "  The tag read is unreliable, so the next cut's z is NOT being guessed.\n"
+        "  Usual cause: a shallow checkout. Set `fetch-depth: 0` on actions/checkout "
+        "(see regen-api-docs.yml / docs-cut.yml), or `git fetch --tags` locally."
+    )
+
+
 def compute_next_version(sdk_version: str) -> dict:
     """Compute the version the next cut would produce for this SDK triple.
 
@@ -251,6 +311,7 @@ def compute_next_version(sdk_version: str) -> dict:
     z = max(existing z) + 1 for a manual cut against the same SDK version.
     """
     zs = existing_z(sdk_version)
+    _assert_tags_visible(sdk_version, zs)
     if not zs:
         z, kind = 0, "sdk-release"
     else:
