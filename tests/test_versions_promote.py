@@ -296,3 +296,78 @@ def test_pruning_is_reported_not_silent(tmp_path, capsys):
     err = capsys.readouterr().err
     assert "v2.6.1.0" in err
     assert "redirect" in err.lower()
+
+
+# --------------------------------------------------------------------------- #
+# Tag-visibility guard (docs#1598 / DOC-1556)
+# --------------------------------------------------------------------------- #
+# `existing_z` reads `git tag --list`, which returns nothing on a shallow or
+# `--no-tags` clone. That is indistinguishable from a triple never cut: both are
+# `[]`, and one of them yields z=0 for a triple already cut, which `--promote`
+# writes as a BACKWARDS stable. `_assert_tags_visible` cross-checks against
+# versions.toml and exits rather than guessing.
+#
+# The production instance: v1's regen-api-docs.yml lacked `fetch-depth: 0`, so a
+# regen triggered by a `union` release (flytekit unchanged at 1.16.28, already cut
+# .0-.3) read existing_z as empty, called it an sdk-release cut, and rolled stable
+# from v1.16.28.3 back to v1.16.28.0. All 13 CI checks passed.
+
+import pytest  # noqa: E402
+
+
+def _guard(tmp_path, monkeypatch, body: str, sdk: str, zs: list[int]):
+    """Run the guard with versions.toml = `body` and git reporting tags `zs`."""
+    p = tmp_path / "versions.toml"
+    p.write_text(body)
+    monkeypatch.setattr(manifest, "VERSIONS_FILE", p)
+    return manifest._assert_tags_visible(sdk, zs)
+
+
+V1_BODY = ('stable = "v1.16.28.3"\n'
+           'enumerated = [\n  "v1.16.28.0",\n  "v1.16.28.1",\n  "v1.16.28.2",\n]\n'
+           'retired = [\n  "v1.16.26.3",\n  "v1.16.26.4",\n]\n'
+           'latest = false\nindexed = false\n')
+
+
+def test_refuses_when_no_tags_are_visible(tmp_path, monkeypatch):
+    """The production failure: versions.toml names four pins, git reports none."""
+    with pytest.raises(SystemExit) as e:
+        _guard(tmp_path, monkeypatch, V1_BODY, "1.16.28", [])
+    msg = str(e.value)
+    assert "v1.16.28.3" in msg, "the error must name what it could not find"
+    assert "fetch-depth: 0" in msg, "the error must name the fix"
+
+
+def test_refuses_on_a_partial_tag_read(tmp_path, monkeypatch):
+    """Some tags visible is still an unreliable read, not a shorter history."""
+    with pytest.raises(SystemExit):
+        _guard(tmp_path, monkeypatch, V1_BODY, "1.16.28", [0, 1])
+
+
+def test_allows_a_consistent_read(tmp_path, monkeypatch):
+    """Every pin versions.toml names is visible: proceed."""
+    assert _guard(tmp_path, monkeypatch, V1_BODY, "1.16.28", [0, 1, 2, 3]) is None
+
+
+def test_allows_a_genuine_first_cut(tmp_path, monkeypatch):
+    """A NEW SDK triple has no tags and versions.toml names none for it.
+
+    This is the case the guard must not break: on 2026-08-19 flytekit 1.16.28 really
+    was a new triple, z=0 was correct, and the same empty tag read was the right
+    answer. Distinguishing the two is the whole point of cross-checking versions.toml
+    rather than just failing on an empty result.
+    """
+    assert _guard(tmp_path, monkeypatch, V1_BODY, "1.16.99", []) is None
+
+
+def test_allows_a_retired_triple_being_recut(tmp_path, monkeypatch):
+    """Retiring a pin does not delete its git tag, so `retired` is cross-checked too."""
+    with pytest.raises(SystemExit):
+        _guard(tmp_path, monkeypatch, V1_BODY, "1.16.26", [])
+    assert _guard(tmp_path, monkeypatch, V1_BODY, "1.16.26", [3, 4]) is None
+
+
+def test_no_versions_file_means_no_cross_check(tmp_path, monkeypatch):
+    """Bootstrapping a line that has no versions.toml yet must still work."""
+    monkeypatch.setattr(manifest, "VERSIONS_FILE", tmp_path / "absent.toml")
+    assert manifest._assert_tags_visible("1.16.28", []) is None
