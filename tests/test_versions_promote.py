@@ -371,3 +371,49 @@ def test_no_versions_file_means_no_cross_check(tmp_path, monkeypatch):
     """Bootstrapping a line that has no versions.toml yet must still work."""
     monkeypatch.setattr(manifest, "VERSIONS_FILE", tmp_path / "absent.toml")
     assert manifest._assert_tags_visible("1.16.28", []) is None
+
+
+# A promotion written but not yet minted. The one-merge flow always passes through
+# this state: the regen fold runs `--promote` then `--write` in the same job, and
+# after the PR merges, build-and-deploy runs cut-docs-version.sh (`--check`) against
+# a versions.toml naming the tag it is about to create. The guard broke both on
+# 2026-09-17: the daily regen failed and flyteplugins-union 0.11.0 never landed.
+
+V2_FOLDED = ('stable = "v2.8.1.0"\n'
+             'enumerated = [\n  "v2.7.1.0",\n  "v2.7.2.0",\n  "v2.8.0.0",\n]\n'
+             'retired = [\n  "v2.7.0.0",\n]\n')
+
+
+def test_allows_a_folded_sdk_release_not_yet_tagged(tmp_path, monkeypatch):
+    """The production failure: stable=v2.8.1.0 just promoted, no v2.8.1.* tag yet."""
+    assert _guard(tmp_path, monkeypatch, V2_FOLDED, "2.8.1", []) is None
+
+
+def test_allows_a_folded_manual_cut_not_yet_tagged(tmp_path, monkeypatch):
+    """A manual cut promotes .3 over .0-.2; only .3 is untagged, and it is next."""
+    assert _guard(tmp_path, monkeypatch, V1_BODY, "1.16.28", [0, 1, 2]) is None
+
+
+def test_pending_stable_does_not_excuse_a_skipped_z(tmp_path, monkeypatch):
+    """stable=.3 with only .0 and .1 visible: .2 is missing, and .3 is not next."""
+    with pytest.raises(SystemExit):
+        _guard(tmp_path, monkeypatch, V1_BODY, "1.16.28", [0, 1])
+
+
+def test_pending_stable_does_not_excuse_an_empty_read_of_a_cut_triple(tmp_path, monkeypatch):
+    """The docs#1598 shape with only stable naming the triple: an empty read implies
+    next=.0, which is not stable=.3, so this is still an unreliable read."""
+    body = 'stable = "v1.16.28.3"\nenumerated = []\nretired = []\n'
+    with pytest.raises(SystemExit) as e:
+        _guard(tmp_path, monkeypatch, body, "1.16.28", [])
+    assert "v1.16.28.3" in str(e.value)
+
+
+def test_fold_then_write_end_to_end(tmp_path, monkeypatch):
+    """compute_next_version after --promote, with the new tag not yet minted."""
+    p = tmp_path / "versions.toml"
+    p.write_text(V2_FOLDED)
+    monkeypatch.setattr(manifest, "VERSIONS_FILE", p)
+    monkeypatch.setattr(manifest, "existing_z", lambda sdk: [])
+    ver = manifest.compute_next_version("2.8.1")
+    assert ver["tag"] == "v2.8.1.0" and ver["cut_kind"] == "sdk-release"
