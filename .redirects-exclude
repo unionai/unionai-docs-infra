@@ -69,6 +69,10 @@ content/user-guide/feature-showcase/*
 
 # Never published in flyte variant (variants: -flyte +union)
 content/deployment/selfmanaged/selfmanaged-aws/manual.md
+# Moved to infrastructure-recommendations/ and deploy/ (unionai-docs#1270). Union-only, so the
+# union redirects are in redirects.csv and the flyte URLs never existed.
+content/deployment/selfmanaged/cluster-recommendations.md
+content/deployment/selfmanaged/selfmanaged-*
 
 # Never published in either v2 variant (variants: -flyte -union) — pruned in DOC-1225 (unionai-docs#1217)
 content/deployment/configuration-reference/*
