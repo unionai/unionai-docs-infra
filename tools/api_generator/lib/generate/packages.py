@@ -4,8 +4,9 @@ import re
 from typing import Dict, List, Optional
 
 from lib.generate.classes import generate_class_details, generate_classes_and_error_list
-from lib.generate.docstring import docstring_summary
+from lib.generate.docstring import docstring_description, docstring_summary
 from lib.generate.hugo import write_front_matter, FrontMatterExtra
+from lib.generate.icons import icon_for
 from lib.ptypes import ClassPackageMap, PackageInfo
 from lib.generate.methods import generate_method, generate_method_list
 from lib.generate.properties import generate_props
@@ -68,6 +69,7 @@ def generate_package_folders(
     flatten: bool,
     ignore_types: List[str],
     frontmatter_extra: Optional[FrontMatterExtra],
+    single_package_flat: bool = False,
 ):
     print("Generating package folders")
 
@@ -76,7 +78,15 @@ def generate_package_folders(
             # Skip packages with no classes, methods, or variables
             continue
 
-        if flatten:
+        append_to_landing = False
+        if single_package_flat:
+            # DOC-1335: the section holds exactly this one package, so the module
+            # level is collapsed -- the module body (doc, directory, methods,
+            # variables) is APPENDED to the landing page generate_home already
+            # wrote, and class pages sit at the section root beside it.
+            pkg_index = os.path.join(pkg_root, "_index.md")
+            append_to_landing = True
+        elif flatten:
             pkg_index = os.path.join(pkg_root, f"{pkg['name']}.md")
             frontmatter_extra = None
         else:
@@ -86,10 +96,19 @@ def generate_package_folders(
             pkg_index = os.path.join(pkg_folder, "_index.md")
 
         # print(f"Generating package index for {pkg['name']}")
-        with open(pkg_index, "w") as index:
-            write_front_matter(pkg["name"], index, frontmatter_extra)
-
-            index.write(f"# {pkg['name']}\n\n")
+        with open(pkg_index, "a" if append_to_landing else "w") as index:
+            if not append_to_landing:
+                # single_package_flat writes no frontmatter here: the module body
+                # is appended to the landing page, whose frontmatter generate_home
+                # already wrote from this same package's docstring.
+                write_front_matter(
+                    pkg["name"],
+                    index,
+                    frontmatter_extra,
+                    description=docstring_description(pkg.get("doc")),
+                    icon=icon_for("module"),
+                )
+                index.write(f"# {pkg['name']}\n\n")
 
             doc = pkg["doc"] if "doc" in pkg else ""
             if doc:
@@ -110,6 +129,7 @@ def generate_package_folders(
                 relative_to_file=pkg_index,
                 flatten=flatten,
                 ignore_types=ignore_types,
+                single_package_flat=single_package_flat,
             )
 
             if len(pkg["methods"]) > 0:

@@ -1,8 +1,31 @@
-<h{{ .Level }} id="{{ .Anchor }}" {{- with .Attributes.class }} class="{{ . }}" {{- end }}>
+{{- /*
+  Heading ids must be stable across builds (DOC-1357).
+
+  Before goldmark parses a page, Hugo swaps every `{{< shortcode >}}` for an
+  internal placeholder of the form HAHAHUGOSHORTCODE<n>s<m>HBHB. The <n> counter
+  is assigned per build, so a heading that contains a shortcode gets an
+  auto-generated id that changes from one deploy to the next, and every deep
+  link into that heading dies with it.
+
+  The author-side fix is to write the shortcode in its `{{% ... %}}` form, which
+  Hugo resolves BEFORE goldmark runs, so the id derives from the real heading
+  text. An explicit `{#my-id}` works too. This block is the safety net for a
+  heading that uses neither: strip the placeholder out of the id so the result
+  is at least the same on every build. Such an anchor reads worse than a
+  properly authored one, but it no longer moves.
+*/ -}}
+{{- $anchor := .Anchor -}}
+{{- if findRE `(?i)hahahugoshortcode\d+s\d+hbhb` $anchor -}}
+  {{- $anchor = replaceRE `(?i)hahahugoshortcode\d+s\d+hbhb` "" $anchor -}}
+  {{- $anchor = replaceRE `-{2,}` "-" $anchor -}}
+  {{- $anchor = trim $anchor "-" -}}
+  {{- if eq $anchor "" -}}{{- $anchor = "section" -}}{{- end -}}
+{{- end -}}
+<h{{ .Level }} id="{{ $anchor }}" {{- with .Attributes.class }} class="{{ . }}" {{- end }}>
 {{- if eq .Level 1 -}}
   {{- .Text -}}
 {{- else -}}
-  <a class="ref" href="#{{ .Anchor }}">
+  <a class="ref" href="#{{ $anchor }}">
     {{- .Text -}}
   </a>
   <div class="ref"></div>

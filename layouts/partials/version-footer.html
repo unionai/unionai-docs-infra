@@ -1,0 +1,89 @@
+{{- /*
+Docs version + component-version stamp (DOC-1245, PRD §9.1). Shown at the bottom
+of every versioned page. Source: the `current_version` build param + the per-cut
+`data/version-manifest.json` (the committed manifest on a tag build; a generated
+one on /docs/latest). Renders NOTHING when either is absent (a v1 single build or
+dev), so the same shared template is safe on every branch.
+*/ -}}
+{{- $cur := .Site.Params.current_version -}}
+{{- /* hugo.Data needs Hugo >= 0.156, which the repo floor now guarantees (.hugoversion,
+       enforced by scripts/pre-flight.sh). Do NOT reintroduce a .Site.Data fallback: it
+       is deprecated and, with the build's --panicOnWarning, fatal on the pinned Hugo.
+       infra#195 added one to keep local dev working on a Hugo older than the templates
+       required; raising the floor to equal the pin removed the reason for it. */ -}}
+{{- $mf := index hugo.Data "version-manifest" -}}
+{{- if and $cur $mf -}}
+  {{- $variant := .Site.Params.variant -}}
+  {{- $c := index $mf.variants $variant -}}
+  {{- if $c -}}
+    {{- /* Render generically off the manifest so the same partial serves v2
+           (flyte-sdk / flyteplugins-union) and v1 (flytekit / union): lead with the
+           SDK (named by sdk_label), then every other non-null component except the
+           git-SHA book-keeping keys. */ -}}
+    {{- $sdk := $mf.sdk_label | default "flyte-sdk" -}}
+    {{- $skip := slice "content" "infra" "examples" $sdk -}}
+    {{- /* Link + label scheme (DOC-1294; grouped-label revision, Peeter
+           2026-08-02, rev 3). The footer is a set of TYPE GROUPS, each a
+           PLAIN type label + colon followed by its components. Each component
+           is ONE continuous inline-code run, name and version joined by a
+           space; multiple components in a group are separated by a plain
+           (non-monospace) space:
+
+             Docs: `unionai/unionai-docs 2.5.16.1`
+             SDK: `flyteorg/flyte-sdk 2.5.16` `flyteplugins-union 0.5.2`
+             Backend: `flyteorg/flyte v2.0.31`     (flyte variant only)
+
+           ONE SDK label covers every SDK-kind package (v2: flyte-sdk +
+           flyteplugins-union; v1: flytekit + union). Identifiers are inline
+           code -- the org/repo slug where a public repo exists, the bare
+           package name where the repo is closed (their PyPI page is the
+           public home). Versions are inline code. Links unchanged:
+           identifier -> home, version -> that exact release (`pypi` is the
+           PyPI project name; NB the flyte-sdk PACKAGE is `flyte` on PyPI).
+           The map lives template-side, not in the manifest, so all of this
+           applies retroactively to every committed pin manifest; a component
+           key not in the map falls back to a plain trailing span. */ -}}
+    {{- $linkmap := dict
+          "flyte-sdk"          (dict "slug" "flyteorg/flyte-sdk" "kind" "SDK" "home" "https://github.com/flyteorg/flyte-sdk" "pypi" "flyte")
+          "flytekit"           (dict "slug" "flyteorg/flytekit" "kind" "SDK" "home" "https://github.com/flyteorg/flytekit"  "pypi" "flytekit")
+          "flyteplugins-union" (dict "slug" "flyteplugins-union" "kind" "SDK" "home" "https://pypi.org/project/flyteplugins-union/" "pypi" "flyteplugins-union")
+          "union"              (dict "slug" "union" "kind" "SDK" "home" "https://pypi.org/project/union/" "pypi" "union")
+          "backend"            (dict "slug" "flyteorg/flyte" "kind" "Backend" "home" "https://github.com/flyteorg/flyte" "reltag" true)
+    -}}
+<div class="docs-version-info" style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border-color,#e5e7eb);font-size:.8rem;color:var(--text-muted,#6b7280);display:flex;flex-wrap:wrap;gap:.4rem 1rem;">
+  {{- /* Docs group: identifier = the content repo slug; number = the exact
+         content snapshot (the cut tag), or the main tip on /docs/latest. */ -}}
+  <span>Docs: <code><a href="https://github.com/unionai/unionai-docs">unionai/unionai-docs</a>
+    {{- if eq $cur "latest" }} <a href="https://github.com/unionai/unionai-docs/tree/main">latest (main)</a>
+    {{- else }} <a href="https://github.com/unionai/unionai-docs/tree/v{{ $mf.docs_version }}">{{ $mf.docs_version }}</a>
+    {{- end -}}</code></span>
+  {{- /* SDK group: one label, then every SDK-kind package -- the lead SDK
+         (named by sdk_label) first, then the rest in key order. */ -}}
+  {{- with index $c $sdk -}}
+    {{- $l := index $linkmap $sdk -}}
+    {{- if $l -}}
+    <span>SDK: <code><a href="{{ $l.home }}">{{ $l.slug }}</a> <a href="https://pypi.org/project/{{ $l.pypi }}/{{ . }}/">{{ . }}</a></code>
+      {{- range $k, $v := $c -}}
+        {{- $ol := index $linkmap $k -}}
+        {{- if and $v (not (in $skip $k)) $ol (eq ($ol.kind | default "") "SDK") }} <code><a href="{{ $ol.home }}">{{ $ol.slug }}</a> <a href="https://pypi.org/project/{{ $ol.pypi }}/{{ $v }}/">{{ $v }}</a></code>
+        {{- end -}}
+      {{- end -}}</span>
+    {{- else -}}
+    <span>SDK: <code>{{ $sdk }} {{ . }}</code></span>
+    {{- end -}}
+  {{- end -}}
+  {{- /* Backend group (flyte variant only) + plain trailing spans for any
+         unmapped component. */ -}}
+  {{- range $k, $v := $c -}}
+    {{- if and $v (not (in $skip $k)) -}}
+      {{- $l := index $linkmap $k -}}
+      {{- if and $l (eq ($l.kind | default "") "Backend") -}}
+        <span>Backend: <code><a href="{{ $l.home }}">{{ $l.slug }}</a> <a href="{{ $l.home }}/releases/tag/{{ $v }}">{{ $v }}</a></code></span>
+      {{- else if not $l -}}
+        <span><code>{{ $k }} {{ $v }}</code></span>
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+</div>
+  {{- end -}}
+{{- end -}}

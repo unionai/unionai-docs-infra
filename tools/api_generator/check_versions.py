@@ -17,11 +17,8 @@ Reads api-packages.toml for the list of packages and their version files.
 """
 
 import argparse
-import json
-import re
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
 from packaging.version import Version
@@ -30,6 +27,9 @@ try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _versions import extract_frontmatter_version, get_pypi_latest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _repo import get_repo_root
@@ -41,52 +41,6 @@ CONFIG_FILE = REPO_ROOT / "api-packages.toml"
 def load_config() -> dict:
     with open(CONFIG_FILE, "rb") as f:
         return tomllib.load(f)
-
-
-def extract_frontmatter_version(version_file: Path) -> str | None:
-    """Extract version: field from Hugo YAML frontmatter."""
-    if not version_file.exists():
-        return None
-    text = version_file.read_text()
-    # Match YAML frontmatter between --- delimiters
-    m = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
-    if not m:
-        return None
-    for line in m.group(1).splitlines():
-        if line.startswith("version:"):
-            return line.split(":", 1)[1].strip()
-    return None
-
-
-def get_pypi_latest(package: str) -> str | None:
-    """Get latest version from PyPI."""
-    url = f"https://pypi.org/pypi/{package}/json"
-    try:
-        with urllib.request.urlopen(url, timeout=15) as resp:
-            data = json.loads(resp.read())
-    except Exception as e:
-        print(f"  Warning: failed to query PyPI for {package}: {e}", file=sys.stderr)
-        return None
-
-    # Find the latest stable version from all releases
-    versions = []
-    for ver_str, files in data.get("releases", {}).items():
-        # Skip yanked releases and releases with no files
-        if not files:
-            continue
-        if all(f.get("yanked", False) for f in files):
-            continue
-        try:
-            v = Version(ver_str)
-            if not v.is_prerelease:
-                versions.append(v)
-        except Exception:
-            continue
-
-    if not versions:
-        return None
-
-    return str(max(versions))
 
 
 def check_all(config: dict) -> list[dict]:
@@ -104,9 +58,12 @@ def check_all(config: dict) -> list[dict]:
         latest = get_pypi_latest(sdk["package"])
         output = REPO_ROOT / sdk["output_folder"]
         # classes can be a directory (no-flatten) or a single .md file (flatten)
-        classes_dir = output / "classes"
-        classes_file = output / "classes.md"
-        content_missing = not (output / "packages").is_dir() or not (classes_dir.is_dir() or classes_file.is_file())
+        # DOC-1335: the generated tree is hoisted -- no `packages/` or `classes/`
+        # wrappers. "Content present" = the landing page plus at least one other
+        # generated markdown file (a module dir or a class page).
+        landing = output / "_index.md"
+        others = [f for f in output.rglob("*.md") if f != landing] if output.is_dir() else []
+        content_missing = not landing.is_file() or not others
         results.append({
             "type": "sdk",
             "package": sdk["package"],
@@ -136,6 +93,7 @@ def check_all(config: dict) -> list[dict]:
             "extras": plugin.get("extras", []),
             "output_folder": output_folder,
             "weight": plugin.get("weight"),
+            "variants": plugin.get("variants"),
             "committed": committed,
             "latest": latest,
             "outdated": _is_outdated(committed, latest),
@@ -195,11 +153,19 @@ def print_results(results: list[dict]) -> None:
             print(f"  {r['package']}: committed={committed} latest={latest} [{status}]")
 
 
-def regenerate(results: list[dict]) -> None:
+def regenerate(results: list[dict], force: bool = False) -> None:
     """Invoke existing Makefiles to regenerate outdated docs.
 
     Sets up the shared SDK/CLI venv once, then runs each generator.
+
+    `force` regenerates every item regardless of its version, for a change to
+    the generator that no version bump would pick up. It has to be threaded
+    through each of the three selections below, not applied by the caller
+    handing over a longer list: each one re-reads `outdated` itself, so a
+    caller-side filter is silently ignored.
     """
+    def wanted(r: dict) -> bool:
+        return force or r["outdated"]
     # Set up the shared venv used by SDK and CLI generation.
     print("\nSetting up shared venv...")
     subprocess.run(
@@ -209,9 +175,9 @@ def regenerate(results: list[dict]) -> None:
     )
 
     # Regenerate all SDKs together
-    has_outdated_sdk = any(r["outdated"] and r["type"] == "sdk" for r in results)
+    has_outdated_sdk = any(wanted(r) and r["type"] == "sdk" for r in results)
     if has_outdated_sdk:
-        outdated_sdks = [r["package"] for r in results if r["outdated"] and r["type"] == "sdk"]
+        outdated_sdks = [r["package"] for r in results if wanted(r) and r["type"] == "sdk"]
         print(f"\nRegenerating SDK docs ({', '.join(outdated_sdks)})...")
         subprocess.run(
             ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "sdks"],
@@ -220,9 +186,9 @@ def regenerate(results: list[dict]) -> None:
         )
 
     # Regenerate all CLIs together
-    has_outdated_cli = any(r["outdated"] and r["type"] == "cli" for r in results)
+    has_outdated_cli = any(wanted(r) and r["type"] == "cli" for r in results)
     if has_outdated_cli:
-        outdated_clis = [r["name"] for r in results if r["outdated"] and r["type"] == "cli"]
+        outdated_clis = [r["name"] for r in results if wanted(r) and r["type"] == "cli"]
         print(f"\nRegenerating CLI docs ({', '.join(outdated_clis)})...")
         subprocess.run(
             ["make", "-f", "unionai-docs-infra/Makefile.api.sdk", "clis"],
@@ -232,7 +198,7 @@ def regenerate(results: list[dict]) -> None:
 
     # Regenerate outdated plugins
     for r in results:
-        if not r["outdated"]:
+        if not wanted(r):
             continue
         if r["type"] == "plugin":
             print(f"\nRegenerating plugin docs ({r['package']})...")
@@ -245,7 +211,24 @@ def regenerate(results: list[dict]) -> None:
                 cmd.append(f"OUTPUT_FOLDER={r['output_folder']}")
             if r.get("weight") is not None:
                 cmd.append(f"WEIGHT={r['weight']}")
+            # A plugin may restrict which variants it appears in (e.g. union-plugin
+            # is Union-only); defaults to "+flyte +union" in the Makefile otherwise.
+            if r.get("variants"):
+                cmd.append(f"PAGE_VARIANTS={r['variants']}")
             subprocess.run(cmd, cwd=REPO_ROOT, check=True)
+
+    # Validate variant gating while the venv still exists. The check reads what
+    # each distribution registered from its entry points, and those are only
+    # visible here -- clean-venv below destroys the only evidence of which
+    # commands came from a Union-only plugin. See tools/check_cli_variant_gating.py.
+    gating_failed = False
+    if has_outdated_cli:
+        print("\nChecking CLI variant gating...")
+        gating = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().parent.parent / "check_cli_variant_gating.py")],
+            cwd=REPO_ROOT,
+        )
+        gating_failed = gating.returncode != 0
 
     # Clean up shared venv
     subprocess.run(
@@ -253,6 +236,12 @@ def regenerate(results: list[dict]) -> None:
         cwd=REPO_ROOT,
         check=True,
     )
+
+    # Reported after cleanup so a failure does not leave the venv behind, but
+    # still fails the regen: publishing a Union-only command into the
+    # open-source docs is worse than not regenerating.
+    if gating_failed:
+        sys.exit("ERROR: generated CLI docs publish a plugin command to the wrong variants (see above).")
 
 
 def main():
@@ -262,12 +251,25 @@ def main():
                        help="Check versions and exit with status code")
     group.add_argument("--update", action="store_true",
                        help="Check versions and prompt to regenerate if outdated")
+    group.add_argument("--all", action="store_true", dest="regen_all",
+                       help="Regenerate every item regardless of version, for a "
+                            "generator change that no version bump would pick up")
     args = parser.parse_args()
 
     config = load_config()
     print("Checking API doc versions against PyPI...")
     results = check_all(config)
     print_results(results)
+
+    # A generator change reaches no committed page on its own. Regeneration is
+    # driven by the PyPI version moving, so an improvement to how a page is
+    # rendered sits unpublished until each package happens to release -- which
+    # for a stable plugin can be never. `--all` is the way to publish one.
+    if args.regen_all:
+        print(f"\nRegenerating all {len(results)} item(s), ignoring versions.")
+        regenerate(results, force=True)
+        print("\nDone. Review and commit the updated docs.")
+        return
 
     outdated = [r for r in results if r["outdated"]]
 

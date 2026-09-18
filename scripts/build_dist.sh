@@ -124,3 +124,9 @@ if [ ${#failed_variants[@]} -ne 0 ]; then
 fi
 
 run_step "Generate LLM docs" $MAKE_CMD llm-docs || exit 1
+
+# Every CSS/JS URL in the built site must resolve to a real file (DOC-1316).
+# Hugo-emitted asset URLs are correct by construction; this catches the ones
+# generated OUTSIDE Hugo, which is where the bugs actually were. Non-blocking
+# for now -- drop the `|| true` to make it a hard gate.
+run_step "Check asset references" unionai-docs-infra/scripts/check-asset-refs.sh || true

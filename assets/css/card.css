@@ -1,0 +1,94 @@
+/* Link card — DOC-1324 (phase 3a) + DOC-1325.
+
+   Was an <sl-card> with an onclick. Two problems in one element: it was not a
+   link (see the shortcode comment), and being shadow-DOM it took its border,
+   radius, padding and type from Shoelace's CDN theme. This file previously had
+   ZERO var() references — no colour of ours reached the card at all.
+
+   Figma's Link Card:
+     border 0.5px --border · radius --radius-dropdown · padding 16 · gap 7
+     CardIcon 18x18        on its own row, ABOVE the title
+     title  Inter 600 14/19    --text
+     body   Inter 400 12.5/20  --text-2
+
+   Ours previously put the icon inline AFTER the title and styled the title as
+   nothing but `font-weight: bold`. */
+
+.link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  height: 100%;
+  padding: 16px;
+  /* LIGHT-MODE CONTRAST (reported by Peeter, live).
+
+     Figma's Link Card is border-only with no fill, and that works in the comp
+     because the comp is the DARK canvas: an 8% white border on #0e0e11 reads
+     clearly. Inverted, it does not. In light mode the card was #ffffff on a
+     #ffffff page — 1.00:1 fill contrast — with a 0.5px 10%-black border
+     landing at 1.24:1. A white box on a white page with a hairline.
+
+     Same defect class as DOC-1315, where callouts were white-on-white. Both
+     come from taking a value that is legible on dark and assuming it inverts.
+
+     So: --surface-offset, which steps DOWN the ramp in light and UP in dark
+     (going darker from near-black hits a floor — dark --bg-1 against --bg is
+     1.03:1, i.e. nothing), plus --border-2 rather than --border for the edge.
+
+       light  fill 1.07:1   border 1.48:1
+       dark   fill 1.11:1   border 1.41:1 */
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-dropdown);
+  background: var(--surface-offset);
+  /* The card is a link, so opt out of the underline the content area puts on
+     every <a>; the box is the affordance. */
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.main-content a.link-card {
+  text-decoration: none;
+}
+
+.link-card:hover {
+  border-color: var(--rule);
+  /* one further step in whichever direction the mode is going */
+  background: var(--bg-2);
+}
+
+/* Keyboard users get a real focus ring — the old card could not be focused at
+   all, so there was nothing to style. */
+.link-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.link-card-icon {
+  font-size: 18px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.link-card-title {
+  font-size: 0.875rem;      /* 14 */
+  font-weight: var(--weight-heading);
+  line-height: 1.36;        /* 19 / 14 */
+  color: var(--text);
+}
+
+.link-card-body {
+  font-size: var(--type-crumb);   /* 12.5 */
+  line-height: 1.6;               /* 20 / 12.5 */
+  color: var(--text-2);
+}
+
+/* The body is authored as Markdown, so it arrives wrapped in <p>. Those carry
+   the global paragraph margin, which would fight the 7px gap the flex column
+   already provides. */
+.link-card-body > p {
+  margin: 0;
+}
+.link-card-body > p + p {
+  margin-top: 0.5rem;
+}

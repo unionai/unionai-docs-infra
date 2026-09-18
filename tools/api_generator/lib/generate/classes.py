@@ -1,11 +1,12 @@
 import io
 import os
-import re
 from typing import Dict, List, Tuple, Optional
 
-from lib.generate.docstring import docstring_summary
+from lib.generate.docstring import docstring_description, docstring_summary
 from lib.generate.hugo import FrontMatterExtra, write_front_matter
+from lib.generate.icons import class_icon_kind, icon_for
 from lib.generate.methods import (
+    escape_html_preserve_code_blocks,
     generate_examples,
     generate_method,
     generate_method_decl,
@@ -24,28 +25,13 @@ PackageTree = Dict[str, List[str]]
 ProtocolBaseClass = "Protocol"
 
 
-def escape_html_preserve_code_blocks(text):
-    """Escape HTML characters in text while preserving code blocks."""
-    if not text:
-        return text
-    
-    # Split on code block delimiters (```)
-    parts = re.split(r'(```.*?```)', text, flags=re.DOTALL)
-    
-    result = []
-    for i, part in enumerate(parts):
-        # Even indices are regular text, odd indices are code blocks
-        if i % 2 == 0:  # Regular text - escape HTML
-            escaped_part = part.replace("<", "&lt;").replace(">", "&gt;")
-            result.append(escaped_part)
-        else:  # Code block - don't escape
-            result.append(part)
-    
-    return ''.join(result)
-
-
-def generate_class_filename(fullname: str, pkg_root: str) -> str:
+def generate_class_filename(fullname: str, pkg_root: str,
+                            single_package_flat: bool = False) -> str:
     nameParts = fullname.split(".")
+    if single_package_flat:
+        # DOC-1335: a single-package section keeps its class pages at the section
+        # root -- the module directory would only restate the section's name.
+        return os.path.join(pkg_root, f"{nameParts[-1].lower()}.md")
     return os.path.join(pkg_root, ".".join(nameParts[0:-1]), f"{nameParts[-1].lower()}.md")
 
 
@@ -61,14 +47,30 @@ def sift_class_and_errors(classes: ClassMap) -> Tuple[List[str], List[str]]:
 
 
 def generate_class_link(
-    fullname: str, pkg_root: str, relative_to_file: str, flatten: bool
+    fullname: str, pkg_root: str, relative_to_file: str, flatten: bool,
+    single_package_flat: bool = False,
 ) -> str:
     nameParts = fullname.split(".")
     pkg_base = os.path.relpath(pkg_root, os.path.dirname(relative_to_file))
     if flatten:
+        # `pkg_base` is already relative to the file being written, so the module
+        # page is `pkg_base/<module>`. The extra `..` that used to lead this made
+        # every link climb one level too far. For a class in the page's own module
+        # -- the common case, and a link to an anchor on the page itself --
+        # `pkg_base` is `.` and the result was `.././<module>#anchor`.
+        #
+        # That form is wrong source-relatively, so Hugo could not resolve it and
+        # passed it through to the HTML untouched, where the browser resolved it
+        # against the page URL (one level deeper) and it landed back on the page
+        # by accident. The `.md` twin has no such luck: it resolves from the
+        # source directory and 404s. 1,649 broken links on v1, 802 of them these.
+        # DOC-1525.
         anchor = generate_anchor_from_name(fullname)
-        result = f"{os.path.join('..', pkg_base, '.'.join(nameParts[0:-1])).lower()}#{anchor}"
+        result = f"{os.path.join(pkg_base, '.'.join(nameParts[0:-1])).lower()}#{anchor}"
         return result
+    elif single_package_flat:
+        # DOC-1335: class pages sit beside the module body at the section root.
+        return os.path.join(pkg_base, nameParts[-1].lower())
     else:
         result = os.path.join(
             pkg_base, ".".join(nameParts[0:-1]), nameParts[-1].lower()
@@ -160,10 +162,17 @@ def generate_class_index(
                 )
 
 
-def generate_class(fullname: str, info: ClassDetails, pkg_root: str):
-    class_file = generate_class_filename(fullname=fullname, pkg_root=pkg_root)
+def generate_class(fullname: str, info: ClassDetails, pkg_root: str,
+                   single_package_flat: bool = False):
+    class_file = generate_class_filename(fullname=fullname, pkg_root=pkg_root,
+                                         single_package_flat=single_package_flat)
     with open(class_file, "w") as output:
-        write_front_matter(info["name"], output)
+        write_front_matter(
+            info["name"],
+            output,
+            description=docstring_description(info.get("doc")),
+            icon=icon_for(class_icon_kind(info)),
+        )
 
         output.write(f"# {info['name']}\n\n")
         output.write(f"**Package:** `{'.'.join(info['path'].split('.')[:-1])}`\n\n")
@@ -229,12 +238,14 @@ def generate_class_details(
             generate_method(method, output, doc_level)
 
 
-def generate_classes(classes: ClassPackageMap, pkg_root: str, ignore_types: List[str]):
+def generate_classes(classes: ClassPackageMap, pkg_root: str, ignore_types: List[str],
+                     single_package_flat: bool = False):
     for _, pkgInfo in classes.items():
         for cls, clsInfo in pkgInfo.items():
             if cls in ignore_types:
                 continue
-            generate_class(fullname=cls, info=clsInfo, pkg_root=pkg_root)
+            generate_class(fullname=cls, info=clsInfo, pkg_root=pkg_root,
+                           single_package_flat=single_package_flat)
 
 
 def generate_classes_and_error_list(
@@ -246,6 +257,7 @@ def generate_classes_and_error_list(
     relative_to_file: str,
     flatten: bool,
     ignore_types: List[str],
+    single_package_flat: bool = False,
 ):
     classes, exceptions = sift_class_and_errors(clss)
 
@@ -272,6 +284,7 @@ def generate_classes_and_error_list(
                 relative_to_file=relative_to_file,
                 pkg_root=pkg_root,
                 flatten=flatten,
+                single_package_flat=single_package_flat,
             )
 
             classNameWithoutPackage = classNameFull.replace(f"{pkg['name']}.", "")
@@ -294,6 +307,7 @@ def generate_classes_and_error_list(
                 relative_to_file=relative_to_file,
                 pkg_root=pkg_root,
                 flatten=flatten,
+                single_package_flat=single_package_flat,
             )
 
             classNameWithoutPackage = classNameFull.replace(f"{pkg['name']}.", "")
@@ -316,6 +330,7 @@ def generate_classes_and_error_list(
                 relative_to_file=relative_to_file,
                 pkg_root=pkg_root,
                 flatten=flatten,
+                single_package_flat=single_package_flat,
             )
             output.write(
                 f"| [`{clsInfo['name']}`]({classLink}) | {docstring_summary(clsInfo['doc'])} |\n"

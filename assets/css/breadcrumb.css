@@ -1,0 +1,41 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  /* Figma sets the crumb 16px above the H1, not 32. */
+  margin-bottom: 1rem;
+  font-size: var(--type-crumb);
+  line-height: var(--lh-crumb);
+  color: var(--text-2);
+}
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+}
+.breadcrumb-item:not(:last-child):after {
+  content: "/";
+  margin: 0 0.5rem;
+  color: var(--text-3);
+}
+.breadcrumb-item a {
+  color: var(--union-color);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.breadcrumb-item a:hover {
+  color: var(--union-color);
+}
+.breadcrumb-item.active {
+  color: var(--text-color);
+}
+/* The last crumb is a link, so it can reveal the current page in the sidebar
+   (DOC-1352). It is still where you ARE rather than somewhere to go, so it keeps
+   the surrounding text colour instead of the link colour, exactly as it looked
+   when it was a span. The underline on hover is the only hint that it does
+   anything. */
+.breadcrumb-item a.breadcrumb-current,
+.breadcrumb-item a.breadcrumb-current:hover {
+  color: inherit;
+}
+.breadcrumb-item a.breadcrumb-current:hover {
+  text-decoration: underline;
+}

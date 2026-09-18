@@ -53,15 +53,15 @@ def check_all(config: dict) -> list[str]:
         if sdk.get("frozen", False):
             continue
         output_folder = sdk["output_folder"]
-        sdk_packages = REPO_ROOT / output_folder / "packages"
-        sdk_classes = REPO_ROOT / output_folder / "classes"
-
-        if not has_md_files(sdk_packages):
-            errors.append(f"SDK API packages: no .md files in {output_folder}/packages/")
-        # classes/ is a directory in no-flatten mode, a single .md file in flatten mode
-        sdk_classes_file = REPO_ROOT / output_folder / "classes.md"
-        if not sdk_classes.is_dir() and not sdk_classes_file.is_file():
-            errors.append(f"SDK API classes: missing {output_folder}/classes/ or {output_folder}/classes.md")
+        # DOC-1335: the generated tree is hoisted -- module dirs (or flatten-mode
+        # module files) sit directly under the section root; there are no
+        # `packages/` or `classes/` wrappers. "Content present" = the landing
+        # plus at least one more generated markdown file.
+        sdk_root = REPO_ROOT / output_folder
+        if not (sdk_root / "_index.md").is_file():
+            errors.append(f"SDK API docs: missing {output_folder}/_index.md")
+        elif not has_md_files(sdk_root):
+            errors.append(f"SDK API docs: no generated .md files under {output_folder}/")
 
         # Linkmap JSON
         gen_name = sdk["generator_name"]
@@ -108,7 +108,12 @@ def check_all(config: dict) -> list[str]:
         if not plugin_dir.is_dir():
             errors.append(f"Plugin '{name}': directory missing: {plugin_rel}/")
         elif not has_md_files(plugin_dir):
-            errors.append(f"Plugin '{name}': no .md files in {plugin_rel}/")
+            # DOC-1335: a single-package plugin with no classes generates ONLY its
+            # landing page (the module body is merged into _index.md), so an
+            # _index-only section is valid when that landing is substantive.
+            plugin_index = plugin_dir / "_index.md"
+            if not (plugin_index.is_file() and plugin_index.stat().st_size > 200):
+                errors.append(f"Plugin '{name}': no generated content in {plugin_rel}/")
 
         if check_plugin_linkmaps:
             # Linkmap JSON

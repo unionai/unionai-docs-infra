@@ -46,10 +46,13 @@
         {{- end -}}
         {{- $position := add $index 2 -}}
         <div class='{{- delimit $classes " " -}}' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            {{- /* The final crumb is the page you are already on. It is a link
+                   so it can answer "where am I?": clicking it reveals this page
+                   in the sidebar rather than reloading. See DOC-1352. */ -}}
             {{- if eq $sectionURL $url -}}
-                <span itemprop="name">{{- $title -}}</span>
+                <a href="{{- $url -}}" class="breadcrumb-current" data-nav-reveal itemprop="item"><span itemprop="name">{{- $title -}}</span></a>
             {{- else if eq $index (sub (len $sections) 1) -}}
-                <span itemprop="name">{{- $title -}}</span>
+                <a href="{{- $url -}}" class="breadcrumb-current" data-nav-reveal itemprop="item"><span itemprop="name">{{- $title -}}</span></a>
             {{- else if $hasIndex -}}
                 {{- $finalURL := $.Site.BaseURL -}}
                 {{- if and (strings.HasSuffix $finalURL "/") (strings.HasPrefix $publicSectionURL "/") -}}

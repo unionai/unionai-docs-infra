@@ -1,44 +1,20 @@
 {{- /* Returns true if the sidebar will render any nav items for the current
-     page+variant. Mirrors the iteration logic in partials/sidebar.html so the
-     two stay in sync.
+     page+variant. Mirrors partials/sidebar.html's full-tree-nav (DOC-1334):
+     the sidebar now always renders the WHOLE site tree -- every allowed
+     `top_menu` section is a root -- so "has items" means "any allowed root
+     exists for this variant", independent of the current page.
 
-     Used by baseof.html to add a `no-sidebar` body class when the sidebar
-     would otherwise render empty (e.g. top-level pages with no children, or
-     a secondary-topnav root page where no child is active).
+     Used by baseof.html to add a `no-sidebar` body class (pages with
+     sidebar_enabled: false, or a variant with no allowed sections).
 */ -}}
-{{- $current := . -}}
-{{- $sidebarEnabled := .Params.sidebar_enabled | default true -}}
 {{- $hasItems := false -}}
-
+{{- $sidebarEnabled := .Params.sidebar_enabled | default true -}}
 {{- if $sidebarEnabled -}}
-  {{- $secondaryTopnavActive := partial "secondary-topnav-active.html" $current -}}
-  {{- range .Site.Sections -}}
-    {{- if eq $current.Section .Section -}}
-      {{- if $secondaryTopnavActive -}}
-        {{- $activeChild := false -}}
-        {{- range .Pages.ByWeight -}}
-          {{- if and (not $activeChild) (hasPrefix $current.RelPermalink .RelPermalink) -}}
-            {{- $activeChild = . -}}
-          {{- end -}}
-        {{- end -}}
-        {{- if and $activeChild $activeChild.IsSection -}}
-          {{- range $activeChild.Pages.ByWeight -}}
-            {{- $access := partial "page-allowed.html" . -}}
-            {{- if $access.allowed -}}
-              {{- $hasItems = true -}}
-            {{- end -}}
-          {{- end -}}
-        {{- end -}}
-      {{- else -}}
-        {{- range .Pages.ByWeight -}}
-          {{- $access := partial "page-allowed.html" . -}}
-          {{- if $access.allowed -}}
-            {{- $hasItems = true -}}
-          {{- end -}}
-        {{- end -}}
-      {{- end -}}
+  {{- range .Site.Sections.ByWeight -}}
+    {{- $access := partial "page-allowed.html" . -}}
+    {{- if and $access.allowed .Params.top_menu -}}
+      {{- $hasItems = true -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
-
 {{- return $hasItems -}}

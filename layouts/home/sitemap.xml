@@ -1,13 +1,23 @@
+{{- /* Fallback sitemap template. layouts/sitemap.xml is the one Hugo currently resolves for
+       the sitemap output format; this kind-scoped copy is kept in lockstep so the two can
+       never disagree if the lookup order changes. Keep any edit applied to both. */ -}}
 {{- $pages := .Site.RegularPages -}}
 {{- $pages = where $pages "Type" "!=" "page" -}}
 {{- $pages = where $pages "Params.noindex" "!=" true -}}
 {{- $pages = where $pages "Params.hidden" "!=" true -}}
+{{- /* Scheme+host for fully-qualified <loc> values — the build's baseURL is path-only.
+       See partials/site-host.html and layouts/sitemap.xml. (DOC-1320) */ -}}
+{{- $host := partial "site-host.html" . -}}
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   {{- range $pages -}}
+  {{- /* Only pages this variant publishes — see layouts/sitemap.xml. (DOC-1320) */ -}}
+  {{- if (partial "page-allowed.html" .).variant -}}
+  {{- $loc := .Permalink | absURL -}}
+  {{- if not (hasPrefix $loc "http") -}}{{- $loc = printf "%s%s" $host $loc -}}{{- end -}}
   <url>
-    <loc>{{ .Permalink | absURL }}</loc>
+    <loc>{{ $loc }}</loc>
     {{- if .Lastmod -}}
     <lastmod>{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}</lastmod>
     {{- else if .Date -}}
@@ -16,5 +26,6 @@
     <changefreq>{{ if .Params.changefreq }}{{ .Params.changefreq }}{{ else }}monthly{{ end }}</changefreq>
     <priority>{{ if .Params.priority }}{{ .Params.priority }}{{ else }}{{ if eq .Kind "home" }}1.0{{ else if eq .Kind "section" }}0.8{{ else }}0.6{{ end }}{{ end }}</priority>
   </url>
+  {{- end -}}
   {{- end -}}
 </urlset>

@@ -1,66 +1,23 @@
-{{/*
-  llm-readable-list: Auto-generates a list of all available section.md bundles
-  for the current build variant, grouped by top-level section.
+{{- /* RETIRED (DOC-1509). Renders nothing, deliberately.
 
-  Finds all section pages with llm_readable_bundle: true in frontmatter,
-  filters by the current variant, groups by top-level section (in weight order),
-  and renders links with approximate token estimates. Nested bundles (e.g.
-  core-concepts/tasks inside core-concepts) render as nested sub-lists.
+       This listed the `_section.md` section bundles. Those are retired: the page
+       twin now carries a full `## Subpages` listing with each child's
+       description and headings, and both bundle URL forms 301 to the twin.
 
-  Usage: {{< llm-readable-list >}}
-*/}}
-{{- $variant := $.Site.Params.variant -}}
-{{- range .Site.Sections.ByWeight -}}
-  {{/* First pass: check if this top section has ANY bundles at any depth */}}
-  {{- $anyBundles := false -}}
-  {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
-    {{- $anyBundles = true -}}
-  {{- end -}}
-  {{- range .Sections.ByWeight -}}
-    {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
-      {{- $anyBundles = true -}}
-    {{- end -}}
-    {{- range .Sections.ByWeight -}}
-      {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
-        {{- $anyBundles = true -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-  {{- if $anyBundles }}
-<p><strong>{{ .Title }}:</strong></p>
-<ul>
-  {{/* Render top section itself if bundled */}}
-  {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) }}
-  <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)</li>
-  {{- end -}}
-  {{/* Render subsections */}}
-  {{- range .Sections.ByWeight -}}
-    {{- $subAllowed := partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
-    {{/* Collect bundled sub-subsections */}}
-    {{- $children := slice -}}
-    {{- range .Sections.ByWeight -}}
-      {{- if partial "llm-bundle-allowed.html" (dict "page" . "variant" $variant) -}}
-        {{- $children = $children | append . -}}
-      {{- end -}}
-    {{- end -}}
-    {{- if $subAllowed }}
-  <li>
-    <a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)
-      {{- if $children }}
-    <ul>
-        {{- range $children }}
-      <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)</li>
-        {{- end }}
-    </ul>
-      {{- end }}
-  </li>
-    {{- else if $children -}}
-      {{/* Subsection not bundled but has bundled children — render them at this level */}}
-      {{- range $children }}
-  <li><a href="{{ .Permalink }}section.md"><code>{{ .Title }}</code></a> (~{{ partial "llm-bundle-tokens.html" . }}K tokens)</li>
-      {{- end -}}
-    {{- end -}}
-  {{- end }}
-</ul>
-  {{- end -}}
-{{- end -}}
+       THE TEMPLATE CANNOT BE DELETED, ONLY EMPTIED.
+
+       Every served tree is built with the BRANCH TIP's infra, pinned version
+       tags included (DOC-1329). A tag is immutable, so its content cannot be
+       edited, and `api-reference/flyte-context.md` calls this shortcode in
+       v2.6.5.0, v2.6.6.0, v2.6.9.0 and v2.6.10.0. Deleting the template fails
+       the Hugo build of all four with "template for shortcode not found", which
+       is how this was discovered.
+
+       So it stays until no enumerated pin references it, which for `stable`
+       means until it has rolled out of the retention window. Same treatment as
+       `llm-bundle-note` (DOC-1358), which is stripped rather than deleted for
+       the same reason.
+
+       Emitting nothing is correct on a pinned tree too: the bundles those pages
+       advertised no longer exist, so a list of them would be a list of
+       redirects. */ -}}

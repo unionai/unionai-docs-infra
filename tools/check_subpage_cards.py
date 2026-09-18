@@ -1,0 +1,281 @@
+#!/usr/bin/env python3
+"""Fail when a section page with children has no subpage cards.
+
+WHY A CHECK RATHER THAN AUTOMATIC GENERATION (DOC-1509)
+
+Cards are placed by an explicit `{{< subpage-cards >}}` marker, not injected,
+because placement carries meaning: every section page that had cards put them
+below its intro prose, and the generated API reference must have none at all
+(its `## Directory` table already lists the same children).
+
+The one thing implicit generation genuinely bought was that a new section page
+could not ship with no navigation because its author did not know the
+convention. This check buys that back without taking the placement decision away
+from the author. Convention plus a gate -- the same shape as
+check_deleted_pages.py and check_generated_content.py, both of which exist
+because a convention on its own did not hold.
+
+SCOPE
+
+Authored content only. `content/api-reference/` is generated and deliberately
+has no cards; running this over it would fail on 70 pages by design.
+
+A section page that should not have cards at all is recorded in the baseline,
+with a reason. There is no parent-side front-matter opt-out: one file holds
+every exemption rather than two mechanisms doing the same job.
+
+A CHILD opts out of being carded with `card_enabled: false` in its own front
+matter. That suppresses its HTML card only; the markdown twin's `## Subpages`
+listing is always comprehensive.
+
+WHAT THIS DELIBERATELY DOES NOT CHECK: SIBLING ICON COLLISIONS
+
+A rule failing when two children of one section share an icon was added and then
+removed the same day. Do not re-add it without new evidence.
+
+It failed on 14 sets of existing content the first time a docs build carried it,
+and every one of them was defensible. The largest were 8 of the 12 pages under
+`deployment/selfmanaged` sharing `cloud` and 6 of the 11 under
+`integrations/agents` sharing `robot` -- pages that ARE all clouds, and ARE all
+agents. No carded page has all its cards identical, which is the case that would
+actually leave a reader with nothing to go on; the grids still carry 5 to 8
+distinct icons each. Peeter, 2026-08-30.
+
+Two other things the removal turned on. An icon is one of several signals on a
+card, next to the title and the description, so shared does not mean
+indistinguishable. And repetition is meaningful elsewhere by design: in the
+generated API reference every symbol page carries `braces` and every error page
+`exclamation-triangle` on purpose, and the only reason that corpus did not trip
+the rule too is that it has no cards for the rule to look at. A rule whose
+premise is wrong on the largest body of pages sharing its shape is the wrong
+rule, not an under-baselined one.
+
+It also could not be silenced: unlike the coverage rule below, it never consulted
+--baseline, so there was no ratchet and no way to land the docs bump that carried
+it. See infra#296 (added), infra#297 (removed).
+
+Usage:
+    check_subpage_cards.py [content-dir] [--exclude-dir PATH ...]
+"""
+
+import argparse
+import re
+import sys
+from pathlib import Path
+
+MARKER = re.compile(r"\{\{[<%]\s*subpage-cards\b")
+LINK_CARD = re.compile(r"\{\{[<%]\s*link-card\b")
+# A CHILD opts out of getting a card, with `card_enabled: false` in its own
+# front matter. There is no parent-side frontmatter opt-out: a page that should
+# not have cards at all is recorded in the baseline, so every exemption lives in
+# one file instead of two places.
+CARD_DISABLED = re.compile(r"^card_enabled:\s*false\s*$", re.MULTILINE)
+
+# A hand-authored card plus the body line under it.
+CARD_WITH_BODY = re.compile(
+    r"\{\{[<%]\s*link-card[^}]*target=\"([^\"]+)\"[^}]*[>%]\}\}\n([^\n]*)")
+
+# The child's own one-line description, which the card body should equal.
+DESCRIPTION = re.compile(r"^description:\s*(.*)$", re.MULTILINE)
+ICON = re.compile(r"^icon:\s*(.*)$", re.MULTILINE)
+
+# The whole shortcode tag, for reading its attributes.
+CARD_TAG = re.compile(r"\{\{[<%]\s*link-card([^}]*)[>%]\}\}")
+
+DEFAULT_EXCLUDES = ("api-reference", "__docs_builder__")
+
+
+def description_of(page_dir: Path, name: str) -> str:
+    """The `description` of the child served at `name`, or "" if it has none."""
+    for cand in (page_dir / name / "_index.md", page_dir / f"{name}.md"):
+        if cand.is_file():
+            m = DESCRIPTION.search(frontmatter(cand.read_text(encoding="utf-8")))
+            return m.group(1).strip().strip("'\"") if m else ""
+    return ""
+
+
+def _attr(blob: str, key: str) -> str:
+    m = re.search(rf'{key}="([^"]*)"', blob)
+    return m.group(1) if m else ""
+
+
+def card_disabled(page_dir: Path, name: str) -> bool:
+    """True when the child at `name` has opted out of being carded.
+
+    This suppresses its HTML card only. The markdown twin's `## Subpages`
+    listing stays comprehensive, because that is a machine index: a page missing
+    from it is undiscoverable rather than merely unadvertised.
+    """
+    for cand in (page_dir / name / "_index.md", page_dir / f"{name}.md"):
+        if cand.is_file():
+            return bool(CARD_DISABLED.search(frontmatter(cand.read_text(encoding="utf-8"))))
+    return False
+
+
+def icon_of(page_dir: Path, name: str) -> str:
+    for cand in (page_dir / name / "_index.md", page_dir / f"{name}.md"):
+        if cand.is_file():
+            m = ICON.search(frontmatter(cand.read_text(encoding="utf-8")))
+            return m.group(1).strip().strip("'\"") if m else ""
+    return ""
+
+
+def children_of(page_dir: Path) -> set:
+    """Immediate children Hugo will render, by the name each is served under.
+
+    A directory counts only when it holds an `_index.md`. Counting every
+    directory finds things Hugo never renders and the shortcode cannot card:
+    `_static` beside the site root, five `STUB.txt` placeholders under
+    `tutorials`, and an `images/` folder that is the ONLY subdirectory of
+    `tutorials/data-processing/micro-batching`. That last one made the page look
+    like a section with one child, so the check demanded cards for a grid that
+    would have been empty -- and the shortcode errors on an empty grid, so the
+    page could not have satisfied the check at all.
+    """
+    return ({p.name for p in page_dir.iterdir()
+             if p.is_dir() and (p / "_index.md").is_file()} |
+            {p.stem for p in page_dir.glob("*.md") if p.name != "_index.md"})
+
+
+def frontmatter(text: str) -> str:
+    if not text.startswith("---"):
+        return ""
+    end = text.find("\n---", 3)
+    return text[4:end] if end != -1 else ""
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("content", nargs="?", default="content", type=Path)
+    ap.add_argument("--exclude-dir", action="append", default=[])
+    ap.add_argument("--baseline", type=Path,
+                    help="file of paths that predate this gate, one per line")
+    args = ap.parse_args()
+
+    if not args.content.is_dir():
+        print(f"check-subpage-cards: no such directory: {args.content}", file=sys.stderr)
+        return 2
+
+    excludes = set(DEFAULT_EXCLUDES) | set(args.exclude_dir)
+
+    # Two entry shapes share one file: a bare path exempts a whole page from
+    # needing cards; `page -> child` exempts one child from needing a card on
+    # that page. Both shrink; neither should ever be added to silence a new
+    # finding.
+    baseline = set()
+    if args.baseline and args.baseline.is_file():
+        for line in args.baseline.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line:
+                baseline.add(line)
+
+    missing, legacy, grandfathered, ok = [], [], [], 0
+    uncovered, out_of_sync, iconless = [], [], []
+    for index in sorted(args.content.rglob("_index.md")):
+        rel = index.relative_to(args.content)
+        if rel.parts and rel.parts[0] in excludes:
+            continue
+        d = index.parent
+        # One source of truth for "what are this page's children". A second copy
+        # of the rule here is how micro-batching stayed flagged after
+        # children_of() was fixed: the helper said zero children, this said one.
+        if not children_of(d):
+            continue
+
+        text = index.read_text(encoding="utf-8")
+        if MARKER.search(text):
+            ok += 1
+        elif LINK_CARD.search(text):
+            legacy.append(str(rel))
+            # A hand-authored card set is a permanent, first-class choice, not a
+            # migration backlog. But it opts out of the two things generation
+            # would have done for free, so check them here instead: that the
+            # cards still cover every child, and that each still says what the
+            # child says about itself.
+            kids = children_of(d)
+            carded = set()
+            for target, body in CARD_WITH_BODY.findall(text):
+                name = target.strip("./").split("/")[0]
+                carded.add(name)
+                want = description_of(d, name)
+                if want and body.strip() and body.strip() != want:
+                    out_of_sync.append((str(rel), name, body.strip(), want))
+            for name in sorted(kids - carded):
+                if card_disabled(d, name):
+                    continue
+                if f"{rel} -> {name}" not in baseline:
+                    uncovered.append((str(rel), name))
+            for card in CARD_TAG.findall(text):
+                name = _attr(card, "target").strip("./").split("/")[0]
+                have, want = _attr(card, "icon"), icon_of(d, name)
+                if have and want and have != want:
+                    out_of_sync.append((str(rel), name, f"icon={have}", f"icon={want}"))
+                elif not have and want:
+                    iconless.append((str(rel), name, want))
+        elif str(rel) in baseline:
+            grandfathered.append(str(rel))
+        else:
+            missing.append(str(rel))
+
+    total = ok + len(legacy) + len(grandfathered) + len(missing)
+    print(f"check-subpage-cards: {total} section page(s) with children "
+          f"({ok} with cards"
+          + (f", {len(legacy)} hand-authored" if legacy else "")
+          + (f", {len(grandfathered)} in the baseline" if grandfathered else "") + ")")
+
+    if iconless:
+        print("")
+        print(f"NOTE: {len(iconless)} hand-authored card(s) have no icon, but the page")
+        print("      they point at has one in its front matter. The card renders")
+        print("      without it. Adding icon=\"...\" to the card would show it.")
+        for rel, name, want in iconless[:12]:
+            print(f"  {rel} -> {name}  (page has icon: {want})")
+        if len(iconless) > 12:
+            print(f"  ... and {len(iconless) - 12} more")
+
+    if not missing and not uncovered and not out_of_sync:
+        print("check-subpage-cards: OK")
+        return 0
+
+    if out_of_sync:
+        print("")
+        print(f"FATAL: {len(out_of_sync)} hand-authored card(s) disagree with the page they")
+        print("       point at. A reader is told one thing on the landing page and")
+        print("       another on the page itself, and nothing else would catch it.")
+        print("")
+        for rel, name, have, want in out_of_sync:
+            print(f"  {rel} -> {name}")
+            print(f"      card: {have}")
+            print(f"      page: {want}")
+        print("")
+
+    if uncovered:
+        print("")
+        print(f"FATAL: {len(uncovered)} child page(s) have no card on their parent.")
+        print("       A hand-authored card set does not grow by itself, so a page added")
+        print("       later is reachable only from the sidebar.")
+        print("")
+        for rel, name in uncovered:
+            print(f"  {rel} -> {name}")
+        print("")
+
+    if not missing:
+        return 1
+
+    print("")
+    print(f"FATAL: {len(missing)} section page(s) with children have no subpage cards.")
+    print("       A reader landing there gets no way forward except the sidebar.")
+    print("")
+    print("       Add {{< subpage-cards >}} where the cards belong -- usually after")
+    print("       the intro prose, not at the top. If this page genuinely should not")
+    print("       have them, add it to the baseline file with a reason.")
+    print("")
+    for p in missing:
+        print(f"  {p}")
+    print("")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

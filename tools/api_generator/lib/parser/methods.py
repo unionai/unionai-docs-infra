@@ -1,3 +1,4 @@
+import enum
 import inspect
 import re
 from functools import cached_property
@@ -9,12 +10,44 @@ from lib.ptypes import MethodInfo, PropertyInfo, VariableInfo, FrameworkType, Pa
 _OBJECT_REPR_RE = re.compile(r"<([\w.]+)\s+object\s+at\s+0x[0-9a-fA-F]+>")
 # Pattern: <module 'some.module' from '/path/to/file.py'>
 _MODULE_REPR_RE = re.compile(r"<module '([\w.]+)' from '[^']+'>")
+# A memory address surviving into a repr makes the value unreproducible.
+_ADDRESS_RE = re.compile(r"0x[0-9a-fA-F]{6,}")
 
 
 def _sanitize_type_str(s: str) -> str:
     """Replace object/module repr strings (with memory addresses or paths) with just the name."""
     s = _MODULE_REPR_RE.sub(r"\1", s)
     return _OBJECT_REPR_RE.sub(r"\1", s)
+
+
+def format_default(value: Any) -> str:
+    """Render a parameter default the way it would be written in source.
+
+    `repr` rather than `str`, so a string default renders as `"flyte-agent"`
+    and not as bare `flyte-agent`, which would not be valid Python in the
+    rendered signature. A value whose repr carries a memory address or spans
+    lines is not reproducible, so it renders as `...`.
+    """
+    if isinstance(value, enum.Enum):
+        return f"{type(value).__name__}.{value.name}"
+    name = getattr(value, "__name__", None)
+    if name and name != "<lambda>" and (
+        inspect.isfunction(value)
+        or inspect.ismethod(value)
+        or inspect.isbuiltin(value)
+    ):
+        # `<function _default_call_llm at 0x...>` is an address, not a default.
+        return name
+    try:
+        text = repr(value)
+    except Exception:
+        return "..."
+    if text.startswith("<class '") and text.endswith("'>"):
+        return text[8:-2]
+    text = _sanitize_type_str(text)
+    if _ADDRESS_RE.search(text) or "\n" in text:
+        return "..."
+    return text
 
 
 def parse_method(
@@ -86,8 +119,8 @@ def do_parse_method(
             ParamInfo(
                 name=param.name,
                 default=(
-                    str(param.default)
-                    if param.default != inspect.Parameter.empty
+                    format_default(param.default)
+                    if param.default is not inspect.Parameter.empty
                     else None
                 ),
                 kind=str(param.kind),

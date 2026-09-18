@@ -1,0 +1,23 @@
+{
+  "attributesForFaceting": [
+    "filterOnly(version)",
+    "filterOnly(variant)",
+    "category"
+  ],
+  "searchableAttributes": [
+    "title",
+    "text"
+  ],
+  "attributesToRetrieve": [
+    "url",
+    "title",
+    "text",
+    "part",
+    "parts",
+    "version",
+    "variant",
+    "category"
+  ],
+  "attributesToSnippet": [],
+  "advancedSyntax": true
+}
