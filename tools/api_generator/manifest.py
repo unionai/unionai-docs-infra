@@ -264,6 +264,18 @@ def _versions_toml_tags() -> list[str]:
     return tags
 
 
+def _versions_toml_stable() -> str | None:
+    """The `stable` tag versions.toml names, or None."""
+    if not VERSIONS_FILE.exists():
+        return None
+    try:
+        with open(VERSIONS_FILE, "rb") as f:
+            stable = tomllib.load(f).get("stable")
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    return str(stable) if stable else None
+
+
 def _assert_tags_visible(sdk_version: str, zs: list[int]) -> None:
     """Refuse to compute a cut when the tag read cannot be trusted.
 
@@ -284,6 +296,15 @@ def _assert_tags_visible(sdk_version: str, zs: list[int]) -> None:
     missing-tag answer happened to be CORRECT (flytekit 1.16.28 really was a new
     triple, so z=0 was right). Getting the flag onto all four is the fix; this is what
     makes the fifth call site fail loudly instead of silently. (docs#1598, DOC-1556.)
+
+    One tag is allowed to be missing: a `stable` that is the NEXT cut the visible tags
+    imply (z=0 on a new triple, max+1 otherwise). That is a promotion written but not
+    yet minted, and the one-merge flow always passes through it: the regen fold runs
+    `--promote` then `--write` in one job, and after that PR merges build-and-deploy's
+    cut-docs-version.sh runs `--check` against a versions.toml naming a tag it is
+    about to create. Treating it as missing broke both. The production failure is
+    still caught: a shallow read of a triple cut to .3 sees next=.0, which is not
+    stable=.3, so it still exits.
     """
     prefix = f"v{sdk_version}."
     expected = sorted(
@@ -291,6 +312,11 @@ def _assert_tags_visible(sdk_version: str, zs: list[int]) -> None:
         if t.startswith(prefix) and t[len(prefix):].isdigit()
     )
     missing = [z for z in expected if z not in zs]
+    stable = _versions_toml_stable()
+    if stable and stable.startswith(prefix) and stable[len(prefix):].isdigit():
+        pending = int(stable[len(prefix):])
+        if pending in missing and pending == (zs[-1] + 1 if zs else 0):
+            missing.remove(pending)
     if not missing:
         return
     named = ", ".join(f"{prefix}{z}" for z in missing)
