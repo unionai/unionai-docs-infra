@@ -536,8 +536,21 @@
   function indexSelectables() {
     // across BOTH hosts, so the Ask AI row is reachable by keyboard
     selectables = Array.prototype.slice.call(el.dropdown.querySelectorAll('.DocSearch-Hit a'));
-    if (selectedIndex >= selectables.length) selectedIndex = 0;
+    selectedIndex = defaultIndex();
     paintSelection();
+  }
+
+  // Enter on a fresh query opens the top keyword hit, not Ask AI. The Ask AI
+  // row renders above the hits, so defaulting to index 0 sent every Enter to
+  // Ask AI as a question -- search appeared to work only by clicking, and when
+  // Ask AI was over quota Enter produced nothing but a chat error (DOC-1561).
+  // Ask AI stays one arrow key away, and is the default only when there are
+  // no hits to open.
+  function defaultIndex() {
+    for (var i = 0; i < selectables.length; i++) {
+      if (selectables[i].dataset.askai == null) return i;
+    }
+    return 0;
   }
 
   function paintSelection() {
