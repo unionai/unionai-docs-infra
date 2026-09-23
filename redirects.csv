@@ -3,7 +3,7 @@ docs.union.ai/_downloads/c74194e5d55278497e27584eb0b3259d/public-key.txt,https:/
 docs.union.ai/administration,https://www.union.ai/docs/v2/union/user-guide/user-management,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/building-workflows,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/building-workflows/launch-plans,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts/runs-and-actions,301,TRUE,TRUE,TRUE,TRUE
-docs.union.ai/building-workflows/launch-plans/triggers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,301,TRUE,TRUE,TRUE,TRUE
+docs.union.ai/building-workflows/launch-plans/triggers,https://www.union.ai/docs/v2/union/user-guide/triggers,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/building-workflows/tasks,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts/tasks,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/building-workflows/tasks/task-software-environment/environment-variables,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts/task-environment,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/building-workflows/tasks/task-software-environment/imagespec,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/container-images,301,TRUE,TRUE,TRUE,TRUE
@@ -125,8 +125,8 @@ docs.union.ai/data-plane-setup,https://www.union.ai/docs/v2/union/deployment,301
 docs.union.ai/developing-workflows,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/accelerated-datasets,https://www.union.ai/docs/v2/union/user-guide/run-scaling/data-flow,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/artifacts,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts/runs-and-actions,301,TRUE,TRUE,TRUE,TRUE
-docs.union.ai/developing-workflows/artifacts/connecting-workflows-with-artifact-event-triggers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,301,TRUE,TRUE,TRUE,TRUE
-docs.union.ai/developing-workflows/artifacts/connecting-workflows-with-triggers-via-artifact-events,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,301,TRUE,TRUE,TRUE,TRUE
+docs.union.ai/developing-workflows/artifacts/connecting-workflows-with-artifact-event-triggers,https://www.union.ai/docs/v2/union/user-guide/triggers,301,TRUE,TRUE,TRUE,TRUE
+docs.union.ai/developing-workflows/artifacts/connecting-workflows-with-triggers-via-artifact-events,https://www.union.ai/docs/v2/union/user-guide/triggers,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/artifacts/consuming-artifacts-in-workflows,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts/runs-and-actions,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/artifacts/declaring-artifacts,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts/runs-and-actions,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/artifacts/materializing-artifacts,https://www.union.ai/docs/v2/union/user-guide/get-started/core-concepts/runs-and-actions,301,TRUE,TRUE,TRUE,TRUE
@@ -143,7 +143,7 @@ docs.union.ai/developing-workflows/registering-workflows,https://www.union.ai/do
 docs.union.ai/developing-workflows/setting-up-ci-cd-deployment,https://www.union.ai/docs/v2/union/user-guide/project-patterns/cicd,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/spot-instances,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/interruptible-tasks-and-queues,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/task-execution-context,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/container-images,301,TRUE,TRUE,TRUE,TRUE
-docs.union.ai/developing-workflows/triggers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,301,TRUE,TRUE,TRUE,TRUE
+docs.union.ai/developing-workflows/triggers,https://www.union.ai/docs/v2/union/user-guide/triggers,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/developing-workflows/unionremote,https://www.union.ai/docs/v2/union/user-guide/get-started/run-modes/running-remote,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/development-cycle,https://www.union.ai/docs/v2/union/user-guide/get-started,301,TRUE,TRUE,TRUE,TRUE
 docs.union.ai/development-cycle/interactive-tasks,https://www.union.ai/docs/v2/union/user-guide/tasks/task-programming/remote-tasks,301,TRUE,TRUE,TRUE,TRUE
@@ -1161,7 +1161,7 @@ www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/configure_
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/configure_use_gpus,https://www.union.ai/docs/v2/flyte/user-guide/tasks/task-configuration/resources/,301,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/customizing_resources,https://www.union.ai/docs/v2/flyte/user-guide/tasks/task-configuration/resources/,301,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/lp_notifications,https://www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/flyte.notify/notification/,301,FALSE,TRUE,TRUE,FALSE
-www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/lp_schedules,https://www.union.ai/docs/v2/flyte/user-guide/tasks/task-configuration/triggers/,301,FALSE,TRUE,TRUE,FALSE
+www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/lp_schedules,https://www.union.ai/docs/v2/flyte/user-guide/triggers/,301,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/reference_launch_plan,https://www.union.ai/docs/v2/flyte/user-guide/tasks/task-programming/remote-tasks/,301,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/reference_task,https://www.union.ai/docs/v2/flyte/user-guide/tasks/task-programming/remote-tasks/,301,FALSE,TRUE,TRUE,FALSE
 www.union.ai/_r_/flyte/en/latest/flytesnacks/examples/productionizing/spot_instances,https://www.union.ai/docs/v2/flyte/user-guide/tasks/task-configuration/interruptible-tasks-and-queues/,301,FALSE,TRUE,TRUE,FALSE
@@ -5505,8 +5505,8 @@ www.union.ai/docs/v2/byoc/user-guide/task-configuration/secrets,https://www.unio
 www.union.ai/docs/v2/byoc/user-guide/task-configuration/secrets/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/secrets,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-configuration/task-plugins,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/task-plugins,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-configuration/task-plugins/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/task-plugins,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/task-configuration/triggers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/task-configuration/triggers/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/task-configuration/triggers,https://www.union.ai/docs/v2/union/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/task-configuration/triggers/,https://www.union.ai/docs/v2/union/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-deployment,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-deployment/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/task-deployment/deploy-command-options,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment/deploy-command-options,302,TRUE,FALSE,TRUE,TRUE
@@ -7083,8 +7083,8 @@ www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/secrets,https://w
 www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/secrets/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/secrets,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/task-plugins,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/task-plugins,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/task-plugins/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/task-plugins,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/triggers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/triggers/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/triggers,https://www.union.ai/docs/v2/union/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/task-configuration/triggers/,https://www.union.ai/docs/v2/union/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-deployment,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-deployment/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/task-deployment/deploy-command-options,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment/deploy-command-options,302,TRUE,FALSE,TRUE,TRUE
@@ -7646,7 +7646,7 @@ www.union.ai/docs/v2/serverless/user-guide/task-configuration/retries-and-timeou
 www.union.ai/docs/v2/serverless/user-guide/task-configuration/reusable-containers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/reusable-containers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/task-configuration/secrets,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/secrets,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/task-configuration/task-plugins,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/task-plugins,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/serverless/user-guide/task-configuration/triggers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/serverless/user-guide/task-configuration/triggers,https://www.union.ai/docs/v2/union/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/task-deployment,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/task-deployment/deploy-command-options,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment/deploy-command-options,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/task-deployment/deployment-patterns,https://www.union.ai/docs/v2/union/user-guide/tasks/task-deployment/deployment-patterns,302,TRUE,FALSE,TRUE,TRUE
@@ -8690,9 +8690,9 @@ docs.union.ai/byoc/guide/core-concepts/tasks/task-hardware-environment/,https://
 docs.union.ai/serverless/core-concepts/tasks/task-hardware-environment/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/resources/,302,TRUE,TRUE,TRUE,FALSE
 docs.union.ai/serverless/guide/core-concepts/tasks/task-hardware-environment/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/resources/,302,TRUE,TRUE,TRUE,FALSE
 docs.union.ai/core-concepts/tasks/task-hardware-environment/accelerators,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/resources/,302,TRUE,TRUE,TRUE,FALSE
-docs.union.ai/serverless/guide/core-concepts/launch-plans,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
-docs.union.ai/byoc/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
-docs.union.ai/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/serverless/guide/core-concepts/launch-plans,https://www.union.ai/docs/v2/union/user-guide/triggers/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/byoc/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/triggers/,302,TRUE,TRUE,TRUE,FALSE
+docs.union.ai/core-concepts/launch-plans/reactive-workflows,https://www.union.ai/docs/v2/union/user-guide/triggers/,302,TRUE,TRUE,TRUE,FALSE
 docs.union.ai/serverless/guide/core-concepts/artifacts/viewing-artifacts,https://www.union.ai/docs/v2/union/user-guide/,302,TRUE,TRUE,TRUE,FALSE
 www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte.io/dataframedecoder/,https://www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/flyte.io.extend/dataframedecoder/,301,TRUE,TRUE,TRUE,FALSE
 www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte.io/dataframeencoder,https://www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/flyte.io.extend/dataframeencoder/,301,TRUE,TRUE,TRUE,FALSE
@@ -8804,3 +8804,9 @@ www.union.ai/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius,https://www
 www.union.ai/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/infrastructure-recommendations/nebius,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius/deploy-dataplane,https://www.union.ai/docs/v2/union/deployment/selfmanaged/deploy/nebius,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/selfmanaged/selfmanaged-nebius/deploy-dataplane/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/deploy/nebius,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/tasks/task-configuration/triggers,https://www.union.ai/docs/v2/flyte/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/tasks/task-configuration/triggers/,https://www.union.ai/docs/v2/flyte/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers,https://www.union.ai/docs/v2/union/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/triggers/,https://www.union.ai/docs/v2/union/user-guide/triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/artifacts/artifact-triggers,https://www.union.ai/docs/v2/union/user-guide/triggers/artifact-triggers,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/artifacts/artifact-triggers/,https://www.union.ai/docs/v2/union/user-guide/triggers/artifact-triggers,302,TRUE,FALSE,TRUE,TRUE

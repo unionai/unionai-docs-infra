@@ -2353,7 +2353,7 @@
       "q": "trigger",
       "ideal": {
         "guide": [
-          "/docs/v2/union/user-guide/tasks/task-configuration/triggers/",
+          "/docs/v2/union/user-guide/triggers/",
           "/docs/v2/union/user-guide/apps/native-app-integrations/flyte-webhook/"
         ],
         "reference": [
@@ -2367,7 +2367,7 @@
       "candidates": {
         "guide": [
           {
-            "url": "/docs/v2/union/user-guide/tasks/task-configuration/triggers/",
+            "url": "/docs/v2/union/user-guide/triggers/",
             "title": "Triggers",
             "score": 152,
             "why": [
@@ -3964,7 +3964,7 @@
             ]
           },
           {
-            "url": "/docs/v2/union/user-guide/tasks/task-configuration/triggers/",
+            "url": "/docs/v2/union/user-guide/triggers/",
             "title": "Triggers",
             "score": 57,
             "why": [
