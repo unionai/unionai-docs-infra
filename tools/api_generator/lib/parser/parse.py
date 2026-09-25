@@ -13,7 +13,7 @@ from lib.parser.packages import (
 from lib.ptypes import ParsedInfo
 
 
-def parse(package: str, all_only: bool = False) -> ParsedInfo:
+def parse(package: str, all_only: bool = False, subpackages: bool = False) -> ParsedInfo:
     # Clear any previously skipped modules
     clear_skipped_modules()
 
@@ -27,7 +27,7 @@ def parse(package: str, all_only: bool = False) -> ParsedInfo:
         exit(1)
 
     if all_only:
-        pkgAndMods = get_all_only(package)
+        pkgAndMods = get_all_only(package, subpackages=subpackages)
     else:
         pkgAndMods = get_subpackages(package)
 

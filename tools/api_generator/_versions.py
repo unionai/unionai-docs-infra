@@ -27,6 +27,33 @@ def extract_frontmatter_version(version_file: Path) -> str | None:
     return None
 
 
+def extract_frontmatter_map(version_file: Path, key: str) -> dict[str, str]:
+    """Extract a one-level ``key:`` mapping from a page's Hugo YAML frontmatter.
+
+    Reads the indented ``name: value`` lines under ``key:``, e.g. the
+    ``plugin_versions:`` block the CLI generator writes. Missing file, missing
+    frontmatter or missing key all return an empty dict.
+    """
+    if not version_file.exists():
+        return {}
+    m = re.match(r"^---\s*\n(.*?)\n---", version_file.read_text(), re.DOTALL)
+    if not m:
+        return {}
+    out: dict[str, str] = {}
+    inside = False
+    for line in m.group(1).splitlines():
+        if line.startswith(f"{key}:"):
+            inside = True
+            continue
+        if inside:
+            if not line.startswith((" ", "\t")):
+                break
+            name, sep, value = line.strip().partition(":")
+            if sep:
+                out[name.strip()] = value.strip()
+    return out
+
+
 def pypi_version_exists(package: str, version: str) -> bool | None:
     """Whether ``version`` is a published (non-yanked) release of ``package`` on PyPI.
 
