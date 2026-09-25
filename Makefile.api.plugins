@@ -40,6 +40,13 @@ WEIGHT_FLAG := $(if $(WEIGHT),--weight $(WEIGHT),)
 # -- unsigned, which gates every page out of every variant. (DOC-1394)
 PAGE_VARIANTS ?= +flyte +union
 
+# Document public subpackages that declare their own __all__ (e.g.
+# flyteplugins.union.factory), not just the top-level __all__. Read here from the
+# plugin's api-packages.toml entry rather than passed in, so every caller --
+# check_versions.py, Makefile.api.sdk's loop, a direct call -- gets it without
+# threading one more variable through each (the DOC-1394/1404 failure mode).
+SUBPACKAGES_FLAG := $(if $(filter true,$(shell $(UV) unionai-docs-infra/tools/api_config.py plugin_by_name '${NAME}' document_subpackages 2>/dev/null)),--subpackages,)
+
 .PHONY: all
 all: check_vars setup-venv parser generate clean-venv
 
@@ -87,9 +94,9 @@ clean_api_data:
 .PHONY: parser
 parser: check_vars clean_api_data
 ifeq ($(SKIP_VENV_SETUP),false)
-	$(PLUGIN_VENV_DIR)/bin/python unionai-docs-infra/tools/api_generator/parser --package ${PLUGIN} --output ${API_DATA} --all-only
+	$(PLUGIN_VENV_DIR)/bin/python unionai-docs-infra/tools/api_generator/parser --package ${PLUGIN} --output ${API_DATA} --all-only $(SUBPACKAGES_FLAG)
 else
-	unionai-docs-infra/tools/api_generator/parser --package ${PLUGIN} --output ${API_DATA} --all-only
+	unionai-docs-infra/tools/api_generator/parser --package ${PLUGIN} --output ${API_DATA} --all-only $(SUBPACKAGES_FLAG)
 endif
 
 .PHONY: generate

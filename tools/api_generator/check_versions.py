@@ -29,10 +29,11 @@ except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _versions import extract_frontmatter_version, get_pypi_latest
+from _versions import extract_frontmatter_map, extract_frontmatter_version, get_pypi_latest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _repo import get_repo_root
+from api_venv_setup import CLI_EXTRA_PACKAGES
 
 REPO_ROOT = get_repo_root()
 CONFIG_FILE = REPO_ROOT / "api-packages.toml"
@@ -104,6 +105,7 @@ def check_all(config: dict) -> list[dict]:
     for cli in config.get("clis", []):
         if cli.get("frozen", False):
             continue
+        output_path = None
         if "output_file" in cli:
             output_path = REPO_ROOT / cli["output_file"]
             content_missing = not output_path.is_file()
@@ -117,13 +119,31 @@ def check_all(config: dict) -> list[dict]:
             committed = None
         package = cli.get("package", cli["name"])
         latest = get_pypi_latest(package) if package else None
+        # Plugins that add commands to this CLI (e.g. flyteplugins-union adds
+        # `flyte factory`). A plugin release changes the page while the CLI's own
+        # version stays put, so each is checked against the version the page
+        # records in its `plugin_versions:` frontmatter block.
+        recorded = extract_frontmatter_map(output_path, "plugin_versions") if output_path else {}
+        plugins = []
+        for plugin_pkg in CLI_EXTRA_PACKAGES.get(cli["name"], []):
+            p_committed = recorded.get(plugin_pkg)
+            p_latest = get_pypi_latest(plugin_pkg)
+            plugins.append({
+                "package": plugin_pkg,
+                "committed": p_committed,
+                "latest": p_latest,
+                "outdated": _is_outdated(p_committed, p_latest),
+            })
         results.append({
             "type": "cli",
             "name": cli["name"],
             "package": package,
             "committed": committed,
             "latest": latest,
-            "outdated": content_missing or _is_outdated(committed, latest),
+            "plugins": plugins,
+            "outdated": content_missing
+            or _is_outdated(committed, latest)
+            or any(p["outdated"] for p in plugins),
         })
 
     return results
@@ -149,6 +169,12 @@ def print_results(results: list[dict]) -> None:
         latest = r["latest"] or "unknown"
         if r["type"] == "cli":
             print(f"  {r['name']}-cli: committed={committed} latest={latest} [{status}]")
+            for p in r.get("plugins", []):
+                p_status = "OUTDATED" if p["outdated"] else "up-to-date"
+                print(
+                    f"    via {p['package']}: committed={p['committed'] or 'not recorded'} "
+                    f"latest={p['latest'] or 'unknown'} [{p_status}]"
+                )
         else:
             print(f"  {r['package']}: committed={committed} latest={latest} [{status}]")
 

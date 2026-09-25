@@ -18,9 +18,14 @@ def main():
         action="store_true",
         help="Only parse symbols in __all__, skip subpackage discovery",
     )
+    parser.add_argument(
+        "--subpackages",
+        action="store_true",
+        help="With --all-only, also parse public submodules that declare their own __all__",
+    )
     args = parser.parse_args()
 
-    result = parse(args.package, all_only=args.all_only)
+    result = parse(args.package, all_only=args.all_only, subpackages=args.subpackages)
 
     yaml_output = yaml.dump(
         result,

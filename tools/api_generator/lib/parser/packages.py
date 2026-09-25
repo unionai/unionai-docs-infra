@@ -60,18 +60,28 @@ def get_package(name: str) -> Optional[Tuple[PackageInfo, ModuleType]]:
     return pkg, package
 
 
-def get_all_only(package_name: str) -> List[Tuple[PackageInfo, ModuleType]]:
+def get_all_only(package_name: str, subpackages: bool = False) -> List[Tuple[PackageInfo, ModuleType]]:
     """
-    Only process symbols explicitly exported in the package's __all__.
+    Only process symbols explicitly exported through an __all__.
 
-    This avoids walking all submodules and only documents the public API
-    as defined by __all__.
+    The top-level package is documented by its __all__. With ``subpackages``,
+    a public submodule or subpackage that declares its own __all__ (e.g.
+    ``flyteplugins.union.factory``) is documented the same way, as a namespace
+    of its own. One that declares none (e.g. a ``cli`` package of Click
+    commands) is skipped, with a warning so the omission is visible.
+
+    ``subpackages`` is opt-in per plugin (``document_subpackages`` in
+    api-packages.toml) because a subpackage ``__all__`` is not always a public
+    API: flyteplugins-codegen uses them to organize internals the top level
+    re-exports selectively.
 
     Args:
         package_name: Name of the package to process
+        subpackages: Also document public submodules that declare __all__
 
     Returns:
-        List containing just the top-level package (members filtered by __all__)
+        The top-level package, plus (with ``subpackages``) every public
+        submodule declaring __all__, each filtered by its own __all__
     """
     pkg_mod = get_package(package_name)
     if pkg_mod is None:
@@ -88,7 +98,29 @@ def get_all_only(package_name: str) -> List[Tuple[PackageInfo, ModuleType]]:
         return get_subpackages(package_name)
 
     print(f"Using __all__ exports only: {all_exports}", file=stderr)
-    return [(pkgInfo, pkg)]
+    result = [(pkgInfo, pkg)]
+    if not subpackages:
+        return result
+
+    for _, name, _ in pkgutil.walk_packages(pkg.__path__, pkgInfo["name"] + ".", onerror=_walk_onerror):
+        if any(p.startswith("_") for p in name.split(".")):
+            continue
+        sub_mod = get_package(name)
+        if sub_mod is None:
+            continue
+        subInfo, sub = sub_mod
+        sub_exports = getattr(sub, "__all__", None)
+        if sub_exports is None:
+            if hasattr(sub, "__path__"):
+                print(
+                    f"\033[93m[WARNING]:\033[0m {name} has no __all__, not documented",
+                    file=stderr,
+                )
+            continue
+        print(f"Using __all__ exports of {name}: {sub_exports}", file=stderr)
+        result.append((subInfo, sub))
+
+    return result
 
 
 def _walk_onerror(name: str) -> None:

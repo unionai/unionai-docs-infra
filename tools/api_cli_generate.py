@@ -30,6 +30,7 @@ except ModuleNotFoundError:
 
 import cli_render
 from _repo import INFRA_ROOT, get_repo_root
+from api_venv_setup import CLI_EXTRA_PACKAGES
 
 REPO_ROOT = get_repo_root()
 CONFIG_FILE = REPO_ROOT / "api-packages.toml"
@@ -108,6 +109,36 @@ def _page_variants(gen_command: str) -> tuple[str | None, str]:
     return plugin_variants, all_variants
 
 
+def _installed_versions(python: Path, packages: list[str]) -> dict[str, str]:
+    """Versions of `packages` installed in the venv at `python`."""
+    versions = {}
+    for package in packages:
+        result = subprocess.run(
+            [str(python), "-c", f"from importlib.metadata import version; print(version({package!r}))"],
+            capture_output=True, text=True, cwd=REPO_ROOT,
+        )
+        if result.returncode != 0:
+            sys.exit(f"ERROR: {package} is not installed in {python}; cannot record its version.")
+        versions[package] = result.stdout.strip()
+    return versions
+
+
+def _stamp_plugin_versions(header: str, versions: dict[str, str]) -> str:
+    """Record the plugin versions a CLI page was generated with in its frontmatter.
+
+    A plugin's commands are part of the page, so a plugin release changes the page
+    even when the CLI's own package has not moved. check_versions.py reads this
+    `plugin_versions:` block to see that; `version:` alone cannot.
+    """
+    if not versions:
+        return header
+    m = re.match(r"^---\s*\n(.*?\n)---", header, re.DOTALL)
+    if not m:
+        sys.exit("ERROR: CLI include template has no frontmatter to record plugin versions in.")
+    block = "plugin_versions:\n" + "".join(f"  {k}: {v}\n" for k, v in sorted(versions.items()))
+    return header[: m.end(1)] + block + header[m.end(1):]
+
+
 def generate_python_cli(cli: dict, python: Path) -> None:
     """Generate CLI docs for a Python-based CLI."""
     include = cli["include"]
@@ -127,6 +158,7 @@ def generate_python_cli(cli: dict, python: Path) -> None:
     # Read include template and substitute version
     include_path = REPO_ROOT / include
     header = include_path.read_text().replace("%%VERSION%%", version)
+    header = _stamp_plugin_versions(header, _installed_versions(python, CLI_EXTRA_PACKAGES.get(cli["name"], [])))
 
     # Generate CLI docs
     gen_parts = shlex.split(gen_command)
