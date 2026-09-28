@@ -77,9 +77,15 @@
   --shadow-card: 0 1px 0 0 rgba(31, 35, 40, 0.04), 0 2px 4px rgba(0, 0, 0, 0.07);
   /* brand marks — each product's own colour, independent of the ACTIVE variant
      (the product toggle shows both at once, so these must not follow --accent).
-     The saturated dark-mode accents serve as the brand colours. */
+     Each is the colour of the product's own logo mark. */
   --brand-union: #FCB51D;
-  --brand-flyte: #c084fc;
+  /* Straight off static/images/icon-logo-flyte.svg, which fills on #6f2aef.
+     Was #c084fc -- violet-400, two steps lighter and 9 degrees bluer than the
+     logo. That is what made the banner and the Signup CTA read as lavender
+     rather than as Flyte, in BOTH modes: unlike --accent, this token has no
+     per-mode value, so light mode was rendering a pale band beside #7c3aed
+     links. One anchor colour now feeds the mark, the band and the CTA. */
+  --brand-flyte: #6f2aef;
   /* THE ACTIVE product's brand colour. --brand-union/-flyte above are each
      product's own mark, used where both appear at once (the product toggle
      shows both dots regardless of which variant you are reading). --brand is
@@ -292,8 +298,18 @@
   /* the active brand follows the variant — see --brand on :root */
   --brand: var(--brand-flyte);
   /* Variant changes the ACCENT ONLY — neutrals are variant-invariant per the
-     Union V2 spec. Light mode darkens the accent, as it does for Union. */
-  --accent: #7c3aed;
+     Union V2 spec. Union darkens its accent for light mode; Flyte instead sits
+     ON the logo colour here and lightens for dark, because the logo violet is
+     already dark enough to carry a white page. */
+  /* The logo violet, same as --brand-flyte. Was #7c3aed (violet-600), a near
+     neighbour at 5.70:1 on the page; the logo's own #6f2aef is 6.45:1, so
+     matching the mark exactly also buys contrast rather than spending it. */
+  --accent: #6f2aef;
+  /* Filled brand surfaces flip to white here. --on-brand is near-black on
+     :root because Union's brand is gold; #131108 on this violet is 2.93:1 and
+     unreadable, while white is 6.45:1. Declared per variant for the same
+     reason --brand is: the value belongs to the brand, not to the mode. */
+  --on-brand: #ffffff;
   --decor: #7652a2;
   --decor-soft: #c7b1dc;
   /* Re-declared, not inherited: these are computed on the element that declares
@@ -375,7 +391,15 @@
   /* Accent only. The purple background cast (--bg #050310, --bg-1 #100e18 and
      the row tints) is deliberately gone: neutrals are variant-invariant, so
      Flyte dark now shares Union dark's surfaces. Decision locked 2026-07-30. */
-  --accent: #c084fc;
+  /* The logo violet cannot be worn straight on a near-black page -- #6f2aef is
+     2.99:1 against --bg and fails AA for the links, sidebar and breadcrumbs
+     that read from --accent. So: the logo's hue (261deg) and saturation, lifted
+     in lightness until it clears AA -- 6.00:1, against 7.29:1 for the #c084fc
+     it replaces. Spending a little of that headroom is the point; #c084fc sat
+     at 270deg, visibly bluer and paler than the mark it was standing in for. */
+  --accent: #a476f9;
+  /* White on the brand fill -- see the note in the light-mode block. */
+  --on-brand: #ffffff;
   /* Re-declared, not inherited: these are computed on the element that declares
      them, so a copy on :root would resolve against the UNION accent and leak
      orange links into the Flyte variant. */
