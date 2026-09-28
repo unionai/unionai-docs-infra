@@ -492,7 +492,17 @@ header .toggle-sidebar {
    Darkening the brand instead keeps the hue, keeps --on-brand correct, and
    works for every variant/mode pair without a value table. Matches how the
    `button-link` shortcode handles its hover (phase 3b). */
-.signup-button:hover {
+.signup-button:hover,
+[data-theme="dark"] .signup-button:hover {
+  /* Hold the label on --on-brand through the hover. The generic `a:hover` rules
+     in base.css paint every link --union-color-dark / --union-color, and both
+     out-specify the resting `.signup-button` / `[data-theme="dark"]
+     .signup-button` colour ((0,2,1) vs (0,2,0)). In dark mode --union-color IS
+     the brand accent, so the label was hovering to the button's own fill:
+     #c084fc on #c084fc in Flyte (invisible) and #f5a623 on #FCB51D in Union
+     (barely legible). Reported with screenshots of both. Repeating the rule
+     under [data-theme="dark"] is what clears `[data-theme="dark"] a:hover`. */
+  color: var(--on-brand);
   filter: brightness(0.93);
 }
 

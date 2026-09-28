@@ -14,7 +14,6 @@ title = 'Union.ai Docs'
 
 [params]
 _merge = "deep"
-signup_link = "https://www.union.ai/pricing"
 docs_root = "https://www.union.ai/docs"
 # Site-level description for the homepage's structured data and meta tags. The homepage is a
 # redirect stub, so its front-matter description is "Redirect to User guide" — which was
@@ -55,6 +54,13 @@ custom_js = [
   "image-lightbox.js",
   "page-actions.js",
 ]
+
+# Target of the header "Signup" CTA. Per variant, because the two variants come
+# from different acquisition surfaces and each carries its own utm_source so the
+# signups can be attributed back to the docs variant they came from.
+[params.signup_link]
+flyte = "https://signup.hosted.unionai.cloud/sign-in?utm_source=flytedocs"
+union = "https://signup.hosted.unionai.cloud/sign-in?utm_source=uniondocs"
 
 [params.variant_weights]
 flyte = 2
