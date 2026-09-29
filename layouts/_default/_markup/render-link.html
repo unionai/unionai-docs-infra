@@ -1,3 +1,8 @@
-{{ $link := partial "rel-link.html" .Destination }}
-{{ $isExternal := or (hasPrefix $link "http://") (hasPrefix $link "https://") }}
+{{- $link := partial "rel-link.html" .Destination -}}
+{{- $isAbsolute := or (hasPrefix $link "http://") (hasPrefix $link "https://") -}}
+{{- /* Absolute links into our own docs (what the docs_home shortcode produces, in any
+       variant or version) stay in the same tab; only other sites open a new one. */ -}}
+{{- $docsRoot := site.Params.docs_root -}}
+{{- $isDocs := and $docsRoot (or (eq $link $docsRoot) (hasPrefix $link (printf "%s/" $docsRoot))) -}}
+{{- $isExternal := and $isAbsolute (not $isDocs) -}}
 <a href="{{ $link | safeURL }}"{{ if $isExternal }} target="_blank" rel="noopener noreferrer"{{ end }}>{{.Text | safeHTML }}</a>
