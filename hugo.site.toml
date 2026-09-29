@@ -59,8 +59,8 @@ custom_js = [
 # from different acquisition surfaces and each carries its own utm_source so the
 # signups can be attributed back to the docs variant they came from.
 [params.signup_link]
-flyte = "https://aws.amazon.com/marketplace/pp/prodview-66k3cmidsgv5o?utm_source=flytedocs"
-union = "https://aws.amazon.com/marketplace/pp/prodview-66k3cmidsgv5o?utm_source=uniondocs"
+flyte = "https://signup.hosted.unionai.cloud/sign-in?utm_source=flytedocs"
+union = "https://signup.hosted.unionai.cloud/sign-in?utm_source=uniondocs"
 
 [params.variant_weights]
 flyte = 2
