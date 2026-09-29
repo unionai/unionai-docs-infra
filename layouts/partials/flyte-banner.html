@@ -1,7 +1,11 @@
 <div class="flyte-banner">
-    <a href="/docs/v2/{{ .Site.Params.variant }}/user-guide/get-started/run-modes/running-devbox/" class="flyte-banner-link" style="will-change: width, height; height: 3rem;" >
+    <a href="/docs/v2/union/deployment/marketplace/" class="flyte-banner-link" style="will-change: width, height; height: 3rem;" >
         <div>
-            Try Flyte 2 locally with the devbox
+            {{- if eq .Site.Params.variant "flyte" }}
+            Try Flyte on Union.ai free for 30 days
+            {{- else }}
+            Try Union.ai free for 30 days
+            {{- end }}
         </div>
         <div class="flyte-banner-button">
             <div>
