@@ -160,14 +160,6 @@
           </div>
         </div>
         {{- end -}}
-        {{- if and (eq .Site.Params.variant "flyte") (eq .Site.Params.current_version "v2") -}}
-        <div class="flyte2-notice">
-          <sl-alert open variant="primary">
-            <sl-icon slot="icon" name="info-circle"></sl-icon>
-            <a href="https://www.union.ai/get-started" target="_blank">Try Flyte 2 for enterprise</a>, hosted on <a href="https://www.union.ai" target="_blank">Union.ai</a>
-          </sl-alert>
-        </div>
-        {{- end -}}
         <div class="breadcrumb-row">
           {{- partial "breadcrumb.html" . -}}
           {{- partial "page-actions.html" . -}}
