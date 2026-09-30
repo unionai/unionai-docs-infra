@@ -81,8 +81,10 @@
 {{- /* Share image for OG/Twitter unfurls and the JSON-LD logo. Must be raster: Slack, X,
        LinkedIn and Facebook ignore SVG og:image. Square logo, so twitter:card is "summary". */ -}}
 {{- $image := "" -}}
+{{- $imageAlt := "Union.ai logo" -}}
 {{- if eq $product_full_name "Flyte OSS" -}}
   {{- $image = printf "%s/images/og-image-flyte.png" (strings.TrimSuffix "/" .Site.BaseURL) -}}
+  {{- $imageAlt = "Flyte logo" -}}
 {{- else -}}
   {{- $image = printf "%s/images/og-image-union.png" (strings.TrimSuffix "/" .Site.BaseURL) -}}
 {{- end -}}
@@ -114,7 +116,7 @@
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="600">
 <meta property="og:image:height" content="600">
-<meta property="og:image:alt" content="{{ .Site.Title }}">
+<meta property="og:image:alt" content="{{ $imageAlt }}">
 <meta property="og:site_name" content="{{ .Site.Title }}">
 
 <!-- Twitter -->
