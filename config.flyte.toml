@@ -1,4 +1,5 @@
 baseURL = '/docs/flyte/'
+title = 'Flyte OSS Docs'
 
 [params]
 _merge = "deep"
