@@ -154,7 +154,7 @@ flyte = "icon-logo-flyte.svg"
 union = "icon-logo.svg"
 
 [params.key.favicon]
-flyte = "icon-logo-flyte.svg"
+flyte = "favicon-flyte.ico"
 union = "favicon.ico"
 
 # Please DO NOT add new keys without documenting them the contributing guide in the same PR.
