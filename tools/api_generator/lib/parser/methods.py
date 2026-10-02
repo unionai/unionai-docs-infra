@@ -4,6 +4,7 @@ import re
 from functools import cached_property
 from typing import Optional, Any
 from lib.parser.docstring import parse_docstring
+from lib.parser.visibility import public_signature
 from lib.ptypes import MethodInfo, PropertyInfo, VariableInfo, FrameworkType, ParamInfo
 
 # Pattern: <some.module.ClassName object at 0x7f...>
@@ -100,7 +101,7 @@ def do_parse_method(
         ]
         return_type = "None"
     else:
-        sig = inspect.signature(member)
+        sig = public_signature(inspect.signature(member))
         param_types = {
             name: (
                 param.annotation

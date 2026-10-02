@@ -12,6 +12,7 @@ from lib.parser.packages import get_package, should_include
 from lib.ptypes import ClassDetails, PackageInfo
 from lib.parser.methods import parse_method, parse_property, parse_variable
 from lib.parser.pydantic_utils import get_pydantic_excluded_members, is_pydantic_model
+from lib.parser.visibility import is_private_member
 from lib.parser.inheritance import is_foreign_member
 
 
@@ -36,6 +37,10 @@ def get_classes(source: PackageInfo, package: ModuleType) -> Dict[str, ClassDeta
     # Get all members of the package
     for name, obj in members:
         if not should_include(name, obj, package, isclass):
+            continue
+
+        # Public in code, but marked private in its docstring
+        if is_private_member(obj):
             continue
 
         path = f"{package_name}.{name}"
@@ -94,6 +99,10 @@ def get_class_details(class_path: str) -> Optional[ClassDetails]:
         for name, member in inspect.getmembers(cls):
             # Skip private members (except __init__)
             if name.startswith("_") and name != "__init__":
+                continue
+
+            # Skip members marked private in their docstring
+            if name != "__init__" and is_private_member(member):
                 continue
 
             # Skip Pydantic built-in members (model_validate, model_dump, model_extra, etc.)

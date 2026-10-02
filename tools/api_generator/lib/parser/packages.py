@@ -11,6 +11,7 @@ from lib.parser.methods import parse_method, parse_variable
 from lib.parser.synchronicity import is_synchronicity_method, parse_synchronicity_method
 from lib.parser.syncify import is_syncify_method, parse_syncify_method
 from lib.parser.callable import is_callable, parse_callable
+from lib.parser.visibility import is_private_member
 
 
 class SkippedModule:
@@ -185,6 +186,8 @@ def get_subpackages(package_name: str) -> List[Tuple[PackageInfo, ModuleType]]:
 def get_functions(info: PackageInfo, pkg: ModuleType) -> List[MethodInfo]:
     result = []
     for name, member in inspect.getmembers(pkg):
+        if is_private_member(member):
+            continue
         method_info = None
         if is_synchronicity_method(name, member):
             method_info = parse_synchronicity_method(name, member)
