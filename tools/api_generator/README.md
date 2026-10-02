@@ -173,6 +173,29 @@ You can specify notes and warnings in your documentation:
 > markdown block.
 ```
 
+### Keeping a public name out of the reference
+
+The generator documents what a package exports: its `__all__`, or failing that its
+names without a leading `_`. To keep a name that must stay public in code out of the
+API reference, add Sphinx autodoc's `:meta private:` field to its docstring. It works
+on a class, method, property or module function:
+
+```python
+@classmethod
+def schema_match(cls, incoming: dict) -> bool:
+    """Check if incoming schema matches File schema.
+
+    :meta private:
+    """
+```
+
+`:meta ...:` lines are never rendered. A docstring that opens with `Internal:` is also
+treated as private; that is flyte-sdk's earlier convention, honored until it switches
+to `:meta private:`.
+
+A parameter whose name starts with `_` (such as `with_runcontext(_tracker=...)`) is left
+out of the signature and the parameter table.
+
 ## Version manifest (`manifest.py`)
 
 `manifest.py` resolves the **docs-version manifest** and computes the version the

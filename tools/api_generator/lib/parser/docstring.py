@@ -4,6 +4,7 @@ import re
 from typing import TypedDict, Optional
 
 from lib.ptypes import ParamDict, ParamInfo
+from lib.parser.visibility import strip_meta_fields
 
 
 # Google-style section headers → internal section names
@@ -173,6 +174,9 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
     # Normalize indentation: handles docstrings where the first line is on
     # the same line as """ (no indent) but continuation lines are indented.
     docstring = inspect.cleandoc(docstring)
+
+    # Drop Sphinx `:meta ...:` directives (see lib/parser/visibility.py)
+    docstring = strip_meta_fields(docstring)
 
     # Pull a wrapper-borrowed body back to the base indentation so its
     # Args:/Returns: sections are visible to the section parser below.
