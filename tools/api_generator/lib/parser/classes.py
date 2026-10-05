@@ -8,7 +8,7 @@ from enum import Enum
 import yaml
 
 from lib.parser.docstring import parse_docstring
-from lib.parser.packages import get_package, should_include
+from lib.parser.packages import get_module_members, get_package, should_include
 from lib.ptypes import ClassDetails, PackageInfo
 from lib.parser.methods import parse_method, parse_property, parse_variable
 from lib.parser.pydantic_utils import get_pydantic_excluded_members, is_pydantic_model
@@ -32,7 +32,7 @@ def get_classes(source: PackageInfo, package: ModuleType) -> Dict[str, ClassDeta
 
     package_name = source["name"]
 
-    members = inspect.getmembers(package)
+    members = get_module_members(package)
 
     # Get all members of the package
     for name, obj in members:

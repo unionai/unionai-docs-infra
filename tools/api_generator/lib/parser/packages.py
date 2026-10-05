@@ -30,6 +30,29 @@ def get_skipped_modules() -> List[SkippedModule]:
     return _skipped_modules
 
 
+def get_module_members(pkg: ModuleType) -> List[Tuple[str, Any]]:
+    """Members of a module, including lazy exports named in its __all__.
+
+    `inspect.getmembers` lists only names already in the module's globals. A
+    package that resolves some exports on first use through a module-level
+    `__getattr__` (PEP 562) leaves those names out until they are accessed,
+    so they would silently drop out of the docs. Resolve every `__all__` name
+    explicitly as well.
+    """
+    members = dict(inspect.getmembers(pkg))
+    for name in getattr(pkg, "__all__", None) or []:
+        if name in members:
+            continue
+        try:
+            members[name] = getattr(pkg, name)
+        except Exception as e:
+            print(
+                f"\033[93m[WARNING]:\033[0m {pkg.__name__}.{name} is in __all__ but could not be resolved: {e}",
+                file=stderr,
+            )
+    return sorted(members.items())
+
+
 def clear_skipped_modules():
     """Clear the list of skipped modules."""
     global _skipped_modules
@@ -185,7 +208,7 @@ def get_subpackages(package_name: str) -> List[Tuple[PackageInfo, ModuleType]]:
 
 def get_functions(info: PackageInfo, pkg: ModuleType) -> List[MethodInfo]:
     result = []
-    for name, member in inspect.getmembers(pkg):
+    for name, member in get_module_members(pkg):
         if is_private_member(member):
             continue
         method_info = None
@@ -208,7 +231,7 @@ def is_variable(member: Any) -> bool:
 
 def get_variables(info, pkg) -> List[VariableInfo]:
     result = []
-    for name, member in inspect.getmembers(pkg):
+    for name, member in get_module_members(pkg):
         if not should_include(name, member, pkg, is_variable):
             continue
 
