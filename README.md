@@ -61,6 +61,7 @@ Deeper topic docs that this README deliberately does not duplicate:
   - [Updating the LLM docs](#updating-the-llm-docs)
 - [CI checks on pull requests](#ci-checks-on-pull-requests)
   - [Check API Docs](#check-api-docs-check-api-docs)
+  - [Check Plugin Registry](#check-plugin-registry-check-plugin-registry)
   - [Check Helm Docs](#check-helm-docs-check-helm-docs)
   - [Check Images](#check-images-check-images)
   - [Check Jupyter Notebooks](#check-jupyter-notebooks-check-jupyter)
@@ -304,6 +305,7 @@ The API reference under `content/api-reference/` is generated from Python packag
 
 ```bash
 make check-api-docs     # verify the committed docs match what the pinned packages generate
+make check-plugin-registry  # verify every released SDK-repo plugin has an api-packages.toml entry
 make update-api-docs    # regenerate content/api-reference/ + linkmap/flytesdk-linkmap.json
 ```
 
@@ -522,6 +524,14 @@ Pull requests run a set of GitHub Actions checks (defined in the parent `unionai
 make update-api-docs
 ```
 Then commit the changed files in `content/api-reference/` and `linkmap/flytesdk-linkmap.json`.
+
+### Check Plugin Registry (`check-plugin-registry`)
+
+**What it checks:** That every plugin released from the SDK repo has a `[[plugins]]` entry in `api-packages.toml`. It lists every `pyproject.toml` under the repo's plugin directory and looks up each unregistered package on PyPI. Configured by the `[plugin_discovery]` table in `api-packages.toml`; a branch without one (v1) skips the check.
+
+**Why it fails:** A plugin has a final release in the SDK's major line (`2.x` on `main`) but no registry entry, so no API reference is ever generated for it. A package that exists on PyPI only as a name claim (a `0.0.0a0` pre-release, say) is reported as `claimed`, and one with no PyPI project as `unreleased`; neither fails. If GitHub or PyPI can't be reached, the check exits 2 rather than report a partial scan as clean.
+
+**How to fix:** Add a `[[plugins]]` entry for the package and run `make update-api-docs`. If the plugin should stay undocumented, add it to `[[plugin_discovery.skip]]` with a `reason`.
 
 ### Check Helm Docs (`check-helm-docs`)
 
