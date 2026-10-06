@@ -218,11 +218,26 @@ def get_functions(info: PackageInfo, pkg: ModuleType) -> List[MethodInfo]:
             method_info = parse_syncify_method(name, member)
         if should_include(name, member, pkg, inspect.isfunction):
             method_info = parse_method(name, member)
+        elif method_info is None and should_include(name, member, pkg, _is_wrapped_function):
+            # A decorated function -- functools.lru_cache/cache, or any decorator
+            # that sets __wrapped__ -- is a wrapper object, not a function, and
+            # would silently drop out of the docs (flyteplugins.lance's only
+            # export did). Document the function underneath. The syncify and
+            # synchronicity wrappers above also unwrap to functions; the
+            # method_info guard leaves those to their own parsers.
+            method_info = parse_method(name, inspect.unwrap(member))
         if is_callable(name, member, pkg.__name__):
             method_info = parse_callable(name, member, pkg.__name__)
         if method_info:
             result.append(method_info)
     return result
+
+
+def _is_wrapped_function(member: Any) -> bool:
+    """True for a non-class wrapper whose __wrapped__ chain ends in a function."""
+    if isinstance(member, type) or not hasattr(member, "__wrapped__"):
+        return False
+    return inspect.isfunction(inspect.unwrap(member))
 
 
 def is_variable(member: Any) -> bool:
