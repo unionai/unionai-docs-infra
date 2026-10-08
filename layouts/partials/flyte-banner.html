@@ -1,5 +1,5 @@
 <div class="flyte-banner">
-    <a href="/docs/v2/union/deployment/marketplace/" class="flyte-banner-link" style="will-change: width, height; height: 3rem;" >
+    <a href="{{- index site.Params.signup_link site.Params.variant -}}" class="flyte-banner-link" target="_blank" rel="noopener noreferrer" style="will-change: width, height; height: 3rem;" >
         <div>
             {{- if eq .Site.Params.variant "flyte" }}
             Try Flyte on Union.ai free for 30 days
