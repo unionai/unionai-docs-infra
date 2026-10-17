@@ -60,9 +60,17 @@ def format_help(text: str) -> str:
     """
     lines = text.split("\n")
     out: list[str] = []
+    in_fence = False
     i = 0
     while i < len(lines):
-        if lines[i].startswith("    "):
+        if lines[i].lstrip().startswith("```"):
+            in_fence = not in_fence
+            out.append(lines[i])
+            i += 1
+        elif in_fence:
+            out.append(lines[i])
+            i += 1
+        elif lines[i].startswith("    "):
             block: list[str] = []
             while i < len(lines) and (lines[i].startswith("    ") or lines[i].strip() == ""):
                 block.append(lines[i])
@@ -73,7 +81,7 @@ def format_help(text: str) -> str:
             out.extend(textwrap.dedent("\n".join(block)).split("\n"))
             out.append("```")
         else:
-            out.append(lines[i])
+            out.append(_escape_html(lines[i]))
             i += 1
     return "\n".join(out)
 
@@ -81,6 +89,27 @@ def format_help(text: str) -> str:
 def _escape_shortcodes(text: str) -> str:
     """Neutralise Hugo delimiters a CLI author wrote for their own reasons."""
     return text.replace("{{<", r"{{&lt;").replace("{{%", r"{{&percnt;")
+
+
+# An inline code span: a run of N backticks closed by a run of exactly N.
+# Twin of api_generator's _INLINE_CODE_RE (lib/generate/methods.py).
+_INLINE_CODE_RE = re.compile(r"(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)")
+
+
+def _escape_html(text: str) -> str:
+    """Escape `<`/`>` in prose, leaving inline code spans alone.
+
+    A placeholder such as `<bucket>` is a raw HTML tag to goldmark, and this
+    site treats raw HTML as a build error -- one option's help failed the whole
+    build. Inside a code span the entity would not decode, so code is skipped.
+    """
+    out, pos = [], 0
+    for m in _INLINE_CODE_RE.finditer(text):
+        out.append(text[pos:m.start()].replace("<", "&lt;").replace(">", "&gt;"))
+        out.append(m.group(0))
+        pos = m.end()
+    out.append(text[pos:].replace("<", "&lt;").replace(">", "&gt;"))
+    return "".join(out)
 
 
 def _declares_no_parameters(command: dict) -> bool:
@@ -128,7 +157,7 @@ def render_command(command: dict, plugin_note: str | None) -> list[str]:
         names = opt["opts"] + opt["secondary_opts"]
         rendered = " ".join(f"`{n}`" for n in names)
         default = f"`{opt['default']}`" if opt["default"] is not None else ""
-        help_text = _escape_shortcodes(textwrap.dedent(opt["help"])) if opt["help"] else ""
+        help_text = _escape_html(_escape_shortcodes(textwrap.dedent(opt["help"]))) if opt["help"] else ""
         rows.append([rendered, f"`{opt['type']}`", default, help_text])
 
     if not rows:
