@@ -7,6 +7,7 @@ from types import ModuleType
 from typing import Any, List, Optional, Tuple
 
 from lib.ptypes import MethodInfo, PackageInfo, VariableInfo
+from lib.parser.docstring import render_module_docstring
 from lib.parser.methods import parse_method, parse_variable
 from lib.parser.synchronicity import is_synchronicity_method, parse_synchronicity_method
 from lib.parser.syncify import is_syncify_method, parse_syncify_method
@@ -76,7 +77,7 @@ def get_package(name: str) -> Optional[Tuple[PackageInfo, ModuleType]]:
     # Add the base package
     pkg = PackageInfo(
         name=package.__name__,
-        doc=package.__doc__,
+        doc=render_module_docstring(package.__doc__),
         methods=[],
         variables=[],
     )

@@ -30,6 +30,24 @@ def _escape_outside_inline_code(line):
     return ''.join(result)
 
 
+# A fenced code block. Flattened into a table cell, its fence lines would turn
+# into an inline code span that opens with the language tag.
+_FENCE_RE = re.compile(r"```[\w+-]*[ \t]*\n(.*?)\n[ \t]*```", re.DOTALL)
+
+
+def table_cell(text: str) -> str:
+    """Flatten Markdown into one table cell.
+
+    Newlines become spaces and pipes are escaped. A fenced code block, which a
+    cell cannot hold, becomes a single inline code span.
+    """
+    def span(m: re.Match) -> str:
+        code = " ".join(line.strip() for line in m.group(1).split("\n") if line.strip())
+        return f"`` {code} ``" if "`" in code else f"`{code}`"
+
+    return _FENCE_RE.sub(span, text).replace("\n", " ").replace("|", "\\|").strip()
+
+
 def escape_html_preserve_code_blocks(text):
     """Escape HTML characters in text while preserving code blocks and blockquotes."""
     if not text:
@@ -192,8 +210,7 @@ def generate_params(method: MethodInfo, output: io.TextIOWrapper):
         # Clean up the doc string - replace newlines with spaces and escape markdown table characters and HTML
         if doc:
             # First escape HTML while preserving code blocks, then clean up for table format
-            doc = escape_html_preserve_code_blocks(doc)
-            doc = doc.replace("\n", " ").replace("|", "\\|").strip()
+            doc = table_cell(escape_html_preserve_code_blocks(doc))
 
             # Remove redundant type information from the beginning of descriptions
             # Pattern: "(type) description..." where type matches what's already in the Type column
@@ -272,7 +289,7 @@ def generate_raises(info, output: io.TextIOWrapper):
     output.write("|-|-|\n")
     for entry in raises:
         exc = f"`{entry['exception']}`" if entry.get("exception") else ""
-        doc = (entry.get("doc") or "").replace("\n", " ").replace("|", "\\|").strip()
+        doc = table_cell(entry.get("doc") or "")
         doc = escape_html_preserve_code_blocks(doc)
         output.write(f"| {exc} | {doc} |\n")
     output.write("\n")

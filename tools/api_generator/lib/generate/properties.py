@@ -1,7 +1,7 @@
 import io
 from typing import List
 
-from lib.generate.methods import escape_html_preserve_code_blocks, format_type
+from lib.generate.methods import escape_html_preserve_code_blocks, format_type, table_cell
 from lib.ptypes import PropertyInfo
 
 
@@ -17,8 +17,7 @@ def generate_props(props: List[PropertyInfo], output: io.TextIOWrapper):
         docs = prop["doc"] if "doc" in prop else ""
         # Clean up the doc string - replace newlines with spaces and escape markdown table characters and HTML
         if docs:
-            docs_cell = escape_html_preserve_code_blocks(docs)
-            docs_cell = docs_cell.replace("\n", " ").replace("|", "\\|").strip()
+            docs_cell = table_cell(escape_html_preserve_code_blocks(docs))
         else:
             docs_cell = ""
         output.write(f"| `{prop['name']}` | {propType} | {docs_cell} |\n")

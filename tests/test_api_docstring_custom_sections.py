@@ -201,6 +201,29 @@ def test_a_header_inside_a_fence_is_left_alone():
     assert render_custom_sections(doc) == doc
 
 
+def test_the_summary_line_is_never_a_header():
+    """It feeds the one-line description in the module's function table."""
+    doc = _doc('''
+        Helper function, used to extract out the following information:
+          - base type
+          - column information
+    ''')
+    assert render_custom_sections(doc) == doc
+
+
+def test_text_after_a_sphinx_field_is_left_alone():
+    """The parser folds it into the field's description, a table cell."""
+    doc = _doc('''
+        Get the parameter.
+
+        :param param_name: The name of the parameter.
+
+        For example:
+            exception: TypeError, 'a' has no type.
+    ''')
+    assert render_custom_sections(doc) == doc
+
+
 def test_a_header_glued_to_the_paragraph_above_is_left_alone():
     doc = _doc('''
         For untyped dict, dataclass, and pydantic basemodel:
