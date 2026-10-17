@@ -1,6 +1,8 @@
+import ast
 import inspect
 import json
 import re
+import textwrap
 from typing import TypedDict, Optional
 
 from lib.ptypes import ParamDict, ParamInfo
@@ -110,6 +112,116 @@ def dedent_nested_sections(docstring: str) -> str:
     )
 
 
+# A free-form section header alone on its line: "Restarts and retries:". One
+# trailing colon only -- "Usage::" opens an RST literal block, which is code.
+_CUSTOM_HEADER_RE = re.compile(r"^[A-Za-z].*[^:\s]:$")
+
+# A body line that reads as code: a decorator, a doctest prompt, a bare
+# ellipsis, a def/class/async statement, an import, or an assignment.
+_CODE_LINE_RE = re.compile(
+    r"^(?:@[A-Za-z_]|>>>|\.\.\.$"
+    r"|(?:async\s+)?def\s+\w+\s*\(|class\s+\w+\s*[:(]|async\s+(?:with|for)\s"
+    r"|(?:from\s+[\w.]+\s+)?import\s+[\w.]+(?:\s*,\s*[\w.]+)*(?:\s+as\s+\w+)?$"
+    r"|[A-Za-z_][\w.]*(?:\[[^\]]*\])?\s*=[^=])"
+)
+
+# Two cells of a column-aligned diagram: text, a run of spaces, text.
+_ALIGNED_RE = re.compile(r"\S {3,}\S")
+
+# One "name: description" entry, as in a See Also or Type Parameters body.
+_NAME_DESC_RE = re.compile(r"^(?P<name>[A-Za-z_][\w.]*(?:\(\))?):\s+(?P<desc>\S.*)$")
+
+
+def _body_is_code(body: list[str]) -> bool:
+    """Whether a dedented section body is code or a diagram rather than prose."""
+    text = "\n".join(body)
+    try:
+        compile(text, "<docstring>", "exec",
+                flags=ast.PyCF_ONLY_AST | ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        return True
+    except SyntaxError:
+        pass
+
+    in_fence = False
+    for line in body:
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+        elif not in_fence and (_CODE_LINE_RE.match(stripped) or _ALIGNED_RE.search(stripped)):
+            return True
+    return False
+
+
+def _render_section_body(body: list[str]) -> list[str]:
+    """Turn an all-`name: description` body into a list; leave prose as is."""
+    entries = [line for line in body if line and not line[0].isspace()]
+    if not all(_NAME_DESC_RE.match(line) for line in entries):
+        return body
+    out = []
+    for line in body:
+        m = _NAME_DESC_RE.match(line)
+        if m:
+            out.append(f"- `{m.group('name')}`: {m.group('desc')}")
+        else:
+            out.append(f"  {line.strip()}" if line.strip() else "")
+    return out
+
+
+def render_custom_sections(docstring: str) -> str:
+    """
+    Render free-form Google-style sections as Markdown instead of code.
+
+    Authors use section headers beyond the ones the parser knows, with the
+    body indented beneath them::
+
+        Restarts and retries:
+            A clustered task can start over at three levels.
+
+    Left alone, the indent makes Markdown render the body as an indented code
+    block, so lists, emphasis, inline code and nested fences reach the reader
+    as literal text. Dedent the body and make the header a bold lead-in -- the
+    shape ``**Example:**`` already has. A body of ``name: description`` lines
+    becomes a list, since dedenting alone would run the entries together.
+
+    The rule is RST's: a header followed *directly* by an indented block is a
+    definition, i.e. prose. A header, a blank line, then an indented block is a
+    literal block (code), and is left alone, as is a header glued to the
+    paragraph above it. So is a body that is code anyway -- see
+    ``_body_is_code`` -- because dedenting would destroy it. Known Google
+    sections are skipped: the section parser owns them.
+    """
+    lines = docstring.split("\n")
+    out: list[str] = []
+    in_fence = False
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+        elif (
+            not in_fence
+            and _CUSTOM_HEADER_RE.match(line)
+            and line.strip() not in _GOOGLE_SECTIONS
+            and (not out or not out[-1].strip())
+            and i + 1 < len(lines)
+            and lines[i + 1].strip()
+            and lines[i + 1][0].isspace()
+        ):
+            end = i + 1
+            while end < len(lines) and (not lines[end].strip() or lines[end][0].isspace()):
+                end += 1
+            while not lines[end - 1].strip():
+                end -= 1
+            body = textwrap.dedent("\n".join(lines[i + 1:end])).split("\n")
+            if not _body_is_code(body):
+                out += [f"**{line.strip()}**", ""] + _render_section_body(body)
+                i = end
+                continue
+        out.append(line)
+        i += 1
+    return "\n".join(out)
+
+
 def convert_rst_roles(text: str) -> str:
     """
     Turn Sphinx cross-reference roles into plain Markdown code spans.
@@ -185,6 +297,10 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
     # Convert RST-style "Example::" to Google-style "Example:" so the
     # section parser picks it up. Also handles "Examples::".
     docstring = re.sub(r'^(\s*Examples?)::', r'\1:', docstring, flags=re.MULTILINE)
+
+    # Dedent free-form sections ("Restarts and retries:") so their bodies
+    # render as Markdown rather than as indented code blocks.
+    docstring = render_custom_sections(docstring)
 
     # Turn Sphinx cross-reference roles into Markdown code spans. Runs before
     # the admonition pass, while code fences are still at the line start.
