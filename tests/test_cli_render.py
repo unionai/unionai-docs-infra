@@ -111,6 +111,38 @@ def test_hugo_delimiters_in_help_are_escaped():
     assert "| `--x` | `text` |  | Use {{< thing" not in out
 
 
+def test_angle_bracket_placeholders_in_option_help_are_escaped():
+    """`<bucket>` is a raw HTML tag to goldmark, and this site makes raw HTML a
+    build error: `--metadata-prefix` (flyteplugins-union 0.17.0) failed the
+    whole build of unionai-docs#1701."""
+    out = _render([_cmd("flyte x", declares_options=True, options=[
+        {"opts": ["--x"], "secondary_opts": [], "type": "text", "default": None,
+         "help": "Where new versions are written (default: <bucket>/versions)."},
+    ])])
+    assert "(default: &lt;bucket&gt;/versions)." in out
+    assert "<bucket>" not in out
+
+
+def test_angle_brackets_in_inline_code_are_left_alone():
+    """Entities do not decode inside code: `&lt;` would reach the reader."""
+    out = _render([_cmd("flyte x", declares_options=True, options=[
+        {"opts": ["--x"], "secondary_opts": [], "type": "text", "default": None,
+         "help": "Defaults to `<volume>-<host>`, or <name>."},
+    ])])
+    assert "Defaults to `<volume>-<host>`, or &lt;name&gt;." in out
+
+
+def test_angle_brackets_in_command_help_prose_are_escaped_but_not_in_code():
+    out = cli_render.format_help("Mount <volume> here.\n\n    flyte mount <volume>\n")
+    assert "Mount &lt;volume&gt; here." in out
+    assert "\nflyte mount <volume>\n" in out
+
+
+def test_an_author_written_fence_in_command_help_is_left_alone():
+    out = cli_render.format_help("Run:\n\n```bash\nflyte mount <volume>\n```\n")
+    assert "```bash\nflyte mount <volume>\n```" in out
+
+
 def test_indented_help_blocks_become_fenced_code():
     """Indentation-based code does not survive `{{< markdown >}}`'s RenderString."""
     out = cli_render.format_help("Examples:\n\n    $ flyte run x.py\n\nDone.")
