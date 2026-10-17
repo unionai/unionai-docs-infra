@@ -1,6 +1,8 @@
+import ast
 import inspect
 import json
 import re
+import textwrap
 from typing import TypedDict, Optional
 
 from lib.ptypes import ParamDict, ParamInfo
@@ -110,6 +112,213 @@ def dedent_nested_sections(docstring: str) -> str:
     )
 
 
+# A free-form section header alone on its line: "Restarts and retries:". One
+# trailing colon only -- "Usage::" opens an RST literal block, which is code.
+_CUSTOM_HEADER_RE = re.compile(r"^[A-Za-z].*[^:\s]:$")
+
+# A body line that reads as code: a decorator, a doctest prompt, a bare
+# ellipsis, a def/class/async statement, an import, or an assignment.
+_CODE_LINE_RE = re.compile(
+    r"^(?:@[A-Za-z_]|>>>|\.\.\.$"
+    r"|(?:async\s+)?def\s+\w+\s*\(|class\s+\w+\s*[:(]|async\s+(?:with|for)\s"
+    r"|(?:from\s+[\w.]+\s+)?import\s+[\w.]+(?:\s*,\s*[\w.]+)*(?:\s+as\s+\w+)?$"
+    r"|[A-Za-z_][\w.]*(?:\[[^\]]*\])?\s*=[^=])"
+)
+
+# Two cells of a column-aligned diagram: text, a run of spaces, text.
+_ALIGNED_RE = re.compile(r"\S {3,}\S")
+
+# One "name: description" entry, as in a See Also or Type Parameters body.
+_NAME_DESC_RE = re.compile(r"^(?P<name>[A-Za-z_][\w.]*(?:\(\))?):\s+(?P<desc>\S.*)$")
+
+# A list-item marker and its padding; the item's text starts where this ends.
+# RST enumerators count too: `#.` (auto-numbered), `a.`, `(1)`.
+_LIST_ITEM_RE = re.compile(r"^ *(?:[-*+]|(?:\d+|#|[A-Za-z])[.)]|\(\d+\)) +")
+
+# A Sphinx field (`:param x:`, `:returns:`). The section parser reads every
+# line after one as that field's continuation.
+_SPHINX_FIELD_RE = re.compile(r"^:[a-z]+")
+
+
+def _is_python(code: str) -> bool:
+    try:
+        compile(code, "<docstring>", "exec",
+                flags=ast.PyCF_ONLY_AST | ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        return True
+    except SyntaxError:
+        return False
+
+
+def _looks_like_python(code: str) -> bool:
+    """Parses, or has a line only code has -- `f(a=1, ...)` placeholders don't parse."""
+    return _is_python(code) or any(
+        _CODE_LINE_RE.match(line.strip()) for line in code.split("\n")
+    )
+
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
+
+
+def convert_rst_literal_blocks(text: str) -> str:
+    """
+    Turn RST literal blocks into fenced code.
+
+    In RST, a paragraph ending in ``::`` followed by a blank line and an
+    indented block marks that block as code::
+
+        Typical use::
+
+            from flyte.remote import Task
+
+    Markdown has no such marker: the ``::`` reaches the reader verbatim and the
+    block becomes an unhighlighted indented code block -- or, inside a list
+    item, where four spaces are not enough to open one, a single run-on line
+    of prose. Fence the block instead, at the column the paragraph's text
+    starts on so a block inside a list item stays inside it, tagged ``python``
+    when it reads as Python (see ``_looks_like_python``).
+
+    The marker follows RST: ``text::`` keeps one colon, ``text ::`` loses
+    both, and a line that is only ``::`` is dropped. ``.. directive::`` lines
+    are not literal blocks and are left alone.
+    """
+    lines = text.split("\n")
+    out: list[str] = []
+    in_fence = False
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+        elif (
+            not in_fence
+            and stripped.endswith("::")
+            and not stripped.startswith("..")
+            and i + 2 < len(lines)
+            and not lines[i + 1].strip()
+        ):
+            item = _LIST_ITEM_RE.match(line)
+            col = item.end() if item else _indent(line)
+            end = i + 2
+            while end < len(lines) and (not lines[end].strip() or _indent(lines[end]) > col):
+                end += 1
+            while end > i + 2 and not lines[end - 1].strip():
+                end -= 1
+            if end > i + 2:
+                code = textwrap.dedent("\n".join(lines[i + 2:end]))
+                pad = " " * col
+                lead = line.rstrip()[:-2]
+                if lead.strip():
+                    out += [lead.rstrip() if lead.endswith(" ") else lead + ":", ""]
+                out.append(pad + "```" + ("python" if _looks_like_python(code) else ""))
+                out += [pad + c if c.strip() else "" for c in code.split("\n")]
+                out.append(pad + "```")
+                i = end
+                continue
+        out.append(line)
+        i += 1
+    return "\n".join(out)
+
+
+def _body_is_code(body: list[str]) -> bool:
+    """Whether a dedented section body is code or a diagram rather than prose."""
+    if _is_python("\n".join(body)):
+        return True
+
+    in_fence = False
+    for line in body:
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+        elif not in_fence and (_CODE_LINE_RE.match(stripped) or _ALIGNED_RE.search(stripped)):
+            return True
+    return False
+
+
+def _render_section_body(body: list[str]) -> list[str]:
+    """Turn an all-`name: description` body into a list; leave prose as is."""
+    entries = [line for line in body if line and not line[0].isspace()]
+    if not all(_NAME_DESC_RE.match(line) for line in entries):
+        return body
+    out = []
+    for line in body:
+        m = _NAME_DESC_RE.match(line)
+        if m:
+            out.append(f"- `{m.group('name')}`: {m.group('desc')}")
+        else:
+            out.append(f"  {line.strip()}" if line.strip() else "")
+    return out
+
+
+def render_custom_sections(docstring: str) -> str:
+    """
+    Render free-form Google-style sections as Markdown instead of code.
+
+    Authors use section headers beyond the ones the parser knows, with the
+    body indented beneath them::
+
+        Restarts and retries:
+            A clustered task can start over at three levels.
+
+    Left alone, the indent makes Markdown render the body as an indented code
+    block, so lists, emphasis, inline code and nested fences reach the reader
+    as literal text. Dedent the body and make the header a bold lead-in -- the
+    shape ``**Example:**`` already has. A body of ``name: description`` lines
+    becomes a list, since dedenting alone would run the entries together.
+
+    The rule is RST's: a header followed *directly* by an indented block is a
+    definition, i.e. prose. A header, a blank line, then an indented block is a
+    literal block (code), and is left alone, as is a header glued to the
+    paragraph above it. So is a body that is code anyway -- see
+    ``_body_is_code`` -- because dedenting would destroy it. Known Google
+    sections are skipped: the section parser owns them. RST literal blocks
+    nested in the body are fenced on the way through.
+
+    The first line is the summary, never a header. Everything from the first
+    Sphinx field on is left alone: the parser folds it into that field's
+    description, which ends up in a table cell.
+    """
+    lines = docstring.split("\n")
+    out: list[str] = []
+    in_fence = False
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if not in_fence and _SPHINX_FIELD_RE.match(line):
+            out += lines[i:]
+            break
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+        elif (
+            not in_fence
+            and _CUSTOM_HEADER_RE.match(line)
+            and line.strip() not in _GOOGLE_SECTIONS
+            and any(prev.strip() for prev in out)
+            and not out[-1].strip()
+            and i + 1 < len(lines)
+            and lines[i + 1].strip()
+            and lines[i + 1][0].isspace()
+        ):
+            end = i + 1
+            while end < len(lines) and (not lines[end].strip() or lines[end][0].isspace()):
+                end += 1
+            while not lines[end - 1].strip():
+                end -= 1
+            # Fence literal blocks first, so code nested in prose is not
+            # mistaken for a body that is code throughout.
+            body = convert_rst_literal_blocks(
+                textwrap.dedent("\n".join(lines[i + 1:end]))
+            ).split("\n")
+            if not _body_is_code(body):
+                out += [f"**{line.strip()}**", ""] + _render_section_body(body)
+                i = end
+                continue
+        out.append(line)
+        i += 1
+    return "\n".join(out)
+
+
 def convert_rst_roles(text: str) -> str:
     """
     Turn Sphinx cross-reference roles into plain Markdown code spans.
@@ -185,6 +394,10 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
     # Convert RST-style "Example::" to Google-style "Example:" so the
     # section parser picks it up. Also handles "Examples::".
     docstring = re.sub(r'^(\s*Examples?)::', r'\1:', docstring, flags=re.MULTILINE)
+
+    # Dedent free-form sections ("Restarts and retries:") so their bodies
+    # render as Markdown rather than as indented code blocks.
+    docstring = render_custom_sections(docstring)
 
     # Turn Sphinx cross-reference roles into Markdown code spans. Runs before
     # the admonition pass, while code fences are still at the line start.
@@ -396,7 +609,33 @@ def parse_docstring(docstring: str | None, source) -> Optional[DocstringInfo]:
         # Regular text → docstring
         result["docstring"] += line + "\n"
 
+    # After section extraction, so Example:: (rewritten above to feed the
+    # Examples section) and code inside Args descriptions are left alone.
+    result["docstring"] = convert_rst_literal_blocks(result["docstring"])
+
     return result
+
+
+def render_module_docstring(docstring: str | None) -> str | None:
+    """
+    Apply the text cleanup ``parse_docstring`` does to a module docstring.
+
+    A module docstring is written to its page whole: nothing extracts its
+    sections into tables. It still needs the same rewrites -- free-form
+    sections, RST roles, admonitions -- or it renders indented sections as
+    code and roles as literal ``:class:`` text. It skips the ``Example::``
+    rewrite, which exists only to feed section extraction; its literal blocks
+    are fenced instead.
+    """
+    if not docstring:
+        return docstring
+    docstring = inspect.cleandoc(docstring)
+    docstring = strip_meta_fields(docstring)
+    docstring = dedent_nested_sections(docstring)
+    docstring = render_custom_sections(docstring)
+    docstring = convert_rst_roles(docstring)
+    docstring = format_three_exclamation_notes(docstring)
+    return convert_rst_literal_blocks(docstring)
 
 
 def test_parse_params():
