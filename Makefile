@@ -9,7 +9,7 @@ PORT ?= 9000
 BUILD := $(shell date +%s)
 UV := uv run --project unionai-docs-infra
 
-.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs check-plugin-registry update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-rendered-images check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names check-subpage-cards check-api-names update-icon-names clean clean-generated
+.PHONY: index-search index-search-settings index-search-synonyms refresh-search-popularity check-search-labels all base dist variant dev serve usage update-examples sync-examples llm-docs check-api-docs check-plugin-registry register-plugins update-api-docs regen-api-docs-all check-helm-docs update-helm-docs generate-helm-docs update-redirects dry-run-redirects deploy-redirects check-deleted-pages check-generated-links check-rendered-images check-asset-refs check-version-menu-parity check-pin-window-parity check-links check-generated-content check-icon-names check-subpage-cards check-api-names update-icon-names clean clean-generated
 all: usage
 
 usage:
@@ -277,6 +277,12 @@ check-api-docs:
 # via [plugin_discovery]; a branch without it (v1) skips.
 check-plugin-registry:
 	@$(UV) unionai-docs-infra/tools/api_generator/check_plugin_registry.py
+
+# Register every released, verified-ours plugin the registry lacks, so the next
+# update-api-docs documents it. The entry's title and output_folder are guesses
+# for the reviewer; see the tool's docstring.
+register-plugins:
+	@$(UV) unionai-docs-infra/tools/api_generator/check_plugin_registry.py --register
 
 # Advisory. Audits the GENERATED API reference for reader-visible defects
 # (literal RST, language-less code blocks, empty parameter descriptions, ...).

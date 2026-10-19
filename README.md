@@ -306,6 +306,7 @@ The API reference under `content/api-reference/` is generated from Python packag
 ```bash
 make check-api-docs     # verify the committed docs match what the pinned packages generate
 make check-plugin-registry  # verify every released SDK-repo plugin has an api-packages.toml entry
+make register-plugins       # add an api-packages.toml entry for each released, verified-ours SDK-repo plugin
 make update-api-docs    # regenerate content/api-reference/ + linkmap/flytesdk-linkmap.json
 ```
 
@@ -531,7 +532,9 @@ Then commit the changed files in `content/api-reference/` and `linkmap/flytesdk-
 
 **Why it fails:** A plugin has a final release in the SDK's major line (`2.x` on `main`) but no registry entry, so no API reference is ever generated for it. A package that exists on PyPI only as a name claim (a `0.0.0a0` pre-release, say) is reported as `claimed`, and one with no PyPI project as `unreleased`; neither fails. If GitHub or PyPI can't be reached, the check exits 2 rather than report a partial scan as clean.
 
-**How to fix:** Add a `[[plugins]]` entry for the package and run `make update-api-docs`. If the plugin should stay undocumented, add it to `[[plugin_discovery.skip]]` with a `reason`.
+**How to fix:** Run `make register-plugins`, which appends a `[[plugins]]` entry for each unregistered release (the regen workflow does this before it regenerates, so a new plugin's docs land in the same PR), then `make update-api-docs`. The entry's `title` is a guess and the page lands at the default `integrations/<name>`; the entry carries a comment asking the reviewer to check title, name and output_folder before merging, since moving a published page later needs a redirect. If the plugin should stay undocumented, add it to `[[plugin_discovery.skip]]` with a `reason`.
+
+**The owner gate:** registration needs `[plugin_discovery].owners`, the PyPI accounts allowed to own a plugin (`flyte-bot`, `unionai-oss`). A release with any owner outside that list is reported as `UNVERIFIED` and never registered -- it may be a name-squat -- and the check fails so a person looks. Confirm the package is ours before adding an owner. Our packages carry no PyPI publish attestations, so the owner accounts are what there is to check.
 
 ### Check Helm Docs (`check-helm-docs`)
 
