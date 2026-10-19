@@ -74,11 +74,13 @@ The trigger is **external to docs**: someone releases the SDK. The docs maintain
 | 3 | `publish.yml` → `notify-docs` | → `unionai-docs` | Fires `repository_dispatch(sdk-release, 2.5.13)` as the **docsy-bot App**. |
 | 4 | `regen-api-docs.yml` | `unionai-docs` | Regenerates the API reference (version → 2.5.13) **and folds the `versions.toml` promote** (`stable = v2.5.13.0`) into **one draft PR**. Nothing auto-merges. |
 | **5** | **Docs maintainer** | `unionai-docs` | **Reviews + merges the one PR.** ← *the single human action.* |
-| 6 | `build-and-deploy.yml` | `unionai-docs` | On the merge push: `versions.toml` names uncut `v2.5.13.0` → **cut pre-step** mints the tag (guard: 2.5.13 is on PyPI ✓) → `build_versions.sh` assembles `/docs/latest` (main, noindex), `/docs/v2` = **2.5.13.0** (indexed), `/docs/v2.5.13.0/` (pinned, noindex) → deploy. |
+| 6 | `build-and-deploy.yml` | `unionai-docs` | On the merge push: `versions.toml` names uncut `v2.5.13.0` → **cut pre-step** mints the tag (guard: 2.5.13 is on PyPI ✓) → `build_versions.sh` assembles `/docs/latest` (main, noindex), `/docs/v2` = **2.5.13.0** (indexed), and a pinned, noindex `/docs/v2.x.y.z/` for each `enumerated` tag, now including the outgoing `2.5.12.0` → deploy. The new stable gets **no** pinned copy of its own (no duplicate tree): `/docs/v2.5.13.0/` doesn't exist until the next cut rotates it into `enumerated`. |
 | 7 | CloudFront + CF rule | edge | Already route `/docs/*`; `/docs/stable/*` → `/docs/v2/*`. **No change.** |
 
-**Result:** `/docs/v2/` (and `/docs/stable/`) now show `2.5.13`; `2.5.12.0` stays frozen at
-`/docs/v2.5.12.0/`. The SDK team did their normal release; the docs maintainer did **one merge**.
+**Result:** `/docs/v2/` (and `/docs/stable/`) now show `2.5.13`. The outgoing `2.5.12.0` moves
+to its pinned `/docs/v2.5.12.0/`, frozen from here on. If pin retention pruned the oldest pin, its
+URL now redirects 301 to `/docs/v2/` (derived from `retired`; see `VERSIONING.md`). The SDK team
+did their normal release; the docs maintainer did **one merge**.
 
 ---
 
@@ -95,7 +97,7 @@ all on `/docs/latest`, none of which cuts a version on its own.
 | **2** | **Docs maintainer** | GitHub Actions UI | Clicks **Run workflow** on `docs-cut.yml`. (Optionally `dry_run` first to preview the version.) |
 | 3 | `docs-cut.yml` | `unionai-docs` | Resolves the next version (SDK unchanged → `z+1` = `v2.5.13.1`), runs `manifest.py --promote`, **opens a draft `versions.toml`-bump PR**. |
 | **4** | **Docs maintainer** | `unionai-docs` | **Merges the PR.** ← *the second step.* |
-| 5 | `build-and-deploy.yml` | `unionai-docs` | Same as A#6: cut pre-step mints `v2.5.13.1`, `/docs/v2` = **2.5.13.1** (now includes the plugin + backend + content drift), `/docs/v2.5.13.1/` published. |
+| 5 | `build-and-deploy.yml` | `unionai-docs` | Same as A#6: cut pre-step mints `v2.5.13.1`, `/docs/v2` = **2.5.13.1** (now includes the plugin + backend + content drift), and the outgoing `2.5.13.0` gets its pinned `/docs/v2.5.13.0/`. |
 
 **Result:** an immutable snapshot of the accumulated non-SDK drift, promoted to the public default.
 
