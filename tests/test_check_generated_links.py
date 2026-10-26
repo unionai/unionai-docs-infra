@@ -19,7 +19,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools" / "link_checker"))
 
 from check_generated_links import (  # noqa: E402
-    build_scope, in_scope, looks_like_code, resolves, without_version,
+    build_scope, in_scope, load_redirects, looks_like_code, main, redirects_to_a_page,
+    resolves, without_version,
 )
 
 
@@ -76,3 +77,51 @@ def test_scope_and_resolution(tmp_path):
     assert resolves(dist, "v2/union/sect"), "a directory resolves"
     assert resolves(dist, "v2/union/page"), "the twin resolves without .md"
     assert not resolves(dist, "v2/union/nope")
+
+
+def _csv(tmp_path, *rows):
+    csv = tmp_path / "redirects.csv"
+    csv.write_text("".join(f"{src},{dst},302,TRUE,FALSE,TRUE,TRUE\n" for src, dst in rows))
+    return csv
+
+
+def test_a_moved_page_is_redirected_not_broken(tmp_path):
+    """The regression: a pinned tag's tree links to the old URL of a page that
+    moved after the tag. Production redirects it; the cut's build must not fail."""
+    dist = tmp_path / "docs"
+    (dist / "v2" / "union" / "deployment" / "sign-up").mkdir(parents=True)
+    redirects = load_redirects(_csv(
+        tmp_path,
+        ("www.union.ai/docs/v2/union/deployment/marketplace/",
+         "https://www.union.ai/docs/v2/union/deployment/sign-up"),
+        ("docs.union.ai/old", "https://www.union.ai/docs/v2/union/x"),
+    ))
+    assert redirects == {"v2/union/deployment/marketplace": "v2/union/deployment/sign-up"}, \
+        "only docs sources, keyed without a trailing slash"
+    for link in ("v2/union/deployment/marketplace/", "v2/union/deployment/marketplace"):
+        assert redirects_to_a_page(dist, link, redirects), link
+
+
+def test_a_redirect_to_nothing_is_still_broken(tmp_path):
+    dist = tmp_path / "docs"
+    (dist / "v2" / "union").mkdir(parents=True)
+    redirects = load_redirects(_csv(
+        tmp_path, ("www.union.ai/docs/v2/union/old", "https://www.union.ai/docs/v2/union/gone")))
+    assert not redirects_to_a_page(dist, "v2/union/old", redirects)
+    assert not redirects_to_a_page(dist, "v2/union/unlisted", redirects)
+
+
+def test_main_passes_a_redirected_link_and_fails_a_dead_one(tmp_path, monkeypatch, capsys):
+    dist = tmp_path / "docs"
+    (dist / "v2" / "union" / "new").mkdir(parents=True)
+    page = dist / "v2.11.4.0" / "union" / "guide.md"
+    page.parent.mkdir(parents=True)
+    page.write_text("[a](https://www.union.ai/docs/v2/union/old/)\n")
+    csv = _csv(tmp_path, ("www.union.ai/docs/v2/union/old/", "https://www.union.ai/docs/v2/union/new"))
+
+    monkeypatch.setattr(sys, "argv", ["x", "--dist", str(dist), "--redirects", str(csv)])
+    assert main() == 0
+    assert "1 to a moved page" in capsys.readouterr().out
+
+    page.write_text("[a](https://www.union.ai/docs/v2/union/dead/)\n")
+    assert main() == 1
