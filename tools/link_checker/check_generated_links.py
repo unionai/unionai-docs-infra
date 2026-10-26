@@ -16,6 +16,15 @@ are valid", because it was reading a different set of files. One of them turned 
 The markdown twins are the surface AI agents read. A dead link there is followed
 by a machine that cannot tell it went somewhere wrong.
 
+REDIRECTS
+---------
+A link to a page that moved is not dead: production answers it with the row in
+`redirects.csv`. That matters most in a pinned tag's tree, built from an
+immutable tag that still links to the old URL; after a restructure every such
+link would otherwise fail the build at the next cut, with nothing to fix it in.
+So a link that does not resolve, but whose exact source is a row in the CSV and
+whose redirect target resolves in this build, counts as redirected, not broken.
+
 SCOPE
 -----
 A build holds only the version/variant trees it built (usually one version, two
@@ -23,7 +32,7 @@ variants). A link into a tree that is not in this build cannot be checked here
 and is NOT a failure -- it is reported separately so the number stays visible.
 
 Usage:
-    check_generated_links.py [--dist dist/docs] [--exclude FILE] [--quiet]
+    check_generated_links.py [--dist dist/docs] [--exclude FILE] [--redirects CSV] [--quiet]
 """
 
 import argparse
@@ -36,6 +45,11 @@ from pathlib import Path
 LINK_RE = re.compile(r'\[([^\]]*)\]\((https://www\.union\.ai/docs/[^)\s]+)\)')
 
 DOCS_PREFIX = "https://www.union.ai/docs/"
+
+# The CSV's sources carry no scheme; its targets are full URLs.
+REDIRECT_SOURCE_PREFIX = "www.union.ai/docs/"
+
+REDIRECTS_CSV = Path(__file__).resolve().parents[2] / "redirects.csv"
 
 # Markdown link syntax is greedy and code samples contain parentheses, so a
 # fenced snippet can be captured as a link. These never occur in a real URL.
@@ -88,6 +102,28 @@ def resolves(dist: Path, path: str) -> bool:
     return target.is_file() or target.is_dir() or (dist / (path + ".md")).is_file()
 
 
+def load_redirects(csv_path: Path) -> dict:
+    """Docs redirects as `{source path: target path}`, both relative to /docs/ and
+    without a trailing slash. Only exact sources: a link the CSV covers only by
+    Cloudflare's subpath matching is still reported, which errs toward failing."""
+    redirects = {}
+    if not csv_path or not csv_path.is_file():
+        return redirects
+    for line in csv_path.read_text(encoding="utf-8").splitlines():
+        source, _, rest = line.partition(",")
+        target = rest.split(",", 1)[0]
+        if source.startswith(REDIRECT_SOURCE_PREFIX) and target.startswith(DOCS_PREFIX):
+            key = source[len(REDIRECT_SOURCE_PREFIX):].rstrip("/")
+            redirects[key] = target[len(DOCS_PREFIX):].split("#")[0].rstrip("/")
+    return redirects
+
+
+def redirects_to_a_page(dist: Path, path: str, redirects: dict) -> bool:
+    """One hop only: the CSV is kept free of chains by its own tests."""
+    target = redirects.get(path.rstrip("/"))
+    return target is not None and resolves(dist, target)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -95,6 +131,9 @@ def main() -> int:
     ap.add_argument("--exclude", type=Path,
                     help="file of variant-relative paths to ignore (no version "
                          "segment), one per line, # for comments")
+    ap.add_argument("--redirects", default=REDIRECTS_CSV, type=Path,
+                    help="redirects.csv; a link it sends to a page in this build "
+                         "is redirected, not broken (default: %(default)s)")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
 
@@ -111,7 +150,8 @@ def main() -> int:
                 excluded.add(line)
 
     scope = build_scope(args.dist)
-    broken, out_of_scope, code_like, skipped = [], 0, 0, 0
+    redirects = load_redirects(args.redirects)
+    broken, out_of_scope, code_like, skipped, redirected = [], 0, 0, 0, 0
     used = set()
     total = 0
 
@@ -136,7 +176,10 @@ def main() -> int:
                 used.add(key)
                 continue
             if not resolves(args.dist, path):
-                broken.append((rel, url))
+                if redirects_to_a_page(args.dist, path, redirects):
+                    redirected += 1
+                else:
+                    broken.append((rel, url))
 
     if not args.quiet or broken:
         print(f"check-generated-links: {total} links in the built markdown "
@@ -145,6 +188,8 @@ def main() -> int:
         print(f"  {code_like} captured from code samples, not URLs -- not checked")
         if skipped:
             print(f"  {skipped} excluded by {args.exclude}")
+        if redirected:
+            print(f"  {redirected} to a moved page, which {args.redirects.name} sends to a page in this build")
         # A baseline entry that matches nothing is dead weight, and worse than
         # inert: it still suppresses that exact link if it ever comes back, so
         # the ratchet quietly loses a tooth. They accumulate on their own -- a
