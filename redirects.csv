@@ -5119,8 +5119,8 @@ www.union.ai/docs/v2/byoc/deployment/selfmanaged/cluster-recommendations,https:/
 www.union.ai/docs/v2/byoc/deployment/selfmanaged/cluster-recommendations/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/infrastructure-recommendations,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/authentication,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/authentication,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/code-viewer,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/code-viewer,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/code-viewer/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/code-viewer,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/deployment/selfmanaged/configuration/data-retention,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/data-retention,302,TRUE,FALSE,TRUE,TRUE
@@ -6627,8 +6627,8 @@ www.union.ai/docs/v2/selfmanaged/deployment/cluster-recommendations,https://www.
 www.union.ai/docs/v2/selfmanaged/deployment/cluster-recommendations/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/infrastructure-recommendations,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/configuration,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/configuration/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/deployment/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/authentication,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/deployment/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/authentication,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/deployment/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/deployment/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/configuration/code-viewer,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/code-viewer,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/configuration/code-viewer/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/code-viewer,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/configuration/data-retention,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/data-retention,302,TRUE,FALSE,TRUE,TRUE
@@ -6701,8 +6701,8 @@ www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/cluster-recommendations,
 www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/cluster-recommendations/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/infrastructure-recommendations,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/authentication,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/authentication,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/code-viewer,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/code-viewer,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/code-viewer/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/code-viewer,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/deployment/selfmanaged/configuration/data-retention,https://www.union.ai/docs/v2/union/deployment/selfmanaged/configuration/data-retention,302,TRUE,FALSE,TRUE,TRUE
@@ -8892,3 +8892,12 @@ www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte.connectors/res
 www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/packages/flyte.connectors/resourcemeta/,https://www.union.ai/docs/v2/flyte/api-reference/flyte-sdk/flyte.connectors/resourcemeta,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/api-reference/flyte-sdk/packages/flyte.connectors/resourcemeta,https://www.union.ai/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/resourcemeta,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/api-reference/flyte-sdk/packages/flyte.connectors/resourcemeta/,https://www.union.ai/docs/v2/union/api-reference/flyte-sdk/flyte.connectors/resourcemeta,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2.12.0.0/union/deployment/selfmanaged/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.0/union/deployment/selfmanaged/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.0/union/deployment/selfmanaged/configuration/authentication.md,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.1/union/deployment/selfmanaged/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.1/union/deployment/selfmanaged/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.1/union/deployment/selfmanaged/configuration/authentication.md,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.2/union/deployment/selfmanaged/configuration/authentication,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.2/union/deployment/selfmanaged/configuration/authentication/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
+www.union.ai/docs/v2.12.0.2/union/deployment/selfmanaged/configuration/authentication.md,https://www.union.ai/docs/v2/union/deployment/selfmanaged/,302,TRUE,FALSE,TRUE,FALSE
