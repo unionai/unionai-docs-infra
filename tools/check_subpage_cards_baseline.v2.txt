@@ -20,6 +20,3 @@
 # The site root is a redirect to user-guide. No reader ever sees it, so it will
 # never want cards. This entry is permanent.
 _index.md
-
-# The page lists every provider in tables that carry per-provider notes; 22 cards would repeat them.
-user-guide/inference/providers/_index.md
