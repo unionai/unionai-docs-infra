@@ -5447,8 +5447,8 @@ www.union.ai/docs/v2/byoc/user-guide/reusable-containers,https://www.union.ai/do
 www.union.ai/docs/v2/byoc/user-guide/reusable-containers/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/reusable-containers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/run-scaling,https://www.union.ai/docs/v2/union/user-guide/run-scaling,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/run-scaling/,https://www.union.ai/docs/v2/union/user-guide/run-scaling,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/byoc/user-guide/run-scaling/batch-inference/,https://www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/byoc/user-guide/run-scaling/batch-inference/,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/run-scaling/data-flow,https://www.union.ai/docs/v2/union/user-guide/run-scaling/data-flow,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/run-scaling/data-flow/,https://www.union.ai/docs/v2/union/user-guide/run-scaling/data-flow,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/byoc/user-guide/run-scaling/life-of-a-run,https://www.union.ai/docs/v2/union/user-guide/run-scaling/life-of-a-run,302,TRUE,FALSE,TRUE,TRUE
@@ -7025,8 +7025,8 @@ www.union.ai/docs/v2/selfmanaged/user-guide/reusable-containers,https://www.unio
 www.union.ai/docs/v2/selfmanaged/user-guide/reusable-containers/,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/reusable-containers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling,https://www.union.ai/docs/v2/union/user-guide/run-scaling,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/,https://www.union.ai/docs/v2/union/user-guide/run-scaling,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/batch-inference/,https://www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/batch-inference/,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/data-flow,https://www.union.ai/docs/v2/union/user-guide/run-scaling/data-flow,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/data-flow/,https://www.union.ai/docs/v2/union/user-guide/run-scaling/data-flow,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/selfmanaged/user-guide/run-scaling/life-of-a-run,https://www.union.ai/docs/v2/union/user-guide/run-scaling/life-of-a-run,302,TRUE,FALSE,TRUE,TRUE
@@ -7620,7 +7620,7 @@ www.union.ai/docs/v2/serverless/user-guide/quickstart,https://www.union.ai/docs/
 www.union.ai/docs/v2/serverless/user-guide/reports,https://www.union.ai/docs/v2/union/user-guide/tasks/task-programming/reports,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/reusable-containers,https://www.union.ai/docs/v2/union/user-guide/tasks/task-configuration/reusable-containers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/run-scaling,https://www.union.ai/docs/v2/union/user-guide/run-scaling,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/serverless/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/serverless/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/run-scaling/data-flow,https://www.union.ai/docs/v2/union/user-guide/run-scaling/data-flow,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/run-scaling/life-of-a-run,https://www.union.ai/docs/v2/union/user-guide/run-scaling/life-of-a-run,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/serverless/user-guide/run-scaling/scale-your-workflows,https://www.union.ai/docs/v2/union/user-guide/run-scaling/scale-your-workflows,302,TRUE,FALSE,TRUE,TRUE
@@ -8931,3 +8931,15 @@ www.union.ai/docs/v2/flyte/user-guide/apps/native-app-integrations/vllm-app.md,h
 www.union.ai/docs/v2/union/user-guide/apps/native-app-integrations/vllm-app,https://www.union.ai/docs/v2/union/user-guide/inference/vllm-app,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/user-guide/apps/native-app-integrations/vllm-app/,https://www.union.ai/docs/v2/union/user-guide/inference/vllm-app,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/user-guide/apps/native-app-integrations/vllm-app.md,https://www.union.ai/docs/v2/union/user-guide/inference/vllm-app.md,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/flyte/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/run-scaling/batch-inference/,https://www.union.ai/docs/v2/flyte/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/run-scaling/batch-inference.md,https://www.union.ai/docs/v2/flyte/user-guide/inference/batch-inference.md,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference/,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/run-scaling/batch-inference.md,https://www.union.ai/docs/v2/union/user-guide/inference/batch-inference.md,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/run-scaling/stream-model-weights,https://www.union.ai/docs/v2/flyte/user-guide/inference/stream-model-weights,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/run-scaling/stream-model-weights/,https://www.union.ai/docs/v2/flyte/user-guide/inference/stream-model-weights,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/user-guide/run-scaling/stream-model-weights.md,https://www.union.ai/docs/v2/flyte/user-guide/inference/stream-model-weights.md,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/run-scaling/stream-model-weights,https://www.union.ai/docs/v2/union/user-guide/inference/stream-model-weights,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/run-scaling/stream-model-weights/,https://www.union.ai/docs/v2/union/user-guide/inference/stream-model-weights,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/union/user-guide/run-scaling/stream-model-weights.md,https://www.union.ai/docs/v2/union/user-guide/inference/stream-model-weights.md,302,TRUE,FALSE,TRUE,TRUE
