@@ -635,6 +635,17 @@ pre code {
   margin: 1.5rem 0;
   font-size: var(--type-small);
 }
+/* .main-content clips horizontal overflow, so a table too wide for the column
+   scrolls inside this wrapper (render-table.html). The margin moves here because
+   an overflow container stops the table's margin collapsing with its neighbours. */
+.table-scroll {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  scrollbar-width: thin;
+}
+.table-scroll table {
+  margin: 0;
+}
 .main-content th,
 .main-content td {
   padding: 10px 14px 10px 0;
