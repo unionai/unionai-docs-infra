@@ -172,7 +172,7 @@
       "ideal": {
         "guide": [
           "/docs/v2/union/user-guide/tasks/task-configuration/queues/",
-          "/docs/v2/union/user-guide/cluster-workload-management/queues/"
+          "/docs/v2/union/user-guide/clusters-and-queues/queues/"
         ],
         "reference": [],
         "tutorial": [],
@@ -182,7 +182,7 @@
       "candidates": {
         "guide": [
           {
-            "url": "/docs/v2/union/user-guide/cluster-workload-management/queues/",
+            "url": "/docs/v2/union/user-guide/clusters-and-queues/queues/",
             "title": "Managing queues",
             "score": 152,
             "why": [
@@ -1963,7 +1963,7 @@
             ]
           },
           {
-            "url": "/docs/v2/union/user-guide/advanced-project/resilient-generation/",
+            "url": "/docs/v2/union/user-guide/project-patterns/advanced-project/resilient-generation/",
             "title": "Resilient generation",
             "score": 57,
             "why": [
@@ -2072,7 +2072,7 @@
       "ideal": {
         "guide": [
           "/docs/v2/union/user-guide/get-started/core-concepts/introducing-apps/",
-          "/docs/v2/union/user-guide/advanced-project/serving-app/"
+          "/docs/v2/union/user-guide/project-patterns/advanced-project/serving-app/"
         ],
         "reference": [
           "/docs/v2/union/api-reference/flyte-sdk/flyte.app/",
@@ -2085,7 +2085,7 @@
       "candidates": {
         "guide": [
           {
-            "url": "/docs/v2/union/user-guide/advanced-project/serving-app/",
+            "url": "/docs/v2/union/user-guide/project-patterns/advanced-project/serving-app/",
             "title": "Serving app",
             "score": 152,
             "why": [
@@ -2220,7 +2220,7 @@
       "ideal": {
         "guide": [
           "/docs/v2/union/user-guide/get-started/core-concepts/introducing-apps/",
-          "/docs/v2/union/user-guide/advanced-project/serving-app/"
+          "/docs/v2/union/user-guide/project-patterns/advanced-project/serving-app/"
         ],
         "reference": [
           "/docs/v2/union/api-reference/flyte-sdk/flyte.app/",
@@ -3282,7 +3282,7 @@
       "candidates": {
         "guide": [
           {
-            "url": "/docs/v2/union/user-guide/cluster-workload-management/clusters/",
+            "url": "/docs/v2/union/user-guide/clusters-and-queues/clusters/",
             "title": "Clusters",
             "score": 27,
             "why": [
@@ -4335,7 +4335,7 @@
             ]
           },
           {
-            "url": "/docs/v2/union/user-guide/advanced-project/resilient-generation/",
+            "url": "/docs/v2/union/user-guide/project-patterns/advanced-project/resilient-generation/",
             "title": "Resilient generation",
             "score": 20,
             "why": [
