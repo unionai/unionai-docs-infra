@@ -153,7 +153,7 @@
     "q": "queue",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/cluster-workload-management/queues/"
+        "/docs/v2/union/user-guide/clusters-and-queues/queues/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-cli/"
@@ -167,7 +167,7 @@
     "candidates": {
       "guide": [
         {
-          "url": "/docs/v2/union/user-guide/cluster-workload-management/queues/",
+          "url": "/docs/v2/union/user-guide/clusters-and-queues/queues/",
           "title": "Managing queues",
           "score": 152,
           "why": [
@@ -1957,7 +1957,7 @@
           ]
         },
         {
-          "url": "/docs/v2/union/user-guide/advanced-project/resilient-generation/",
+          "url": "/docs/v2/union/user-guide/project-patterns/advanced-project/resilient-generation/",
           "title": "Resilient generation",
           "score": 57,
           "why": [
@@ -2064,7 +2064,7 @@
     "q": "app",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/advanced-project/serving-app/"
+        "/docs/v2/union/user-guide/project-patterns/advanced-project/serving-app/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte.remote/app/"
@@ -2080,7 +2080,7 @@
     "candidates": {
       "guide": [
         {
-          "url": "/docs/v2/union/user-guide/advanced-project/serving-app/",
+          "url": "/docs/v2/union/user-guide/project-patterns/advanced-project/serving-app/",
           "title": "Serving app",
           "score": 152,
           "why": [
@@ -3269,7 +3269,7 @@
     "q": "register",
     "ideal": {
       "guide": [
-        "/docs/v2/union/user-guide/cluster-workload-management/clusters/"
+        "/docs/v2/union/user-guide/clusters-and-queues/clusters/"
       ],
       "reference": [
         "/docs/v2/union/api-reference/flyte-sdk/flyte.io.extend/dataframetransformerengine/"
@@ -3285,7 +3285,7 @@
     "candidates": {
       "guide": [
         {
-          "url": "/docs/v2/union/user-guide/cluster-workload-management/clusters/",
+          "url": "/docs/v2/union/user-guide/clusters-and-queues/clusters/",
           "title": "Clusters",
           "score": 27,
           "why": [
@@ -4347,7 +4347,7 @@
           ]
         },
         {
-          "url": "/docs/v2/union/user-guide/advanced-project/resilient-generation/",
+          "url": "/docs/v2/union/user-guide/project-patterns/advanced-project/resilient-generation/",
           "title": "Resilient generation",
           "score": 20,
           "why": [
