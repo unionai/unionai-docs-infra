@@ -150,8 +150,9 @@ def extract_links(content: str, variant: str | None = None) -> list[tuple[int, s
     """Extract markdown links from content.
 
     Returns list of (line_number, link_text, link_url).
-    Strips content inside `{{< variant ... >}}...{{< /variant >}}` blocks that
-    do not include the given `variant`, code blocks, and inline code.
+    Strips content inside `{{< variant ... >}}...{{< /variant >}}` (or the
+    `{{% %}}` form) blocks that do not include the given `variant`, code blocks,
+    and inline code.
     """
     links = []
 
@@ -168,12 +169,12 @@ def extract_links(content: str, variant: str | None = None) -> list[tuple[int, s
     # reported errors stay accurate.
     if variant is not None:
         def _filter_variant_block(m: re.Match) -> str:
-            args = m.group(1).split()
+            args = m.group(2).split()
             if variant in args:
                 return m.group(0)
             return "\n" * m.group(0).count("\n")
         body = re.sub(
-            r"\{\{<\s*variant\s+([^>]+?)\s*>\}\}(.*?)\{\{<\s*/variant\s*>\}\}",
+            r"\{\{([<%])\s*variant\s+([^>%]+?)\s*[>%]\}\}(.*?)\{\{\1\s*/variant\s*[>%]\}\}",
             _filter_variant_block, body, flags=re.DOTALL,
         )
 
