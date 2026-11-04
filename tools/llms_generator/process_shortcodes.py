@@ -323,11 +323,19 @@ class ShortcodeProcessor:
         return re.sub(pattern, replace_button_link, content, flags=re.DOTALL)
 
     def process_variant_shortcodes(self, content: str) -> str:
-        """Process {{< variant >}} shortcodes for conditional content based on variant."""
-        pattern = r'\{\{<\s*variant\s+([^>]*)>\}\}(.*?)\{\{<\s*/variant\s*>\}\}'
+        """Process {{< variant >}} and {{% variant %}} shortcodes for conditional content.
+
+        The `{{% %}}` form gates a single list item inline, with the opening tag at the
+        end of the previous item's line. Its content is kept verbatim, leading newline
+        included, so the item stays in the surrounding list.
+        """
+        pattern = (
+            r'\{\{(?P<delim>[<%])\s*variant\s+(?P<spec>[^>%]*)[>%]\}\}'
+            r'(?P<body>.*?)\{\{(?P=delim)\s*/variant\s*[>%]\}\}'
+        )
 
         def replace_variant(match):
-            variant_spec, variant_content = match.groups()
+            variant_spec, variant_content = match.group('spec'), match.group('body')
 
             # Parse variant specification (e.g., "union" or "!flyte")
             # Handle space-separated variants and negation
@@ -347,7 +355,9 @@ class ShortcodeProcessor:
             if exclude_variants:
                 should_include = should_include and (self.variant not in exclude_variants)
 
-            return variant_content.strip() if should_include else ""
+            if not should_include:
+                return ""
+            return variant_content if match.group('delim') == '%' else variant_content.strip()
 
         return re.sub(pattern, replace_variant, content, flags=re.DOTALL)
 
