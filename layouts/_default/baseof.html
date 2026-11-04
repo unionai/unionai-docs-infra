@@ -167,10 +167,11 @@
           {{- $line := index (split . ".") 0 -}}
           {{- $byLine := index ($.Site.Params.line_notices | default dict) $line | default dict -}}
           {{- with $n := index $byLine $.Site.Params.variant -}}
-            {{- $md := printf "> [!%s] %s\n> %s" ($n.type | default "NOTE") $n.title $n.message -}}
+            {{- $body := $n.message | default "" -}}
             {{- with $n.link_path -}}
-              {{- $md = printf "%s [%s](/docs/%s/%s/%s)" $md $n.link_text $n.link_line $.Site.Params.variant . -}}
-            {{- end }}
+              {{- $body = printf "%s [%s](/docs/%s/%s/%s)" $body $n.link_text $n.link_line $.Site.Params.variant . | strings.TrimSpace -}}
+            {{- end -}}
+            {{- $md := printf "> [!%s] %s\n> %s" ($n.type | default "NOTE") $n.title $body }}
         <div class="line-notice" role="note">{{ $.RenderString (dict "display" "block") $md }}</div>
           {{- end -}}
         {{- end -}}
