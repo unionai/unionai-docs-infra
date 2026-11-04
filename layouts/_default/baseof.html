@@ -160,21 +160,6 @@
           </div>
         </div>
         {{- end -}}
-        {{- /* Per-line notice (DOC-1572): params.line_notices.<line>.<variant> in hugo.ver.toml.
-               "v1" and "v1.16.30.0" both resolve to line "v1"; "latest" and an
-               unversioned dev build resolve to no notice. Then keyed by variant. */ -}}
-        {{- with .Site.Params.current_version -}}
-          {{- $line := index (split . ".") 0 -}}
-          {{- $byLine := index ($.Site.Params.line_notices | default dict) $line | default dict -}}
-          {{- with $n := index $byLine $.Site.Params.variant -}}
-            {{- $body := $n.message | default "" -}}
-            {{- with $n.link_path -}}
-              {{- $body = printf "%s [%s](/docs/%s/%s/%s)" $body $n.link_text $n.link_line $.Site.Params.variant . | strings.TrimSpace -}}
-            {{- end -}}
-            {{- $md := printf "> [!%s] %s\n> %s" ($n.type | default "NOTE") $n.title $body }}
-        <div class="line-notice" role="note">{{ $.RenderString (dict "display" "block") $md }}</div>
-          {{- end -}}
-        {{- end -}}
         <div class="breadcrumb-row">
           {{- partial "breadcrumb.html" . -}}
           {{- partial "page-actions.html" . -}}
