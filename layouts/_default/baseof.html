@@ -166,15 +166,11 @@
         {{- with .Site.Params.current_version -}}
           {{- $line := index (split . ".") 0 -}}
           {{- with $n := index ($.Site.Params.line_notices | default dict) $line -}}
-        <div class="old-version line-notice" role="note">
-          <div class="title">{{- $n.title -}}</div>
-          <div class="message">
-            {{- $n.message | markdownify -}}
-            {{- with $n.link_path }}
-            <p><a href="{{- printf "/docs/%s/%s/%s" $n.link_line $.Site.Params.variant . -}}">{{- $n.link_text }} →</a></p>
-            {{- end -}}
-          </div>
-        </div>
+            {{- $md := printf "> [!%s] %s\n> %s" ($n.type | default "NOTE") $n.title $n.message -}}
+            {{- with $n.link_path -}}
+              {{- $md = printf "%s [%s](/docs/%s/%s/%s)" $md $n.link_text $n.link_line $.Site.Params.variant . -}}
+            {{- end }}
+        <div class="line-notice" role="note">{{ $.RenderString (dict "display" "block") $md }}</div>
           {{- end -}}
         {{- end -}}
         <div class="breadcrumb-row">
