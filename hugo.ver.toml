@@ -14,16 +14,13 @@ show_deprecation_message = false
 # stable /docs/<line> and every pinned /docs/<line>.x.y.z. Keyed by line ("v1"), which
 # baseof.html takes from current_version's first dot-separated segment. It lives in
 # the infra (chrome), not in the line's content, so it reaches every pin at once,
-# through a pointer bump, with no cut. `message` is Markdown. `link_path` is resolved
-# against /docs/<link_line>/<variant>/.
+# through a pointer bump, with no cut. It renders as a Markdown alert (`> [!TYPE]
+# title`), through the same render hook as every callout in content. `message` is
+# Markdown, on one line. `link_path` is resolved against /docs/<link_line>/<variant>/.
 [params.line_notices.v1]
-title = "Flyte 1 reaches end of life on December 31, 2026"
-message = """
-Until December 31, 2026, Flyte 1 (`flytekit` 1.x and the Flyte 1 backend) receives
-bug fixes and security fixes. After that date it receives no fixes or releases of
-any kind, including security fixes. The `flyte` and `flytekit` repositories stay
-available, and you can fork them to keep maintaining Flyte 1.
-"""
-link_text = "Migrate from Flyte 1 to Flyte 2"
+type = "WARNING"
+title = "Flyte 1 reaches end of life on December 31, 2026."
+message = "Until then it gets bug and security fixes; after that, none. To keep using it, you can fork `flyte` and `flytekit`."
+link_text = "Migrate to Flyte 2"
 link_line = "v2"
 link_path = "user-guide/migration/flyte-2/"
