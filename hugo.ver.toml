@@ -10,25 +10,15 @@ show_deprecation_message = false
 # Set legacy version number
 # current_version = "<do-not-set>" # set by build
 
-# Per-line notice (DOC-1572), shown at the top of every page of a version line: the
-# stable /docs/<line> and every pinned /docs/<line>.x.y.z. Keyed by line ("v1"), which
-# baseof.html takes from current_version's first dot-separated segment, then by
-# variant. It lives in the infra (chrome), not in the line's content, so it reaches
-# every pin at once, through a pointer bump, with no cut. It renders as a Markdown
-# alert (`> [!TYPE] title`), through the same render hook as every callout in
-# content. `message` is Markdown, on one line, and optional. `link_path` is resolved
-# against /docs/<link_line>/<variant>/.
-[params.line_notices.v1.flyte]
-type = "WARNING"
-title = "Flyte 1 reaches end of life on December 31, 2026."
-message = "Until then it gets bug and security fixes; after that, none. To keep using it, you can fork `flyte` and `flytekit`."
-link_text = "Migrate to Flyte 2"
-link_line = "v2"
-link_path = "user-guide/migration/flyte-2/"
-
-[params.line_notices.v1.union]
-type = "WARNING"
-title = "Union.ai v1 is no longer offered."
-link_text = "Migrate to Union.ai v2"
-link_line = "v2"
-link_path = "user-guide/migration/flyte-2/"
+# Per-line banner (DOC-1572): replaces the sign-up banner at the top of every page of a
+# version line -- the stable /docs/<line> and every pinned /docs/<line>.x.y.z -- in both
+# variants. Keyed by line ("v1"), which flyte-banner.html takes from current_version's
+# first dot-separated segment; a line without an entry (v2, latest, a dev build) keeps
+# the sign-up banner. It lives in the infra (chrome), not in the line's content, so it
+# reaches every pin at once, through a pointer bump, with no cut. `link_path` is
+# resolved against the line's stable tree, /docs/<line>/<variant>/, so a pin links to
+# the current page rather than its own snapshot of it.
+[params.line_banners.v1]
+text = "Flyte 1 reaches end of life on December 31, 2026"
+button = "Learn more"
+link_path = "community/"
