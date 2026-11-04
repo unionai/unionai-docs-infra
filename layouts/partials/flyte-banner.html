@@ -1,4 +1,25 @@
+{{- /* Top banner. On a version line with a params.line_banners entry (hugo.ver.toml,
+       DOC-1572) it carries that line's notice, linking within the docs; everywhere
+       else, the sign-up banner. "v1" and "v1.16.30.0" both resolve to line "v1". */ -}}
+{{- $lineBanner := false -}}
+{{- with site.Params.current_version -}}
+  {{- $line := index (split . ".") 0 -}}
+  {{- $lineBanner = index (site.Params.line_banners | default dict) $line -}}
+  {{- if $lineBanner -}}{{- $lineBanner = merge $lineBanner (dict "line" $line) -}}{{- end -}}
+{{- end -}}
 <div class="flyte-banner">
+    {{- with $lineBanner }}
+    <a href="{{- printf "/docs/%s/%s/%s" .line site.Params.variant .link_path -}}" class="flyte-banner-link" style="will-change: width, height; height: 3rem;" >
+        <div>
+            {{ .text }}
+        </div>
+        <div class="flyte-banner-button">
+            <div>
+                {{ .button }}
+            </div>
+        </div>
+    </a>
+    {{- else }}
     <a href="{{- index site.Params.signup_link site.Params.variant -}}" class="flyte-banner-link" target="_blank" rel="noopener noreferrer" style="will-change: width, height; height: 3rem;" >
         <div>
             {{- if eq .Site.Params.variant "flyte" }}
@@ -13,4 +34,5 @@
             </div>
         </div>
     </a>
+    {{- end }}
 </div>

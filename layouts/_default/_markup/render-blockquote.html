@@ -1,5 +1,7 @@
 {{- if .AlertType -}}
-<div>
+{{- /* A class given as a block attribute after the alert (`{.large-title}`) lands on
+       this wrapper, so CSS can style one callout without touching the rest. */ -}}
+<div{{ with .Attributes.class }} class="{{ . }}"{{ end }}>
     <sl-alert open
         {{ if eq .AlertType "note" }}variant="primary"{{ end }}
         {{- if eq .AlertType "warning" -}}variant="warning"{{- end -}}

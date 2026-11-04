@@ -521,9 +521,3 @@ header .toggle-sidebar {
 .old-version .message {
   font-size: 0.9rem;
 }
-
-/* Per-line notice (DOC-1572): drop the trailing paragraph margin so the box's
-   bottom padding matches its top. */
-.old-version .message > :last-child {
-  margin-bottom: 0;
-}
