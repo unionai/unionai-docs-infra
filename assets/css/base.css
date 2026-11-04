@@ -936,6 +936,13 @@ sl-alert > strong:first-of-type {
   color: var(--notice-hue);
 }
 
+/* Opt-in larger title for one callout: put `{.large-title}` on the line after the
+   alert in Markdown (DOC-1572; the Flyte 1 end-of-life callout on the v1 Community
+   page). 16px instead of the usual 12px. */
+.large-title sl-alert {
+  --notice-title-size: 1rem;
+}
+
 /* The templates emit `<strong>Title</strong><br />`, and the <br> before a
    block-level title would add an empty line. */
 sl-alert > strong:first-of-type + br {
