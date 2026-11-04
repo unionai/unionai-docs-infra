@@ -936,6 +936,13 @@ sl-alert > strong:first-of-type {
   color: var(--notice-hue);
 }
 
+/* The per-line notice at the top of every page of a version line (DOC-1572;
+   baseof.html, hugo.ver.toml line_notices): the same callout, with a larger
+   title (16px rather than 12px). */
+.line-notice sl-alert {
+  --notice-title-size: 1rem;
+}
+
 /* The templates emit `<strong>Title</strong><br />`, and the <br> before a
    block-level title would add an empty line. */
 sl-alert > strong:first-of-type + br {

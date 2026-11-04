@@ -28,7 +28,7 @@ link_path = "user-guide/migration/flyte-2/"
 
 [params.line_notices.v1.union]
 type = "WARNING"
-title = "Union.ai 1.x is no longer offered."
-link_text = "Migrate to Union.ai 2.x"
+title = "Union.ai v1 is no longer offered."
+link_text = "Migrate to Union.ai v2"
 link_line = "v2"
 link_path = "user-guide/migration/flyte-2/"
