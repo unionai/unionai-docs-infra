@@ -160,12 +160,13 @@
           </div>
         </div>
         {{- end -}}
-        {{- /* Per-line notice (DOC-1572): params.line_notices.<line> in hugo.ver.toml.
+        {{- /* Per-line notice (DOC-1572): params.line_notices.<line>.<variant> in hugo.ver.toml.
                "v1" and "v1.16.30.0" both resolve to line "v1"; "latest" and an
-               unversioned dev build resolve to no notice. */ -}}
+               unversioned dev build resolve to no notice. Then keyed by variant. */ -}}
         {{- with .Site.Params.current_version -}}
           {{- $line := index (split . ".") 0 -}}
-          {{- with $n := index ($.Site.Params.line_notices | default dict) $line -}}
+          {{- $byLine := index ($.Site.Params.line_notices | default dict) $line | default dict -}}
+          {{- with $n := index $byLine $.Site.Params.variant -}}
             {{- $md := printf "> [!%s] %s\n> %s" ($n.type | default "NOTE") $n.title $n.message -}}
             {{- with $n.link_path -}}
               {{- $md = printf "%s [%s](/docs/%s/%s/%s)" $md $n.link_text $n.link_line $.Site.Params.variant . -}}

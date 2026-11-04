@@ -12,15 +12,24 @@ show_deprecation_message = false
 
 # Per-line notice (DOC-1572), shown at the top of every page of a version line: the
 # stable /docs/<line> and every pinned /docs/<line>.x.y.z. Keyed by line ("v1"), which
-# baseof.html takes from current_version's first dot-separated segment. It lives in
-# the infra (chrome), not in the line's content, so it reaches every pin at once,
-# through a pointer bump, with no cut. It renders as a Markdown alert (`> [!TYPE]
-# title`), through the same render hook as every callout in content. `message` is
-# Markdown, on one line. `link_path` is resolved against /docs/<link_line>/<variant>/.
-[params.line_notices.v1]
+# baseof.html takes from current_version's first dot-separated segment, then by
+# variant. It lives in the infra (chrome), not in the line's content, so it reaches
+# every pin at once, through a pointer bump, with no cut. It renders as a Markdown
+# alert (`> [!TYPE] title`), through the same render hook as every callout in
+# content. `message` is Markdown, on one line. `link_path` is resolved against
+# /docs/<link_line>/<variant>/.
+[params.line_notices.v1.flyte]
 type = "WARNING"
 title = "Flyte 1 reaches end of life on December 31, 2026."
 message = "Until then it gets bug and security fixes; after that, none. To keep using it, you can fork `flyte` and `flytekit`."
 link_text = "Migrate to Flyte 2"
+link_line = "v2"
+link_path = "user-guide/migration/flyte-2/"
+
+[params.line_notices.v1.union]
+type = "WARNING"
+title = "Union.ai 1.x is no longer offered."
+message = "All Union.ai customers now run Union.ai 2.x."
+link_text = "Migrate to Union.ai 2.x"
 link_line = "v2"
 link_path = "user-guide/migration/flyte-2/"
