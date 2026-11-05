@@ -103,9 +103,17 @@ for CHART in "${CHARTS[@]}"; do
   # backticks so Hugo's goldmark renderer doesn't treat them as raw HTML.
   # Pattern: < followed by a letter, then 1+ letters/digits/underscores/hyphens, then >
   # Minimum 2 chars inside brackets to avoid matching real HTML tags like <p>, <a>.
-  # Code spans are copied unchanged: a placeholder already inside one (e.g.
+  # Code spans are left alone: a placeholder already inside one (e.g.
   # `*.apps.<dp>.<domain>`) is safe, and wrapping it again splits the span into
   # broken fragments.
-  perl -pe 's{(`[^`]*`)|<([A-Za-z][A-Za-z0-9_-]+)>}{defined $1 ? $1 : "`<$2>`"}ge' "$OUTPUT" > "$DEST"
+  # On table rows, a bare | inside a code span is escaped as \|: GFM splits
+  # cells on it even inside backticks, so a default such as
+  # `(.Values.provider | default "")` would otherwise cut the row short.
+  perl -pe '
+    my $row = /^\|/;
+    s{(`[^`]*`)|<([A-Za-z][A-Za-z0-9_-]+)>}{
+      if (defined $1) { my $c = $1; $c =~ s/(?<!\\)\|/\\|/g if $row; $c }
+      else { "`<$2>`" }
+    }ge' "$OUTPUT" > "$DEST"
   echo "Generated: $DEST"
 done
