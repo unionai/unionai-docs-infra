@@ -19,7 +19,8 @@ DOCS_ROOT="${REPO_ROOT:-$(git -C "$INFRA_ROOT" rev-parse --show-toplevel 2>/dev/
 
 CHARTS=(dataplane knative-operator)
 TEMPLATE_DIR="$DOCS_ROOT/scripts/helm-docs"
-DEST_DIR="$DOCS_ROOT/content/deployment/helm-chart-reference"
+# Keep in step with CONTENT_DIR in check_helm_versions.py.
+DEST_DIR="$DOCS_ROOT/content/deployment/selfmanaged/helm-chart-reference"
 CLEANUP_FILES=()
 CLEANUP_DIRS=()
 
@@ -65,7 +66,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$DEST_DIR"
+# Refuse to write outside the published section. If the section moves, fail
+# here rather than writing pages to a directory nothing links to.
+if [[ ! -f "$DEST_DIR/_index.md" ]]; then
+  echo "ERROR: $DEST_DIR/_index.md not found. Has the Helm chart reference section moved?"
+  echo "       Update DEST_DIR here and CONTENT_DIR in check_helm_versions.py."
+  exit 1
+fi
 
 # --- Generate docs for each chart ---
 
@@ -96,6 +103,9 @@ for CHART in "${CHARTS[@]}"; do
   # backticks so Hugo's goldmark renderer doesn't treat them as raw HTML.
   # Pattern: < followed by a letter, then 1+ letters/digits/underscores/hyphens, then >
   # Minimum 2 chars inside brackets to avoid matching real HTML tags like <p>, <a>.
-  sed -E 's/<([A-Za-z][A-Za-z0-9_-]+)>/`<\1>`/g' "$OUTPUT" > "$DEST"
+  # Code spans are copied unchanged: a placeholder already inside one (e.g.
+  # `*.apps.<dp>.<domain>`) is safe, and wrapping it again splits the span into
+  # broken fragments.
+  perl -pe 's{(`[^`]*`)|<([A-Za-z][A-Za-z0-9_-]+)>}{defined $1 ? $1 : "`<$2>`"}ge' "$OUTPUT" > "$DEST"
   echo "Generated: $DEST"
 done

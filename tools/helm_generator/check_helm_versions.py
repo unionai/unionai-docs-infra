@@ -27,10 +27,15 @@ from _repo import get_repo_root
 REPO_ROOT = get_repo_root()
 INFRA_ROOT = Path(__file__).resolve().parent.parent.parent
 
+# The Helm chart reference section. generate_helm_docs.sh writes to the same
+# directory and refuses to run if it holds no _index.md, so a moved section
+# fails both tools loudly instead of passing as "up-to-date".
+CONTENT_DIR = "content/deployment/selfmanaged/helm-chart-reference"
+
 # Charts to check: (chart_name, content_file_relative_to_repo_root)
 CHARTS = [
-    ("dataplane", "content/deployment/helm-chart-reference/dataplane.md"),
-    ("knative-operator", "content/deployment/helm-chart-reference/knative-operator.md"),
+    ("dataplane", f"{CONTENT_DIR}/dataplane.md"),
+    ("knative-operator", f"{CONTENT_DIR}/knative-operator.md"),
 ]
 
 HELM_CHARTS_REPO = "unionai/helm-charts"
@@ -90,16 +95,17 @@ def check_all() -> list[dict]:
         filepath = REPO_ROOT / content_file
         committed = extract_frontmatter_version(filepath)
         latest = get_latest_chart_version(chart_name)
-        outdated = False
-        if committed is None:
-            outdated = filepath.exists()  # file exists but no chart_version
-        elif latest is not None and committed != latest:
-            outdated = True
+        missing = not filepath.exists()
+        # A missing file, or one without chart_version, is never current: a
+        # moved section once made this check pass silently while the docs went
+        # stale for months.
+        outdated = committed is None or (latest is not None and committed != latest)
         results.append({
             "chart": chart_name,
             "committed": committed,
             "latest": latest,
             "outdated": outdated,
+            "missing": missing,
             "content_file": content_file,
         })
     return results
@@ -109,7 +115,12 @@ def print_results(results: list[dict]) -> None:
     for r in results:
         committed = r["committed"] or "not set"
         latest = r["latest"] or "unknown"
-        status = "OUTDATED" if r["outdated"] else "up-to-date"
+        if r["missing"]:
+            status = f"MISSING: no file at {r['content_file']}"
+        elif r["outdated"]:
+            status = "OUTDATED"
+        else:
+            status = "up-to-date"
         print(f"  {r['chart']}: committed={committed} latest={latest} [{status}]")
 
 
@@ -140,7 +151,7 @@ def main():
         return
 
     if args.check:
-        print(f"\n{len(outdated)} chart(s) have newer versions in {HELM_CHARTS_REPO}.")
+        print(f"\n{len(outdated)} chart(s) missing or behind {HELM_CHARTS_REPO}.")
         print("Run 'make update-helm-docs' or 'make dist' locally to regenerate.")
         sys.exit(1)
 
