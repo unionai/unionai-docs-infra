@@ -128,7 +128,8 @@ def regenerate() -> None:
     """Invoke the generation script to regenerate helm docs."""
     script = INFRA_ROOT / "tools" / "helm_generator" / "generate_helm_docs.sh"
     print("\nRegenerating helm chart docs...")
-    subprocess.run([str(script)], cwd=REPO_ROOT, check=True)
+    # Run through bash so the script needn't carry the executable bit.
+    subprocess.run(["bash", str(script)], cwd=REPO_ROOT, check=True)
 
 
 def main():

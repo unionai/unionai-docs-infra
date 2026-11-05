@@ -327,4 +327,4 @@ update-helm-docs:
 	@$(UV) unionai-docs-infra/tools/helm_generator/check_helm_versions.py --update
 
 generate-helm-docs:
-	@unionai-docs-infra/tools/helm_generator/generate_helm_docs.sh
+	@bash unionai-docs-infra/tools/helm_generator/generate_helm_docs.sh
