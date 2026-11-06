@@ -5597,7 +5597,7 @@ www.union.ai/docs/v2/flyte/community/troubleshoot,https://www.union.ai/docs/v2/f
 www.union.ai/docs/v2/flyte/deployment,https://www.union.ai/docs/v2/flyte/oss-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/,https://www.union.ai/docs/v2/flyte/oss-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/architecture/kubernetes-rbac,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/architecture/kubernetes-rbac,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture/overview,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/overview,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-AWS,https://www.union.ai/docs/v2/union/deployment/selfmanaged/aws/legacy,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-aws,https://www.union.ai/docs/v2/union/deployment/selfmanaged/aws/legacy,302,TRUE,FALSE,TRUE,TRUE
@@ -5633,7 +5633,6 @@ www.union.ai/docs/v2/flyte/deployment/enabling-gcp-resources/enabling-google-art
 www.union.ai/docs/v2/flyte/deployment/enabling-gcp-resources/enabling-google-cloud-storage,https://www.union.ai/docs/v2/flyte/deployment/byoc/enabling-gcp-resources/enabling-google-cloud-storage,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/enabling-gcp-resources/enabling-google-secret-manager,https://www.union.ai/docs/v2/flyte/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/multi-cluster,https://www.union.ai/docs/v2/flyte/deployment/byoc/multi-cluster,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/platform-architecture,https://www.union.ai/docs/v2/flyte/deployment/byoc/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/selfmanaged-aws/cdk,https://www.union.ai/docs/v2/union/deployment/selfmanaged/aws/legacy,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/single-sign-on-setup,https://www.union.ai/docs/v2/flyte/deployment/byoc/single-sign-on-setup,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/single-sign-on-setup/google-oidc,https://www.union.ai/docs/v2/flyte/deployment/byoc/single-sign-on-setup/google-oidc,302,TRUE,FALSE,TRUE,TRUE
@@ -8036,7 +8035,6 @@ www.union.ai/docs/v2/flyte/deployment/enabling-gcp-resources/enabling-google-sec
 www.union.ai/docs/v2/union/deployment/enabling-gcp-resources/enabling-google-secret-manager/,https://www.union.ai/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/multi-cluster/,https://www.union.ai/docs/v2/flyte/deployment/byoc/multi-cluster,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/multi-cluster/,https://www.union.ai/docs/v2/union/deployment/byoc/multi-cluster,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/platform-architecture/,https://www.union.ai/docs/v2/flyte/deployment/byoc/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/single-sign-on-setup/,https://www.union.ai/docs/v2/flyte/deployment/byoc/single-sign-on-setup,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/single-sign-on-setup/,https://www.union.ai/docs/v2/union/deployment/byoc/single-sign-on-setup,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/single-sign-on-setup/google-oidc/,https://www.union.ai/docs/v2/flyte/deployment/byoc/single-sign-on-setup/google-oidc,302,TRUE,FALSE,TRUE,TRUE
@@ -8047,7 +8045,7 @@ www.union.ai/docs/v2/flyte/deployment/single-sign-on-setup/other-identity-provid
 www.union.ai/docs/v2/union/deployment/single-sign-on-setup/other-identity-providers/,https://www.union.ai/docs/v2/union/deployment/byoc/single-sign-on-setup/other-identity-providers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/architecture/,https://www.union.ai/docs/v2/union/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/architecture/kubernetes-rbac/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/architecture/kubernetes-rbac/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/architecture/kubernetes-rbac/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture/overview/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/overview,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/architecture/overview/,https://www.union.ai/docs/v2/union/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
@@ -9107,3 +9105,7 @@ www.union.ai/docs/v2/union/deployment/selfmanaged/architecture.md,https://www.un
 www.union.ai/docs/v2/union/deployment/byoc/platform-architecture,https://www.union.ai/docs/v2/union/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/byoc/platform-architecture/,https://www.union.ai/docs/v2/union/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/byoc/platform-architecture.md,https://www.union.ai/docs/v2/union/deployment/platform-architecture.md,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/byoc/platform-architecture/,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/kubernetes-rbac,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/kubernetes-rbac/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/byoc/platform-architecture,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
