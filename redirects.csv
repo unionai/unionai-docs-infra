@@ -5596,9 +5596,9 @@ www.union.ai/docs/v2/flyte/community/contribute/contribute-code,https://www.unio
 www.union.ai/docs/v2/flyte/community/troubleshoot,https://www.union.ai/docs/v2/flyte/community/troubleshooting,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment,https://www.union.ai/docs/v2/flyte/oss-deployment,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/,https://www.union.ai/docs/v2/flyte/oss-deployment,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/architecture,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/architecture,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture/kubernetes-rbac,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/architecture/overview,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/overview,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/architecture/overview,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-AWS,https://www.union.ai/docs/v2/union/deployment/selfmanaged/aws/legacy,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-aws,https://www.union.ai/docs/v2/union/deployment/selfmanaged/aws/legacy,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byok-data-plane-setup-on-aws/cdk,https://www.union.ai/docs/v2/union/deployment/selfmanaged/aws/legacy,302,TRUE,FALSE,TRUE,TRUE
@@ -8043,11 +8043,11 @@ www.union.ai/docs/v2/flyte/deployment/single-sign-on-setup/microsoft-entra-id/,h
 www.union.ai/docs/v2/union/deployment/single-sign-on-setup/microsoft-entra-id/,https://www.union.ai/docs/v2/union/deployment/byoc/single-sign-on-setup/microsoft-entra-id,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/single-sign-on-setup/other-identity-providers/,https://www.union.ai/docs/v2/flyte/deployment/byoc/single-sign-on-setup/other-identity-providers,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/single-sign-on-setup/other-identity-providers/,https://www.union.ai/docs/v2/union/deployment/byoc/single-sign-on-setup/other-identity-providers,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/architecture/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/architecture/,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/architecture/,https://www.union.ai/docs/v2/union/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/architecture/kubernetes-rbac/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/architecture/kubernetes-rbac/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
-www.union.ai/docs/v2/flyte/deployment/architecture/overview/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/overview,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/architecture/overview/,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/architecture/overview/,https://www.union.ai/docs/v2/union/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/cluster-recommendations/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/cluster-recommendations,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/union/deployment/cluster-recommendations/,https://www.union.ai/docs/v2/union/deployment/selfmanaged/infrastructure-recommendations,302,TRUE,FALSE,TRUE,TRUE
@@ -9109,3 +9109,7 @@ www.union.ai/docs/v2/flyte/deployment/byoc/platform-architecture/,https://www.un
 www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/kubernetes-rbac,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/kubernetes-rbac/,https://www.union.ai/docs/v2/flyte/deployment/selfmanaged/kubernetes-rbac,302,TRUE,FALSE,TRUE,TRUE
 www.union.ai/docs/v2/flyte/deployment/byoc/platform-architecture,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/overview,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
+www.union.ai/docs/v2/flyte/deployment/selfmanaged/architecture/overview/,https://www.union.ai/docs/v2/flyte/deployment/platform-architecture,302,TRUE,FALSE,TRUE,TRUE
