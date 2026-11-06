@@ -1520,7 +1520,7 @@
         "/docs/v2/union/tutorials/data-processing/micro-batching/"
       ],
       "other": [
-        "/docs/v2/union/deployment/selfmanaged/architecture/kubernetes-rbac/"
+        "/docs/v2/union/deployment/selfmanaged/kubernetes-rbac/"
       ]
     },
     "groups_with_candidate": 4,
@@ -1618,7 +1618,7 @@
       ],
       "other": [
         {
-          "url": "/docs/v2/union/deployment/selfmanaged/architecture/kubernetes-rbac/",
+          "url": "/docs/v2/union/deployment/selfmanaged/kubernetes-rbac/",
           "title": "Kubernetes Access Controls",
           "score": 25,
           "why": [
@@ -4669,7 +4669,7 @@
           ]
         },
         {
-          "url": "/docs/v2/union/deployment/selfmanaged/architecture/kubernetes-rbac/",
+          "url": "/docs/v2/union/deployment/selfmanaged/kubernetes-rbac/",
           "title": "Kubernetes Access Controls",
           "score": 47,
           "why": [
