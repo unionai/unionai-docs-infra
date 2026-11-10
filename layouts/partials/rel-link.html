@@ -18,6 +18,19 @@
         {{ $path = strings.TrimSuffix "_index" $path }}
         {{ $path = strings.TrimSuffix "/" $path }}
     {{ end }}
+    {{/* A leaf page linking to itself by file name ("<stem>#anchor" or "./<stem>#anchor",
+         as v1's generated module pages do for every class they list) is served one level
+         deeper than its source (foo.md -> foo/), so passing that through sends the browser
+         to foo/foo and a 404: 802 links on v1. Nothing means foo/foo, so resolve it to the
+         page itself. Other relative paths pass through untouched: generated and docstring
+         links on leaf pages are still written relative to the page URL. */}}
+    {{ if and (eq page.Kind "page") page.File (ne page.File.BaseFileName "index") }}
+        {{ $self := lower page.File.BaseFileName }}
+        {{ $p := lower (strings.TrimPrefix "./" $path) }}
+        {{ if eq $p $self }}
+            {{ $path = page.RelPermalink }}
+        {{ end }}
+    {{ end }}
     {{- $link = printf "%s%s" $path $fragment -}}
 {{- else -}}
     {{/* 1. Extract fragment FIRST, before any suffix trimming */}}
