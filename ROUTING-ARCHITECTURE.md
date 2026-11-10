@@ -67,7 +67,6 @@ There are **two CloudFront distributions**:
 | Project | Subdomain | Custom Domains | Production Branch |
 |---------|-----------|----------------|-------------------|
 | **docs** | `docs-dog.pages.dev` | `docs.union.ai`, `web-docs.union.ai` | `main` |
-| **docs-builder** | `docs-builder.pages.dev` | *(none)* | `main` (orphan, see below) |
 
 The **docs** project serves both v2 docs (via `web-docs.union.ai`) and the legacy `docs.union.ai` domain. Each deployment also gets a unique preview URL (e.g., `621e958d.docs-dog.pages.dev`).
 
@@ -90,13 +89,15 @@ The **docs** project serves both v2 docs (via `web-docs.union.ai`) and the legac
 
 The v1 docs are served from `v1.docs-dog.pages.dev` — this is a deployment alias within the same **docs** Pages project, not a separate project. Built and deployed by the same GHA workflow on the `v1` branch with `--branch=v1`.
 
-The **docs-builder** project was previously used for preview/staging Git-connected builds. After the 2026-05 GHA-build migration it has no role; it remains in the dashboard as an orphan with auto-deploys disabled (1,714 historical deployments make bulk-delete via API expensive vs. its zero-cost inert state).
+`docs` is the only Pages project on the account. The former **docs-builder** project, which ran the Git-connected preview builds before the 2026-05 GHA-build migration, was deleted on 2026-11-10 together with its 1,714 deployments. Its branch aliases had kept serving stale copies of the docs on `*.docs-builder.pages.dev`.
 
 The Admin@flyte.org account has **no Cloudflare Pages projects**.
 
 ### Workers Routes
 
 Neither the `union.ai` zone nor the `flyte.org` zone has any Cloudflare Workers routes configured. All request processing is done via redirect rules, transform rules, page rules, and bulk redirects.
+
+One Worker serves a hostname in the `union.ai` zone, through a Workers custom domain rather than a route: `academy.union.ai` → Worker `academy` (static assets, deployed by Workers Builds from `unionai/academy`, since 2026-11-10). It is outside the docs path and CloudFront.
 
 ### Phase 2: Cloudflare Zone Rules (union.ai)
 
