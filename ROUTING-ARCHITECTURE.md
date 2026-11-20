@@ -2,7 +2,7 @@
 
 > **Last verified 2026-09-02** against the live Cloudflare rulesets and production responses.
 > The Cloudflare rule tables below were read from the API, not from memory: dynamic redirects
-> `b97ef0221e4b49a1a8c2cb614248b1f8` (17 rules, ruleset version 71) and transforms
+> `b97ef0221e4b49a1a8c2cb614248b1f8` (18 rules, ruleset version 74, re-read 2026-11-20) and transforms
 > `60866e7f204a4848ba5ec3670ea095eb` (3 rules). Re-read both before trusting the tables, since
 > they are edited in the dashboard and this file cannot know about it.
 >
@@ -105,7 +105,7 @@ Before traffic reaches CloudFront, Cloudflare processes its own zone rules for `
 
 #### Redirect Rules (Dynamic Redirects)
 
-Ruleset `b97ef0221e4b49a1a8c2cb614248b1f8` (phase `http_request_dynamic_redirect`), processed in order. **17 rules, all enabled, ruleset version 71 as of 2026-09-02.** This is the only mechanism in the stack that can use regular expressions and capture groups; bulk redirect lists cannot (see "Which mechanism handles what" below).
+Ruleset `b97ef0221e4b49a1a8c2cb614248b1f8` (phase `http_request_dynamic_redirect`), processed in order. **18 rules, all enabled, ruleset version 74 as of 2026-11-20.** This is the only mechanism in the stack that can use regular expressions and capture groups; bulk redirect lists cannot (see "Which mechanism handles what" below).
 
 | # | Match | Target | Code | Purpose |
 |---|-------|--------|------|---------|
@@ -126,6 +126,7 @@ Ruleset `b97ef0221e4b49a1a8c2cb614248b1f8` (phase `http_request_dynamic_redirect
 | 15 | `/docs/v1` or `/docs/v1/*`, excluding the five variant prefixes, `versions.json` and `llms.txt` | `/docs/v1/union/user-guide/` | 302 | **F1: v1 fallback** (DOC-1330) |
 | 16 | `/docs/v2` or `/docs/v2/*`, same exclusions | `/docs/v2/union/user-guide/` | 302 | **F2: v2 fallback** (DOC-1330) |
 | 17 | `/docs` or `/docs/*`, excluding `^/docs/(v[0-9][^/]*\|latest\|stable)(/\|$)`, `/docs/llms.txt`, `/docs/sitemap.xml` | `/docs/v2/union/user-guide/` | 302 | **F3: docs-root fallback** (DOC-1358 / DOC-1320) |
+| 18 | `www.union.ai/aws` or `/aws/` (exact) | `https://aws.amazon.com/marketplace/pp/prodview-66k3cmidsgv5o` (query string kept) | 302 | Marketing vanity URL for the AWS Marketplace listing (re:Invent 2026). Bare `union.ai/aws` reaches it through rule 1 |
 
 **Key behaviors.**
 
