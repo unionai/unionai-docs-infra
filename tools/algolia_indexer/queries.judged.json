@@ -27,9 +27,7 @@
         "tutorial": [],
         "other": [
           "/docs/v2/union/security/data-protection/secrets/",
-          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/",
-          "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
-          "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/"
+          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/"
         ]
       },
       "groups_with_candidate": 4,
@@ -418,8 +416,7 @@
         ],
         "tutorial": [],
         "other": [
-          "/docs/v2/union/deployment/selfmanaged/configuration/image-builder/",
-          "/docs/v2/union/deployment/byoc/enabling-azure-resources/enabling-azure-container-registry/"
+          "/docs/v2/union/deployment/selfmanaged/configuration/image-builder/"
         ]
       },
       "groups_with_candidate": 4,
@@ -1271,9 +1268,7 @@
         "tutorial": [],
         "other": [
           "/docs/v2/union/security/data-protection/secrets/",
-          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/",
-          "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
-          "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/"
+          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/"
         ]
       },
       "groups_with_candidate": 4,
@@ -3000,9 +2995,7 @@
         "tutorial": [],
         "other": [
           "/docs/v2/union/security/data-protection/secrets/",
-          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/",
-          "/docs/v2/union/deployment/byoc/enabling-aws-resources/enabling-aws-secrets-manager/",
-          "/docs/v2/union/deployment/byoc/enabling-gcp-resources/enabling-google-secret-manager/"
+          "/docs/v2/union/deployment/selfmanaged/configuration/union-secrets/"
         ]
       },
       "groups_with_candidate": 4,
