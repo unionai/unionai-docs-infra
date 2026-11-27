@@ -9,3 +9,31 @@ footer .prev {
 footer .next {
     margin-left: auto; /* Pushes element to the right */
 }
+/* "Cookie preferences" (partials/cookie-prefs.html): a quiet footer line. Directly under the
+   version stamp it joins that block; on a page without one it opens its own. */
+.cookie-prefs {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    font-size: .8rem;
+}
+
+.docs-version-info + .cookie-prefs {
+    margin-top: .4rem;
+    padding-top: 0;
+    border-top: none;
+}
+
+.cookie-prefs-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--text-muted, #6b7280);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.cookie-prefs-link:hover {
+    color: inherit;
+}

@@ -80,3 +80,25 @@ window.FinsweetConsentPro.push(['consent', function (consentPro) {
   consentPro.on('consent-updated', syncPostHog);
 }]);
 </script>
+{{- /* Docs only: hide ConsentPro's floating "open preferences" button. The docs footer carries a
+       "Cookie preferences" link instead (partials/cookie-prefs.html), which opens the same
+       dialog. The button lives in ConsentPro's open shadow root, which page CSS can't reach,
+       so the rule goes into that root once the runtime creates it. !important beats the
+       inline display the runtime sets when it shows the button. */ -}}
+<script>
+(function () {
+  var css = '[fs-consent-element="fixed-preferences"]{display:none !important}';
+  function patch() {
+    var root = document.querySelector('[fs-consent-element="root"]');
+    if (!root || !root.shadowRoot) return false;
+    var style = document.createElement('style');
+    style.textContent = css;
+    root.shadowRoot.appendChild(style);
+    return true;
+  }
+  if (patch()) return;
+  var observer = new MutationObserver(function () { if (patch()) observer.disconnect(); });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  setTimeout(function () { observer.disconnect(); }, 30000);
+})();
+</script>
