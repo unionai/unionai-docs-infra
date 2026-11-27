@@ -1,0 +1,8 @@
+{{- /* "Cookie preferences": reopens ConsentPro's preferences dialog, so a visitor can change or
+       withdraw consent as easily as they gave it. It replaces the floating button that
+       partials/posthog.html hides. The runtime opens the dialog on a click on any element
+       with fs-consent-element="open-preferences". It doesn't cancel the click, so this is a
+       button, not an <a href="#"> that would also jump to the top of the page. */ -}}
+<div class="cookie-prefs">
+  <button type="button" class="cookie-prefs-link" fs-consent-element="open-preferences">Cookie preferences</button>
+</div>
