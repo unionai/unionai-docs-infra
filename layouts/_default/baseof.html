@@ -21,6 +21,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{- /* Consent banner, then PostHog: first in <head>, ahead of every other script. */ -}}
+    {{- partial "posthog.html" . -}}
     {{- /* Per-page-type <title> so generated API reference doesn't collide with concept
            pages in external search (DOC-1234). Reference pages get an explicit
            "API reference" qualifier; concept/guide pages keep the plain

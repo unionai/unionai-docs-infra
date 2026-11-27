@@ -1,0 +1,82 @@
+{{- /* PostHog product analytics, behind the website's ConsentPro cookie banner.
+
+       Copied unchanged from www.union.ai's <head>, so a visitor's docs pages, website pages
+       and "Get started" clicks join up in one PostHog project. Order matters:
+
+       1. ConsentPro, the website's banner (a Webflow app). US visitors are tracked unless
+          they click Reject; everyone else only after Accept. The choice is stored for all of
+          www.union.ai, so a visitor who answered on the website is not asked again.
+       2. The PostHog loader and init. The hostname check keeps local builds and preview hosts
+          out; PostHog starts opted out and stores nothing until consent says yes. Session
+          recording is off and person profiles are created only for identified users.
+       3. The consent bridge, which opts PostHog in or out to match ConsentPro, on load and on
+          every change.
+
+       Never ship PostHog without step 1. Keep all three in step with the website's copy.
+
+       The banner's markup and CSS are not here: the runtime fetches www.union.ai/ (its
+       `source`), lifts the banner out of that page and renders it in a shadow root. So it
+       renders only where `/` is the Webflow site, which means production, not local builds or
+       PR previews. The Webflow CSS colors it from theme variables the website defines on
+       :root and the docs don't; custom properties inherit into the shadow root, so the
+       style below sets the website's (dark theme) values on the banner's host element. */ -}}
+<style>
+  [fs-consent-element="root"] {
+    --_primitives---colors--neutral-darkest: #000;
+    --_primitives---colors--white: #fff;
+    --_primitives---opacity--transparent: transparent;
+    --_theme---accent: #fcb51f;
+    --_theme---background: #000;
+    --_theme---background-alt-90: color-mix(in srgb, #18191a 90%, transparent);
+    --_theme---body: #cccfd1;
+    --_theme---heading: #fff;
+    --_theme---border: color-mix(in srgb, #fff 12%, transparent);
+    --_theme---container: var(--_theme---border);
+    --_ui-styles---radius--medium: 1rem;
+    --_ui-styles---radius--small: .5rem;
+    color: #fff;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+</style>
+<script src="https://api.consentpro.com/v2/cdn/runtime/690e38b4066a3319f4dad995.js" type="text/javascript" finsweet="consentpro" siteid="690e38b4066a3319f4dad995"></script>
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p||((p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",p.onerror=function(){p=null},(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r));var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],Object.defineProperty(u,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e}}),Object.defineProperty(u.people,"toString",{configurable:!0,enumerable:!0,writable:!0,value:function(){return u.toString(1)+".people (stub)"}}),o="Mh Ah Rh Ph Dh jh init md yd hd vd kd gd Sd ld Md Ed Ad Rd Pd Od capture getExtension bd gr fd pd calculateEventProperties Dd register register_once register_for_session unregister unregister_for_session Bd ud Nd getFeatureFlag getFeatureFlagPayload getFeatureFlagResult getAllFeatureFlags isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys onActiveMatchingSurveysChanged renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync zd identify setPersonProperties unsetPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset Hd shutdown setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty jd Cd createPersonProfile setInternalOrTestUser qd Hh Bh opt_in_capturing opt_out_capturing zh has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing xd debug wc Ls getPageViewId captureTraceFeedback captureTraceMetric sd".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    if (/^(www\.)?union\.ai$/.test(location.hostname)) {
+    posthog.init('phc_CunB3RBAmVXS5kpuou6RQvmJh4htBnADpFERroFPDQHb', {
+        api_host: 'https://us.i.posthog.com',
+        defaults: '2026-08-30',
+        person_profiles: 'identified_only',
+        opt_out_capturing_by_default: true,
+        opt_out_persistence_by_default: true,
+        disable_session_recording: true,
+    })
+}
+</script>
+<script>
+window.FinsweetConsentPro = window.FinsweetConsentPro || [];
+window.FinsweetConsentPro.push(['consent', function (consentPro) {
+  function syncPostHog() {
+    var tries = 0;
+    function checkPostHog() {
+      var ph = window.posthog;
+      if (!ph || !ph.__loaded) {
+        if (tries++ < 50) {
+          setTimeout(checkPostHog, 200);
+        }
+        return;
+      }
+      var allowed = !!consentPro.consents.get().analytics;
+      if (allowed && !ph.has_opted_in_capturing()) {
+        ph.opt_in_capturing();
+      }
+      if (!allowed && !ph.has_opted_out_capturing()) {
+        ph.opt_out_capturing();
+      }
+    }
+    checkPostHog();
+  }
+  syncPostHog();
+  consentPro.on('consent-updated', syncPostHog);
+}]);
+</script>
