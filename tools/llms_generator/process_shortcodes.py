@@ -49,6 +49,78 @@ except ImportError:
                 return {}
 
 
+# {{< code ... >}}: the attribute string is group 1.
+CODE_SHORTCODE = re.compile(r'\{\{<\s*code\s+([^>]*?)\s*/?>\}\}')
+# One named shortcode attribute: name=value, the value double-quoted, single-quoted or bare.
+_SHORTCODE_ATTR = re.compile(r'(\w+)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|(\S+))')
+# What code.html strips before comparing a line with a fragment marker.
+_MARKER_PREFIX = re.compile(r'^\s*(#|//|/\*+|\*+)?\s*')
+
+
+def parse_shortcode_attrs(attr_string: str) -> Dict[str, str]:
+    """Named shortcode attributes, in any order, quoted or not (Hugo's `.Get`)."""
+    attrs = {}
+    for m in _SHORTCODE_ATTR.finditer(attr_string):
+        name, dq, sq, bare = m.groups()
+        attrs[name] = dq if dq is not None else sq if sq is not None else bare
+    return attrs
+
+
+def render_code_include(
+    file_content: str,
+    fragment: Optional[str] = None,
+    line_from: Optional[str] = None,
+    line_to: Optional[str] = None,
+    show_fragments: bool = False,
+) -> str:
+    """The code a {{< code >}} shortcode shows, selected as layouts/shortcodes/code.html does.
+
+    1. `fragment`: the lines between its start and end markers (a marker matches once a
+       leading comment prefix is stripped). Otherwise `from` and `to` (1-based, inclusive),
+       when both are set. Otherwise the whole file.
+    2. Every line containing `docs-fragment` is dropped (any fragment's marker, not only the
+       selected one's), unless `show_fragments` is set.
+    3. Leading blank lines go, runs of blank lines collapse to one, and a trailing blank
+       line goes.
+
+    A fragment that isn't found yields no lines; Hugo has already failed the build for it.
+    """
+    lines = file_content.split('\n')
+
+    if fragment:
+        start_marker = f"{{{{docs-fragment {fragment}}}}}"
+        end_marker = f"{{{{/docs-fragment {fragment}}}}}"
+        selected, in_fragment = [], False
+        for line in lines:
+            clean = _MARKER_PREFIX.sub('', line, count=1)
+            if clean == start_marker:
+                in_fragment = True
+            elif clean == end_marker:
+                break
+            elif in_fragment:
+                selected.append(line)
+    elif line_from and line_to:
+        start, end = int(line_from), int(line_to)
+        selected = lines[start - 1:end]
+    else:
+        selected = lines
+
+    if not show_fragments:
+        selected = [line for line in selected if 'docs-fragment' not in line]
+
+    normalized, prev_blank = [], True
+    for line in selected:
+        blank = line.strip(' \t\r') == ''
+        if blank and prev_blank:
+            continue
+        normalized.append(line)
+        prev_blank = blank
+    if normalized and normalized[-1].strip(' \t\r') == '':
+        normalized.pop()
+
+    return '\n'.join(normalized)
+
+
 class ShortcodeProcessor:
     def __init__(self, variant: str, version: str = "v2", base_path: str = "", input_dir: str = ""):
         self.variant = variant
@@ -174,33 +246,45 @@ class ShortcodeProcessor:
         return content
 
     def process_code_shortcodes(self, content: str) -> str:
-        """Process {{< code file="..." lang="..." >}} shortcodes."""
-        pattern = r'\{\{<\s*code\s+file="([^"]*)"(?:\s+lang="([^"]*)")?(?:\s+fragment="([^"]*)")?[^>]*>\}\}'
+        """Process {{< code file="..." ... >}} shortcodes into fenced code blocks.
+
+        Attributes are read by name, in any order, quoted or not, as Hugo's `.Get` reads
+        them, and the code is selected exactly as layouts/shortcodes/code.html selects it
+        (see render_code_include). The twin must show what the page shows: matching only
+        `lang="..." fragment="..."` in that order inlined the whole file for every other
+        form, which was half of all embeds (DOCP-95).
+        """
 
         def replace_code(match):
-            file_path, lang, fragment = match.groups()
+            attrs = parse_shortcode_attrs(match.group(1))
+            file_path = attrs.get('file')
+            if not file_path:
+                return match.group(0)
 
-            # Read file content
             try:
                 full_path = self.resolve_file_path(file_path)
                 with open(full_path, 'r', encoding='utf-8') as f:
                     file_content = f.read()
-
-                # Handle fragments if specified
-                if fragment:
-                    file_content = self.extract_fragment(file_content, fragment)
-
-                # Generate markdown code block
-                lang_str = lang or ""
-                source_url = file_path
-                if source_url.startswith('/unionai-examples/'):
-                    source_url = 'https://github.com/unionai/unionai-examples/blob/main/' + source_url[len('/unionai-examples/'):]
-                return f"```{lang_str}\n{file_content.rstrip()}\n```\n\n*Source: {source_url}*"
-
             except Exception as e:
                 return f"```\n# Error reading file: {file_path}\n# {str(e)}\n```"
 
-        return re.sub(pattern, replace_code, content)
+            code = render_code_include(
+                file_content,
+                fragment=attrs.get('fragment'),
+                line_from=attrs.get('from'),
+                line_to=attrs.get('to'),
+                show_fragments=bool(attrs.get('show_fragments')),
+            )
+            lang_str = attrs.get('lang') or ""
+            source_url = file_path
+            if source_url.startswith('/unionai-examples/'):
+                source_url = 'https://github.com/unionai/unionai-examples/blob/main/' + source_url[len('/unionai-examples/'):]
+            # Code that itself contains a ``` fence (markdown in a string) would close a
+            # three-backtick fence early: fence it with one more backtick than its longest run.
+            fence = '`' * max(3, max((len(r) for r in re.findall(r'`+', code)), default=0) + 1)
+            return f"{fence}{lang_str}\n{code}\n{fence}\n\n*Source: {source_url}*"
+
+        return CODE_SHORTCODE.sub(replace_code, content)
 
     def process_note_shortcodes_recursive(self, content: str) -> str:
         """Process {{< note >}} shortcodes with support for nested shortcodes."""
@@ -407,28 +491,6 @@ class ShortcodeProcessor:
             return self.base_path / 'content' / '_static' / file_path[9:]
         else:
             return self.base_path / file_path.lstrip('/')
-
-    def extract_fragment(self, content: str, fragment_name: str) -> str:
-        """Extract a fragment from file content using Hugo fragment markers."""
-        start_marker = f"{{{{docs-fragment {fragment_name}}}}}"
-        end_marker = f"{{{{/docs-fragment {fragment_name}}}}}"
-
-        lines = content.split('\n')
-        in_fragment = False
-        fragment_lines = []
-
-        for line in lines:
-            # Check for markers in comments (removing common comment prefixes)
-            clean_line = re.sub(r'^\s*(#|//|/\*+|\*+)?\s*', '', line)
-
-            if clean_line == start_marker:
-                in_fragment = True
-            elif clean_line == end_marker:
-                break
-            elif in_fragment:
-                fragment_lines.append(line)
-
-        return '\n'.join(fragment_lines)
 
     def process_grid_shortcodes_recursive(self, content: str) -> str:
         """Process {{< grid >}} shortcodes with support for nested shortcodes."""
